@@ -539,17 +539,18 @@ nav.tabs button{padding-bottom:2px}
 .invprev .ip-co{font-family:var(--serif);font-size:20px;font-weight:600;color:#111}
 .invprev .ip-sub{font-size:8.5px;letter-spacing:2px;text-transform:uppercase;color:#B68C5A}
 .invprev .ip-h1{font-family:var(--serif);font-size:18px;font-weight:600;margin-bottom:8px;color:#111}
+.invprev .ip-meta{font-size:11px}
 .invprev .ip-meta div{margin-bottom:2px}
 .invprev .ip-meta span{color:#777}
 .invprev .ip-s{font-size:11px;color:#777}
 .invprev table.ip-t{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px;color:#111;table-layout:fixed}
-.invprev table.ip-t th{background:#F3EADC;border:1px solid #D9CBB8;padding:4px 5px;text-align:left;font-weight:600;font-size:10px}
+.invprev table.ip-t th{background:#F3EADC;border:1px solid #D9CBB8;padding:4px 5px;text-align:left;font-weight:700;font-size:10px}
 .invprev table.ip-t td{border:1px solid #D9CBB8;padding:4px 5px;vertical-align:middle;overflow-wrap:anywhere}
 .invprev table.ip-t .c{text-align:center}
-.invprev .ip-tot{text-align:right;margin-top:10px}
-.invprev .ip-tot .big{font-size:15px;margin-top:4px}
+.invprev .ip-tot{text-align:right;margin-top:10px;font-size:11px}
+.invprev .ip-tot .big{font-size:13px;margin-top:4px}
 .invprev .ip-tot .big b{color:#8A6030}
-.invprev .ip-w{margin-top:12px;line-height:1.5}
+.invprev .ip-w{margin-top:12px;line-height:1.5;font-size:11px}
 .invprev .ip-f{margin-top:14px;font-size:11px}
 .invprev .ip-f::after{content:'';display:block}
 
@@ -1601,7 +1602,7 @@ function invoiceDocx(o){
     return `<w:tr>`
       + wCell(num(i+1),{w:W[0]})
       + wCell(txt(x.maker),{w:W[1]})
-      + wCell(txt(x.art,{b:true}),{w:W[2]})
+      + wCell(txt(x.art),{w:W[2]})
       + wCell(txt(x.color),{w:W[3]})
       + wCell(txt(x.meter),{w:W[4]})
       + wCell(txt(compText(x.comp),{color:'555555',sz:16}),{w:W[5]})
@@ -1618,16 +1619,16 @@ function invoiceDocx(o){
     ['Дата заявки: ', fmtDate(o.at)],
     ['Дата відвантаження: ', o.shippedAt?fmtDate(o.shippedAt):'—'],
     ['Умови оплати: ', pay]
-  ].map(([k,v])=>wP([{t:k,color:'777777',sz:19},{t:v,b:true,sz:19}],{space:40})).join('');
+  ].map(([k,v])=>wP([{t:k,color:'777777',sz:17},{t:v,b:true,sz:17}],{space:40})).join('');
   const tot = [['Товар:', fmtEur(oSum(o))]]
     .concat(oShip(o)?[['Доставка:', fmtEur(oShip(o))]]:[])
-    .map(([k,v])=>wP([{t:k+' ',sz:20},{t:v,b:true,sz:20}],{align:'right',space:40})).join('')
-    + wP([{t:'Разом до оплати: ',sz:24},{t:fmtEur(oTotal(o)),b:true,sz:26,color:'8A6030'}],{align:'right',space:120})
-    + (oPaid(o)>0&&!o.paid?wP([{t:'Оплачено: ',sz:20},{t:fmtEur(oPaid(o)),b:true,sz:20},{t:'  ·  Залишок: ',sz:20},{t:fmtEur(oOwed(o)),b:true,sz:20,color:'A5362C'}],{align:'right',space:120}):'')
-    + wP([{t:'Вага нетто: ',sz:19},{t:fmtKg(oKg(o))+' кг',b:true,sz:19}],{space:20})
-    + wP([{t:'Конуси: ',sz:19},{t:`${fmtN(oCn(o))} шт × ${fmtG(CONE_KG)} = ${fmtKg2(oConesKg(o))} кг`,b:true,sz:19}],{space:20})
-    + wP([{t:'Коробки: ',sz:19},{t:`${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг`,b:true,sz:19}],{space:20})
-    + wP([{t:'Вага брутто: ',sz:21},{t:fmtKg2(oGross(o))+' кг',b:true,sz:21}],{space:200})
+    .map(([k,v])=>wP([{t:k+' ',sz:17},{t:v,b:true,sz:17}],{align:'right',space:40})).join('')
+    + wP([{t:'Разом до оплати: ',sz:20},{t:fmtEur(oTotal(o)),b:true,sz:22,color:'8A6030'}],{align:'right',space:120})
+    + (oPaid(o)>0&&!o.paid?wP([{t:'Оплачено: ',sz:17},{t:fmtEur(oPaid(o)),b:true,sz:17},{t:'  ·  Залишок: ',sz:17},{t:fmtEur(oOwed(o)),b:true,sz:17,color:'A5362C'}],{align:'right',space:120}):'')
+    + wP([{t:'Вага нетто: ',sz:17},{t:fmtKg(oKg(o))+' кг',b:true,sz:17}],{space:20})
+    + wP([{t:'Конуси: ',sz:17},{t:`${fmtN(oCn(o))} шт × ${fmtG(CONE_KG)} = ${fmtKg2(oConesKg(o))} кг`,b:true,sz:17}],{space:20})
+    + wP([{t:'Коробки: ',sz:17},{t:`${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг`,b:true,sz:17}],{space:20})
+    + wP([{t:'Вага брутто: ',sz:18},{t:fmtKg2(oGross(o))+' кг',b:true,sz:18}],{space:200})
     + `<w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p><w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p>`;
   const body =
     wP([{t:'Diamant Group Filati',b:true,sz:38,font:'Georgia'}],{space:0})
@@ -1661,7 +1662,7 @@ function openInvoice(id){
   const rows=o.lines.map((li,i)=>{ const x=skuById(li.sku)||{}, q=lq(li), c=lc(li);
     return `<tr><td class="c">${i+1}</td>
       <td>${cell(x.maker)}</td>
-      <td><b>${cell(x.art)}</b></td>
+      <td>${cell(x.art)}</td>
       <td>${cell(x.color)}</td>
       <td>${cell(x.meter)}</td>
       <td class="ip-s">${cell(compText(x.comp))}</td>
