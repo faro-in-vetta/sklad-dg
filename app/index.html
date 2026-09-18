@@ -594,11 +594,11 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
     <img class="dglogo" src="" alt="" id="authLogo" width="52" height="52">
     <div class="dgname" style="font-size:22px">Diamant Group Filati</div>
     <div class="dgsub" style="margin-bottom:14px">Premium Italian Stock Yarn</div>
-    <label class="f">Пошта<input id="authEmail" type="email" autocomplete="username" inputmode="email"></label>
+    <label class="f">Логін<input id="authEmail" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
     <label class="f">Пароль<input id="authPass" type="password" autocomplete="current-password"></label>
     <div class="err" id="authErr" style="min-height:0;padding:0;background:none;color:var(--red);margin:-4px 0 10px"></div>
     <button class="btn" id="authBtn" type="submit" style="width:100%">Увійти</button>
-    <button class="btn ghost small" id="authReset" type="button" style="width:100%;margin-top:8px">Забули пароль?</button>
+    <p class="hint" style="margin:10px 0 0;text-align:center">Логін і пароль видає адміністратор складу.</p>
   </form>
 </div>
 <div class="toast" id="toast"></div>
@@ -1029,7 +1029,6 @@ function wireAuth(){
   if(f && !f.dataset.wired){
     f.dataset.wired='1';
     f.addEventListener('submit', e=>{ e.preventDefault(); doLogin(); });
-    $('#authReset').addEventListener('click', e=>{ e.preventDefault(); doReset(); });
     const logo=document.querySelector('.dglogo');
     if(logo) $('#authLogo').src = logo.src;
   }
@@ -1063,22 +1062,21 @@ function showAuth() {
   $('#auth').style.display = 'flex';
 }
 
+/* Логін перетворюється на службову адресу <логін>@sklad.faroinvetta.com.
+   Пошта ніде не використовується — листи на неї не йдуть. */
+const LOGIN_DOMAIN = 'sklad.faroinvetta.com';
+const mailOf = v => v.includes('@') ? v : v + '@' + LOGIN_DOMAIN;
+const loginOf = v => String(v||'').replace('@' + LOGIN_DOMAIN, '');
+
 async function doLogin() {
-  const email = $('#authEmail').value.trim(), pass = $('#authPass').value;
+  const email = mailOf($('#authEmail').value.trim().toLowerCase()), pass = $('#authPass').value;
   const err = m => { $('#authErr').textContent = m; };
-  if (!email || !pass) return err('Вкажіть пошту й пароль.');
+  if (!$('#authEmail').value.trim() || !pass) return err('Вкажіть логін і пароль.');
   err(''); $('#authBtn').disabled = true;
   const { error } = await db.auth.signInWithPassword({ email, password: pass });
   $('#authBtn').disabled = false;
-  if (error) return err(error.message === 'Invalid login credentials' ? 'Невірна пошта або пароль.' : error.message);
+  if (error) return err(error.message === 'Invalid login credentials' ? 'Невірний логін або пароль.' : error.message);
   await afterLogin();
-}
-
-async function doReset() {
-  const email = $('#authEmail').value.trim();
-  if (!email) { $('#authErr').textContent = 'Вкажіть пошту, і я надішлю лист для зміни пароля.'; return; }
-  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: location.href });
-  $('#authErr').textContent = error ? error.message : 'Лист надіслано, перевірте пошту.';
 }
 
 async function doLogout() {
@@ -2042,63 +2040,65 @@ function openSettings(){
   const users = activeUsers();
   const inv = (S.invites||[]);
   openSheet(`${head('Доступ і дані')}
-    ${admin?`<div class="box"><h3>Запросити людину</h3>
-      <div id="ierr"></div>
-      <label class="f">Email<input id="iEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@company.com"></label>
+    ${admin?`<div class="box"><h3>Додати людину</h3>
+      <div id="ierr"></div><div id="iout"></div>
+      <label class="f">Логін<input id="iEmail" type="text" autocapitalize="none" spellcheck="false" autocomplete="off" placeholder="oleh"></label>
       <label class="f">Ім'я<input id="iName" placeholder="Як підписувати в журналі"></label>
       <label class="f">Роль<select id="iRole">${roleOptions('manager')}</select></label>
       <p class="hint" id="iRoleDesc">Може: ${ROLE_DESC.manager}</p>
-      <button class="btn" data-invite style="width:100%">Надіслати запрошення</button>
-      <p class="hint" style="margin:8px 0 0">Людина отримає лист із посиланням, перейде за ним і задасть пароль.</p>
-    </div>`:''}
-    ${admin&&inv.length?`<div class="box"><h3>Очікують підтвердження (${inv.length})</h3>
-      ${inv.map(i=>`<div class="urow"><div style="flex:1;min-width:0"><b>${esc(i.name||i.email)}</b><div class="sub" style="color:var(--muted);font-size:13px;overflow-wrap:anywhere">${esc(i.email)} · ${ROLE[i.role]} · надіслано ${fmtDate(i.at)}</div>
-        <div class="btns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
-          <button class="btn small ghost" data-resendinv="${i.id}">Надіслати ще раз</button>
-          <button class="btn small ghost" data-cancelinv="${i.id}">Скасувати</button>
-        </div></div></div>`).join('')}
+      <label class="f">Пароль<input id="iPass" type="text" autocomplete="off" placeholder="щонайменше 8 символів"></label>
+      <button class="btn small ghost" data-genpass="iPass" style="width:100%;margin:-2px 0 10px">Згенерувати пароль</button>
+      <button class="btn" data-invite style="width:100%">Створити доступ</button>
+      <p class="hint" style="margin:8px 0 0">Пошта не потрібна. Логін і пароль передайте людині особисто.</p>
     </div>`:''}
     <div class="box"><h3>Люди (${users.length})</h3>
       ${users.map(u=>`<div class="urow">${avatar(u,'big')}<div style="flex:1;min-width:0">
         <b>${esc(u.name)}</b>${u.id===S.current?'<span class="me">це ви</span>':''}
-        <div class="sub" style="color:var(--muted);font-size:13px;overflow-wrap:anywhere">${esc(u.email||'')}</div>
+        <div class="sub" style="color:var(--muted);font-size:13px;overflow-wrap:anywhere">${esc(loginOf(u.email||''))}</div>
         ${admin?`<div style="display:flex;gap:6px;margin-top:6px;align-items:center">
           <select data-urole="${u.id}" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 8px;font-size:14px" ${u.id===S.current?'disabled title="Свою роль змінити не можна"':''}>${Object.keys(ROLE).map(r=>`<option value="${r}" ${r===u.role?'selected':''}>${ROLE[r]}</option>`).join('')}</select>
           ${u.id===S.current?'':`<button class="btn small ghost" data-rmuser="${u.id}">Видалити</button>`}
         </div>`:`<div class="sub" style="font-size:13px">${ROLE[u.role]}</div>`}
       </div></div>`).join('')}
     </div>
+    ${admin?`<div class="box"><h3>Змінити пароль</h3>
+      <div id="perr"></div><div id="pout"></div>
+      <label class="f">Людина<select id="pUser">${users.map(u=>`<option value="${u.id}">${esc(u.name)} · ${esc(loginOf(u.email||''))}</option>`).join('')}</select></label>
+      <label class="f">Новий пароль<input id="pPass" type="text" autocomplete="off" placeholder="щонайменше 8 символів"></label>
+      <button class="btn small ghost" data-genpass="pPass" style="width:100%;margin:-2px 0 10px">Згенерувати пароль</button>
+      <button class="btn" data-setpass style="width:100%">Зберегти пароль</button>
+    </div>`:''}
     <div class="box"><h3>Що дозволяє кожна роль</h3>
       <dl class="meta">${Object.keys(ROLE).map(r=>`<dt>${ROLE[r]}</dt><dd>${ROLE_DESC[r]}</dd>`).join('')}</dl>
     </div>
     <div class="box"><h3>Ви в системі</h3>
-      <div class="urow">${avatar(me(),'big')}<div style="flex:1;min-width:0"><b>${esc(me().name)}</b><div class="sub" style="color:var(--muted);font-size:13px">${esc(ME?ME.email:'')} · ${ROLE[me().role]}</div></div></div>
+      <div class="urow">${avatar(me(),'big')}<div style="flex:1;min-width:0"><b>${esc(me().name)}</b><div class="sub" style="color:var(--muted);font-size:13px">${esc(loginOf(ME?ME.email:''))} · ${ROLE[me().role]}</div></div></div>
       <button class="btn ghost" id="logoutBtn" style="width:100%;margin-top:8px">Вийти</button>
     </div>`);
   rmArm=null;
 }
-/* Лист надсилає Edge Function invite-user (працює під service_role).
-   Клієнт лише просить; рядок у invites створює сама функція. */
-async function inviteViaServer(email, name, role){
+/* Доступи створює Edge Function invite-user (працює під service_role).
+   Пошта не використовується: логін перетворюється на службову адресу. */
+async function callAccess(body){
   try{
-    const { data, error } = await db.functions.invoke('invite-user', { body:{ email, name, role } });
+    const { data, error } = await db.functions.invoke('invite-user', { body });
     if(error){
       let msg = '';
       try { msg = (await error.context.json()).error; } catch(_){}
-      return { ok:false, msg: msg || 'Не вдалося надіслати лист. Спробуйте ще раз.' };
+      return { ok:false, msg: msg || 'Сервер не відповів. Спробуйте ще раз.' };
     }
     if(data && data.error) return { ok:false, msg:data.error };
-    return { ok:true };
+    return { ok:true, data };
   }catch(e){
     return { ok:false, msg:'Немає зв\'язку із сервером.' };
   }
 }
 
-async function reloadInvites(){
-  const { data } = await db.from('invites').select('*').is('accepted_at', null);
-  S.invites = (data||[]).map(i=>({ id:i.id, email:i.email, name:i.name||'', role:i.role, token:i.token, at:i.created_at, by:i.created_by }));
-  Object.keys(SNAP).forEach(k=>{ if(k.startsWith('invite:')) delete SNAP[k]; });
-  S.invites.forEach(i=>remember('invite', i.id, { id:i.id, email:i.email, name:i.name, role:i.role }));
+async function reloadUsers(){
+  const { data } = await db.from('profiles').select('*');
+  if(!data) return;
+  S.users = data.map(pf=>({ id:pf.id, name:pf.name, role:pf.role, email:pf.email, removed:pf.removed }));
+  data.forEach(pf=>remember('profile', pf.id, { id:pf.id, name:pf.name, role:pf.role, removed:pf.removed }));
 }
 
 function busy(sel, on, label){
@@ -2106,40 +2106,74 @@ function busy(sel, on, label){
   b.disabled = on; if(label) b.textContent = label;
 }
 
+/* пароль без плутанини між O/0 та I/l */
+function genPass(){
+  const abc='ABCDEFGHJKLMNPQRSTUVWXYZ', low='abcdefghijkmnpqrstuvwxyz', dig='23456789';
+  const all=abc+low+dig, r=n=>all[Math.floor(Math.random()*all.length)];
+  let out = abc[Math.floor(Math.random()*abc.length)] + low[Math.floor(Math.random()*low.length)] + dig[Math.floor(Math.random()*dig.length)];
+  for(let i=0;i<7;i++) out += r();
+  return out.split('').sort(()=>Math.random()-0.5).join('');
+}
+
+function fillPass(id){
+  const el = document.getElementById(id); if(!el) return;
+  el.value = genPass(); el.focus(); el.select();
+}
+
+function credsCard(target, login, pass){
+  const box = document.getElementById(target); if(!box) return;
+  box.innerHTML = `<div class="box" style="background:var(--surface);margin:0 0 12px">
+    <b>Доступ створено</b>
+    <dl class="meta" style="margin:8px 0 0"><dt>Логін</dt><dd>${esc(login)}</dd><dt>Пароль</dt><dd>${esc(pass)}</dd></dl>
+    <button class="btn small ghost" data-copycreds="${esc(login)}|${esc(pass)}" style="width:100%;margin-top:8px">Копіювати</button>
+    <p class="hint" style="margin:8px 0 0">Передайте це людині. Пароль більше ніде не показується — якщо загубиться, задайте новий.</p>
+  </div>`;
+}
+
+async function copyCreds(v){
+  const [login, pass] = String(v).split('|');
+  const text = 'Склад Diamant Group Filati\nhttps://sklad.faroinvetta.com/app/\nЛогін: ' + login + '\nПароль: ' + pass;
+  try{ await navigator.clipboard.writeText(text); toast('Скопійовано'); }
+  catch(e){ toast('Не вдалося скопіювати'); }
+}
+
 async function sendInvite(){
-  const email=$('#iEmail').value.trim().toLowerCase(), name=$('#iName').value.trim(), role=$('#iRole').value;
+  const login=$('#iEmail').value.trim().toLowerCase(), name=$('#iName').value.trim(),
+        role=$('#iRole').value, password=$('#iPass').value;
   const fe=m=>{$('#ierr').innerHTML=`<div class="err">${m}</div>`;};
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fe('Перевірте адресу email.');
-  if(activeUsers().some(u=>(u.email||'').toLowerCase()===email)) return fe('Людина з такою адресою вже має доступ.');
-  S.invites=S.invites||[];
-  if(S.invites.some(i=>i.email===email)) return fe('Запрошення на цю адресу вже надіслано і чекає підтвердження.');
-  if(activeUsers().length + S.invites.length >= 10) return fe('Досягнуто ліміту в 10 людей. Видаліть когось або скасуйте запрошення.');
+  if(!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(login)) return fe('Логін: 3–32 символи, латиниця, цифри, крапка, дефіс або підкреслення.');
+  if(activeUsers().some(u=>loginOf(u.email||'').toLowerCase()===login)) return fe('Такий логін уже зайнятий.');
+  if(password.length < 8) return fe('Пароль — щонайменше 8 символів.');
+  if(activeUsers().length >= 10) return fe('Досягнуто ліміту в 10 людей. Спершу видаліть когось.');
 
-  busy('[data-invite]', true, 'Надсилаю…');
-  const r = await inviteViaServer(email, name, role);
-  busy('[data-invite]', false, 'Надіслати запрошення');
+  fe('');
+  busy('[data-invite]', true, 'Створюю…');
+  const r = await callAccess({ mode:'create', login, name, role, password });
+  busy('[data-invite]', false, 'Створити доступ');
   if(!r.ok) return fe(r.msg);
-  await reloadInvites();
-  toast('Лист із запрошенням надіслано на '+email);
+
+  await reloadUsers();
+  toast('Доступ для «' + (name||login) + '» створено');
   openSettings();
+  credsCard('iout', login, password);
 }
 
-async function resendInvite(id){
-  const i=S.invites.find(x=>x.id===id); if(!i) return;
-  busy('[data-resendinv="'+id+'"]', true, 'Надсилаю…');
-  const r = await inviteViaServer(i.email, i.name, i.role);
-  busy('[data-resendinv="'+id+'"]', false, 'Надіслати ще раз');
-  toast(r.ok ? 'Лист надіслано ще раз на '+i.email : r.msg);
-}
+async function setPass(){
+  const uid=$('#pUser').value, password=$('#pPass').value;
+  const fe=m=>{$('#perr').innerHTML=`<div class="err">${m}</div>`;};
+  if(!uid) return fe('Виберіть людину.');
+  if(password.length < 8) return fe('Пароль — щонайменше 8 символів.');
 
-async function cancelInvite(id){
-  const i=S.invites.find(x=>x.id===id); if(!i) return;
-  const { error } = await db.from('invites').delete().eq('id', id);
-  if(error){ toast('Не вдалося скасувати: '+error.message); return; }
-  delete SNAP[snapKey('invite', id)];
-  S.invites=S.invites.filter(x=>x.id!==id);
-  toast('Запрошення скасовано');
+  const u = S.users.find(x=>x.id===uid);
+  fe('');
+  busy('[data-setpass]', true, 'Зберігаю…');
+  const r = await callAccess({ mode:'password', user_id:uid, password });
+  busy('[data-setpass]', false, 'Зберегти пароль');
+  if(!r.ok) return fe(r.msg);
+
+  toast('Пароль змінено');
   openSettings();
+  credsCard('pout', loginOf(u ? u.email : ''), password);
 }
 function setRole(uidv, role){
   const u=S.users.find(x=>x.id===uidv); if(!u) return;
@@ -2931,8 +2965,9 @@ document.addEventListener('click', e=>{
   if(d.costdel){ costDel(t); return; }
   if(d.costadd){ costAdd(d.costadd); return; }
   if('invite' in d){ sendInvite(); return; }
-  if(d.resendinv){ resendInvite(d.resendinv); return; }
-  if(d.cancelinv){ cancelInvite(d.cancelinv); return; }
+  if(d.genpass){ fillPass(d.genpass); return; }
+  if('setpass' in d){ setPass(); return; }
+  if(d.copycreds){ copyCreds(d.copycreds); return; }
   if(d.rmuser){ removeUser(t); return; }
   if('dexport' in d){ exportDebt(); return; }
   if('export' in d){ openExport(); return; }
