@@ -181,6 +181,11 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .box h3{margin:0 0 8px;font-size:16px}
 .meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 .meta dt{color:var(--muted)}.meta dd{margin:0}
+/* смужка заповнення сховища. Клас .bar уже зайнятий графіком аналітики. */
+.usebar{height:8px;border-radius:999px;background:var(--line);overflow:hidden;margin:6px 0 4px}
+.usebar > i{display:block;height:100%;border-radius:999px;background:var(--gold);transition:width .3s}
+.usebar.warn > i{background:#C9871F}
+.usebar.crit > i{background:var(--red)}
 /* компактні відступи — лише всередині .compact (панель «Доступ і дані») */
 .compact .box{padding:10px 12px;margin-bottom:8px}
 .compact .box h3{font-size:16px;margin:0 0 6px}
@@ -835,6 +840,9 @@ async function hydrate() {
     reserves: (or_.data || []).map(r => fromOrder(r, ol.data || [], pa.data || [], rt.data || [], ev.data || [])),
     audit: (au.data || []).map(a => ({ id: a.id, sku: a.sku_id, act: a.act, text: a.text, who: a.created_by, at: a.created_at })),
     debug: ((st && st.data) || []).some(r => r.key === 'debug_mode' && r.value === true),
+    limits: Object.fromEntries(((st && st.data) || [])
+      .filter(r => r.key === 'storage_limit_mb' || r.key === 'db_limit_mb')
+      .map(r => [r.key, Number(r.value) || 0])),
     customFibers: [], orderSeqByYear: {}
   };
   S.skus.forEach(x => { x.comp = x.comp || []; (x.comp).forEach(c => { if (!FIBER_TYPE[c.f] && !S.customFibers.includes(c.f)) S.customFibers.push(c.f); }); });
@@ -1074,6 +1082,7 @@ async function afterLogin() {
   await hydrate();
   render();
   await touchPresence();
+  checkUsage();
   setInterval(touchPresence, 60000);
   setInterval(reloadSoon, 45000);
   window.addEventListener('focus', reloadSoon);
@@ -2095,6 +2104,7 @@ function openSettings(){
       <button class="btn small ghost" data-genpass="pPass" style="width:100%;margin:-2px 0 10px">Згенерувати пароль</button>
       <button class="btn" data-setpass style="width:100%">Зберегти пароль</button>
     </div>`:''}
+    ${can('fin')?`<div class="box"><h3>Місце у сховищі</h3><div id="usageBox"><p class="hint" style="margin:0">Рахую…</p></div></div>`:''}
     ${me().role==='admin'?`<div class="box"><h3>Режим налагодження</h3>
       <p class="hint" style="margin:0 0 8px">${S.debug
         ? 'Увімкнений. Адмін може видаляти назавжди заявки, SKU й акаунти — зручно, поки система не в роботі. Перед реальним стартом вимкніть.'
@@ -2109,6 +2119,7 @@ function openSettings(){
       <button class="btn ghost" id="logoutBtn" style="width:100%;margin-top:8px">Вийти</button>
     </div></div>`);
   rmArm=null;
+  if(can('fin')) drawUsage();
 }
 /* Доступи створює Edge Function invite-user (працює під service_role).
    Пошта не використовується: логін перетворюється на службову адресу. */
@@ -2190,6 +2201,58 @@ async function sendInvite(){
   openSettings();
   credsCard('iout', login, password);
 }
+
+/* --- скільки зайнято місця --- */
+const MB = 1024*1024;
+const fmtMB = b => b >= 1024*MB ? (b/1024/MB).toFixed(2)+' ГБ' : Math.round(b/MB)+' МБ';
+
+function usageRow(title, used, limitMb, note){
+  const limit = (limitMb||0) * MB;
+  const pct = limit ? Math.min(100, used/limit*100) : 0;
+  const cls = pct >= 90 ? 'crit' : pct >= 75 ? 'warn' : '';
+  return `<div style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;font-size:14px">
+      <span>${title}</span><b class="num">${fmtMB(used)} з ${fmtMB(limit)}</b>
+    </div>
+    <div class="usebar ${cls}"><i style="width:${pct.toFixed(1)}%"></i></div>
+    <div class="hint" style="margin:0">${Math.round(pct)}% зайнято${note?' · '+note:''}</div>
+  </div>`;
+}
+
+async function drawUsage(){
+  const box = document.getElementById('usageBox'); if(!box) return;
+  const { data, error } = await db.rpc('usage_stats');
+  if(error || !data || !data[0]){
+    box.innerHTML = `<p class="hint" style="margin:0">Не вдалося порахувати. Перевірте, чи виконано 06_usage.sql.</p>`;
+    return;
+  }
+  const u = data[0];
+  const sLimit = (S.limits && S.limits.storage_limit_mb) || 1024;
+  const dLimit = (S.limits && S.limits.db_limit_mb) || 500;
+  const sPct = sLimit ? u.storage_bytes/(sLimit*MB)*100 : 0;
+
+  box.innerHTML =
+    usageRow('Фото', u.storage_bytes, sLimit, `${fmtN(u.storage_files)} файлів`) +
+    usageRow('База даних', u.db_bytes, dLimit, '') +
+    (sPct >= 90
+      ? `<p class="hint" style="margin:6px 0 0;color:var(--red)"><b>Місце майже скінчилося.</b> Коли ліміт буде вичерпано, нові фото перестануть зберігатися. Час переходити на Pro.</p>`
+      : sPct >= 75
+      ? `<p class="hint" style="margin:6px 0 0">Зайнято більше трьох чвертей. Варто планувати перехід на платний тариф.</p>`
+      : `<p class="hint" style="margin:6px 0 0">Ліміти тарифу зберігаються в таблиці app_settings — після переходу на Pro змініть там цифри на 102400 і 8192.</p>`);
+}
+
+/* попередження при вході, щоб не перевіряти вручну */
+async function checkUsage(){
+  if(!can('fin')) return;
+  try{
+    const { data } = await db.rpc('usage_stats');
+    if(!data || !data[0]) return;
+    const sLimit = (S.limits && S.limits.storage_limit_mb) || 1024;
+    const pct = u_pct(data[0].storage_bytes, sLimit);
+    if(pct >= 90) toast('Сховище заповнене на '+Math.round(pct)+'%. Скоро фото перестануть зберігатися.');
+  }catch(e){ /* мовчки: це не має заважати роботі */ }
+}
+const u_pct = (used, limitMb) => limitMb ? used/(limitMb*MB)*100 : 0;
 
 /* --- режим налагодження й видалення назавжди (тільки адмін) --- */
 let purgeArm = null;
@@ -2741,6 +2804,7 @@ function costAdd(skuId){
 
 /* SKU form with photos */
 let draftPhotos = [];
+let draftHex = '';
 let draftComp = [];
 const fiberList = () => { const base=[]; FIBERS.forEach(([t,l])=>l.forEach(([c,n])=>base.push([c,n]))); (S.customFibers||[]).forEach(c=>{ if(!base.some(x=>x[0]===c)) base.push([c,'']); }); return base; };
 const fiberOptions = sel => { const l=fiberList(); const known=l.some(x=>x[0]===sel); return (sel&&!known?`<option value="${esc(sel)}" selected>${esc(sel)}</option>`:'')+l.map(([c,n])=>`<option value="${esc(c)}" ${c===sel?'selected':''}>${esc(c)}${n?' — '+esc(n):''}</option>`).join('')+'<option value="__manual">✎ Ввести вручну…</option>'; };
@@ -2757,11 +2821,24 @@ function compTotal(){
   el.innerHTML = `Разом: <b>${fmtPctC(t)}%</b>${ok?' ✓':` · має бути 100%`}${ok?` · ${esc(compText(draftComp.filter(x=>x.f)))}`:''}`;
   el.style.color = ok?'var(--green)':'var(--red)';
 }
+/* Наступний штрихкод: DG0000001 і далі по наростаючій.
+   Рахуємо від найбільшого вже зайнятого номера, враховуючи й видалені
+   картки, щоб код ніколи не використався вдруге. */
+function nextSkuCode(){
+  let max = 0;
+  (S.skus||[]).forEach(x=>{
+    const m = /^DG(\d{1,9})$/i.exec(String(x.code||'').trim());
+    if(m) max = Math.max(max, parseInt(m[1],10));
+  });
+  return 'DG' + String(max+1).padStart(7,'0');
+}
+
 function openSkuForm(id){
   const s = id ? skuById(id) : null;
   draftPhotos = s ? [...s.photos] : [];
+  draftHex = (s && s.hex) || '';
   draftComp = s && s.comp ? s.comp.map(x=>({...x})) : [{f:'',p:''}];
-  const nextCode = 'DG' + String(S.seq).padStart(6,'0');
+  const nextCode = nextSkuCode();
   openSheet(`${head(s?'Коригування картки SKU':'Новий SKU')}
     <div id="ferr"></div>
     <div class="photos" id="photoSlots"></div>
@@ -2769,19 +2846,19 @@ function openSkuForm(id){
     <datalist id="makers">${[...new Set(liveSkus().map(x=>x.maker).filter(Boolean))].map(m=>`<option value="${esc(m)}">`).join('')}</datalist>
     <label class="f">Артикул<input id="fArt" value="${esc(s?.art||'')}" placeholder="LANA MERINO 2/28" autocomplete="off"></label>
     <label class="f">Nm<input id="fMeter" type="text" value="${esc(s?.meter||'')}" placeholder="2/28" autocomplete="off"></label>
-    <div class="f" style="font-size:14px;color:var(--muted);margin-bottom:6px">Склад пряжі, %</div>
+    <div class="f" style="font-size:14px;color:var(--muted);margin-bottom:6px">Склад пряжі, % — необов'язково</div>
     <div id="compRows"></div>
     <button type="button" class="btn ghost small" id="compAdd" style="margin-bottom:6px">+ Додати складник</button>
     <div class="ctot num" id="compTot"></div>
-    <label class="f">Колір (назва й номер)<input id="fColor" value="${esc(s?.color||'')}" placeholder="Blu notte 0412"></label>
-    <div style="font-size:14px;color:var(--muted)">Відтінок для каталогу</div>
+    <label class="f">Колір — назва й номер, необов'язково<input id="fColor" value="${esc(s?.color||'')}" placeholder="Blu notte 0412"></label>
+    <div style="font-size:14px;color:var(--muted)">Відтінок для каталогу, необов'язково</div>
     ${Object.entries(SHADES).map(([g,list])=>`<div class="swatch-grp">${g}</div><div class="swatches">${list.map(([n,h])=>`<button type="button" class="sw" data-sw="${h}" data-swn="${esc(n)}" title="${esc(n)}" aria-label="${esc(n)}" aria-pressed="${(s?.hex||'').toLowerCase()===h.toLowerCase()}" style="background:${h}"></button>`).join('')}</div>`).join('')}
-    <div class="hex-row"><span class="hex-prev" id="hexPrev" style="background:${esc(s?.hex||'#2b3a67')}"></span><span id="hexName" style="flex:1">${esc(s?.hex||'#2b3a67')}</span>Свій<input id="fHex" type="color" value="${esc(s?.hex||'#2b3a67')}" aria-label="Свій відтінок"></div>
+    <div class="hex-row"><span class="hex-prev" id="hexPrev" style="background:${esc(s?.hex||'var(--indigo-soft)')}"></span><span id="hexName" style="flex:1">${s?.hex?esc(s.hex):'без відтінку'}</span>Свій<input id="fHex" type="color" value="${esc(s?.hex||'#2b3a67')}" aria-label="Свій відтінок"></div>
+    <button type="button" class="btn ghost small" data-nohex style="margin:-4px 0 12px">Без відтінку</button>
     ${can('fin')?`<label class="f">Ціна продажу за прайсом, €/кг<input id="fSale" type="number" inputmode="decimal" step="0.01" min="0" value="${s?.sale||''}" placeholder="Необов'язково"></label>
     <p class="hint" id="fMk">Якщо не вказати, продаж і націнка рахуються за фактичними відвантаженнями.</p>`:'<p class="hint">Ціни закупівлі та продажу вносить бухгалтер або адмін.</p>'}
-    <label class="f">Штрихкод<input id="fCode" value="${esc(s?.code||nextCode)}" inputmode="text"></label>
-    <p class="hint">Код створено автоматично. Якщо на конусі вже є код постачальника, відскануйте його або впишіть замість цього.</p>
-    <button class="btn ghost small" id="fScanCode" style="margin:-4px 0 12px">Відсканувати код постачальника</button>
+    <label class="f">Штрихкод<input id="fCode" value="${esc(s?.code||nextCode)}" readonly tabindex="-1" style="background:var(--bg);color:var(--muted);cursor:default"></label>
+    <p class="hint">Присвоюється автоматично, по наростаючій. Змінити не можна.</p>
     ${s?'':`<div class="pair">
       <label class="f">Прихід, кг<input id="fKg" type="number" inputmode="decimal" step="0.1" min="0"></label>
       <label class="f">Прихід, конусів<input id="fCn" type="number" inputmode="numeric" step="1" min="0"></label>
@@ -2799,17 +2876,27 @@ function openSkuForm(id){
 function drawSlots(){
   $('#photoSlots').innerHTML = [0,1,2].map(i=>draftPhotos[i]
     ? `<div class="slot"><img src="${photoSrc(draftPhotos[i])}" alt="Фото ${i+1}"><button class="rm" data-rmphoto="${i}" aria-label="Прибрати фото">×</button></div>`
-    : `<label class="slot">Фото ${i+1}<br>+ <input type="file" accept="image/*" capture="environment" data-photo="${i}"></label>`
+    : `<label class="slot">Фото ${i+1}<br>+ <input type="file" accept="image/*" data-photo="${i}"></label>`
   ).join('');
 }
+/* Стиснення однакове для камери телефона й файлу з комп'ютера:
+   довша сторона до 1280 px, далі підбираємо якість, поки не влізе в ~280 КБ. */
 function compress(file){
   return new Promise((res,rej)=>{
     const img = new Image(); const url = URL.createObjectURL(file);
     img.onload = ()=>{
-      const max=640, k=Math.min(1, max/Math.max(img.width,img.height));
-      const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
-      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg',0.62));
+      const max=1280, k=Math.min(1, max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');
+      c.width=Math.max(1,Math.round(img.width*k)); c.height=Math.max(1,Math.round(img.height*k));
+      const ctx=c.getContext('2d');
+      ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);   // прозорий PNG не почорніє
+      ctx.drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+
+      const LIMIT = 280*1024;
+      let q = 0.78, out = c.toDataURL('image/jpeg', q);
+      while(out.length*0.75 > LIMIT && q > 0.4){ q -= 0.08; out = c.toDataURL('image/jpeg', q); }
+      res(out);
     };
     img.onerror = ()=>{URL.revokeObjectURL(url); rej();};
     img.src = url;
@@ -2830,7 +2917,7 @@ function saveSku(id){
   S.customFibers=S.customFibers||[]; comp.forEach(x=>{ if(!FIBER_TYPE[x.f] && !S.customFibers.includes(x.f)) S.customFibers.push(x.f); });
   if(id){
     const old=skuById(id);
-    const nv={meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):(+old.sale||0),maker,art,color,code,hex:$('#fHex').value,note:$('#fNote').value.trim()};
+    const nv={meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):(+old.sale||0),maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim()};
     const lbl={maker:'Бренд',art:'Артикул',color:'Колір',meter:'Nm',code:'Штрихкод',hex:'Відтінок',note:'Примітка',sale:'Ціна продажу'};
     const show=(k,v)=>k==='sale'?(v?fmtEur(v):'—'):(v===''||v==null?'—':String(v));
     const ch=Object.keys(lbl).filter(k=>String(old[k]??'')!==String(nv[k]??'')).map(k=>`${lbl[k]}: ${show(k,old[k])} → ${show(k,nv[k])}`);
@@ -2839,7 +2926,7 @@ function saveSku(id){
     const oc=compText(old.comp), nc=compText(comp);
     if(oc!==nc) ch.push(`Склад: ${oc||'—'} → ${nc||'—'}`);
     if(ch.length) audit(id,'edit',ch.join('; '));
-    Object.assign(skuById(id), {comp,meter:$('#fMeter').value.trim(),sale:nv.sale,maker,art,color,code,hex:$('#fHex').value,note:$('#fNote').value.trim(),photos:[...draftPhotos]});
+    Object.assign(skuById(id), {comp,meter:$('#fMeter').value.trim(),sale:nv.sale,maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),photos:[...draftPhotos]});
     if(save()){ toast('Зміни збережено'); openSku(id); render(); }
     return;
   }
@@ -2847,8 +2934,7 @@ function saveSku(id){
   if((kg>0)!==(cn>0)) return fe('Для приходу вкажіть і кг, і кількість конусів.');
   const nid=uid();
   audit(nid,'create','Створено картку'+(draftPhotos.length?` з ${draftPhotos.length} фото`:''));
-  S.skus.push({id:nid,createdBy:S.current,comp,meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):0,maker,art,color,code,hex:$('#fHex').value,note:$('#fNote').value.trim(),photos:[...draftPhotos],created:now()});
-  if(code==='DG'+String(S.seq).padStart(6,'0')) S.seq++;
+  S.skus.push({id:nid,createdBy:S.current,comp,meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):0,maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),photos:[...draftPhotos],created:now()});
   const price=parseFloat($('#fPrice')?.value)||0;
   if(kg>0){ const at=dateToIso($('#fDate').value); if(price>0) addCost(skuById(nid), at, price); S.ops.push({id:uid(),sku:nid,type:'in',kg,cones:cn,price,who:S.current,at,party:maker,comment:'Перша партія'}); }
   if(save()){ toast('SKU додано'); render(); openSku(nid); }
@@ -3076,7 +3162,13 @@ document.addEventListener('click', e=>{
   if('export' in d){ openExport(); return; }
   if(d.xper){ xPeriod(d.xper); return; }
   if(d.edit){ openSkuForm(d.edit); return; }
+  if('nohex' in d){
+    draftHex=''; $('#hexPrev').style.background='var(--indigo-soft)'; $('#hexName').textContent='без відтінку';
+    document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed','false'));
+    return;
+  }
   if(d.sw){
+    draftHex=d.sw.toLowerCase();
     $('#fHex').value=d.sw.toLowerCase(); $('#hexPrev').style.background=d.sw; $('#hexName').textContent=d.swn+' · '+d.sw;
     document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed', b===t));
     if(!$('#fColor').value.trim()) $('#fColor').value=d.swn+' ';
@@ -3088,7 +3180,6 @@ document.addEventListener('click', e=>{
     case 'addBtn': openSkuForm(); break;
     case 'scanBtn': if($('#sheet').classList.contains('open')) closeSheet(); openScan(); break;
     case 'fSave': saveSku(d.id||null); break;
-    case 'fScanCode': openScan('sku'); break;
     case 'oSave': saveOp(d.type, d.sku, d.res||null); break;
     case 'settingsBtn': openSettings(); break;
     case 'onlineBtn': openOnline(); break;
@@ -3113,7 +3204,7 @@ document.addEventListener('change', async e=>{
     const c=parseFloat($('#fPrice')?.value)||0, sp=parseFloat($('#fSale')?.value)||0;
     if(c&&sp&&$('#fMk')) $('#fMk').textContent='Націнка: '+fmtPct((sp-c)/c*100);
   }
-  if(t.id==='fHex'){ $('#hexPrev').style.background=t.value; $('#hexName').textContent=t.value; document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed','false')); }
+  if(t.id==='fHex'){ draftHex=t.value; $('#hexPrev').style.background=t.value; $('#hexName').textContent=t.value; document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed','false')); }
   if(t.id==='scanFile' && t.files[0]) scanFromFile(t.files[0]);
   if(t.dataset && t.dataset.cf!==undefined){ const i=+t.dataset.cf; if(t.value==='__manual'){ draftComp[i].f=''; draftComp[i].manual=true; drawComp(); $(`[data-cfm="${i}"]`)?.focus(); } else { draftComp[i].f=t.value; drawComp(); } }
   if(t.dataset && t.dataset.lsm!==undefined){ syncOD(); OD.lines[+t.dataset.lsm].sample=t.checked; drawOrderEditor(); }
