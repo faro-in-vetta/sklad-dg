@@ -1030,7 +1030,10 @@ async function reloadSoon() {
   clearTimeout(reloadTimer);
   reloadTimer = setTimeout(async () => {
     if (SYNCING || DIRTY) return;
-    try { await hydrate(); render(); } catch (e) { console.error(e); }
+    try {
+      await hydrate(); render();
+      if (sheetKind === 'online') openOnline();   // перемальовуємо відкриту панель присутності
+    } catch (e) { console.error(e); }
   }, 300);
 }
 
@@ -1051,6 +1054,13 @@ async function boot() {
   await afterLogin();
 }
 
+/* Запит у supabase-js виконується лише тоді, коли промайс дочекалися.
+   Тому тут потрібен await, інакше відмітка присутності нікуди не йде. */
+async function touchPresence(){
+  try { await db.rpc('touch_presence'); }
+  catch (e) { console.warn('presence', e); }
+}
+
 async function afterLogin() {
   const { data: { user } } = await db.auth.getUser();
   const { data: prof, error } = await db.from('profiles').select('*').eq('id', user.id).single();
@@ -1061,8 +1071,8 @@ async function afterLogin() {
   document.body.classList.remove('locked');
   await hydrate();
   render();
-  db.rpc('touch_presence');
-  setInterval(() => db.rpc('touch_presence'), 60000);
+  await touchPresence();
+  setInterval(touchPresence, 60000);
   setInterval(reloadSoon, 45000);
   window.addEventListener('focus', reloadSoon);
 }
@@ -2035,7 +2045,9 @@ function agoText(t){
   const h=Math.round(m/60); if(h<24) return `був(-ла) ${h} год тому`;
   return 'був(-ла) '+fmtDate(new Date(t).toISOString());
 }
+let sheetKind = null;
 function openOnline(){
+  sheetKind = 'online';
   const list=activeUsers().sort((a,b)=>seenAt(b)-seenAt(a));
   const n=list.filter(isOnline).length;
   openSheet(`${head('Хто в базі зараз')}
@@ -2450,7 +2462,7 @@ async function exportDebt(){
 /* ---------- sheets ---------- */
 function openSheet(html){ $('#panel').innerHTML = html; $('#sheet').classList.add('open'); }
 function markNav(id){ document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-current', x.id===id)); }
-function closeSheet(){ document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-current', x.dataset.tab===tab)); stopScan(); $('#sheet').classList.remove('open'); $('#panel').innerHTML=''; }
+function closeSheet(){ sheetKind = null; document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-current', x.dataset.tab===tab)); stopScan(); $('#sheet').classList.remove('open'); $('#panel').innerHTML=''; }
 $('#sheet').addEventListener('click', e=>{ if(e.target.id==='sheet') closeSheet(); });
 function head(t){ return `<div class="panel-head">${t?`<h2>${t}</h2>`:'<span style="flex:1"></span>'}<button class="x" data-close aria-label="Закрити">×</button></div>`; }
 
