@@ -989,19 +989,7 @@ async function pushChanges() {
         if (!error) remember('profile', u.id, row);
       }
     }
-    for (const i of (S.invites || [])) {
-      const row = { id: i.id, email: i.email, name: i.name, role: i.role };
-      if (!SNAP[snapKey('invite', i.id)]) {
-        const { data, error } = await db.from('invites').insert({ id: i.id, email: i.email, name: i.name || null, role: i.role }).select().single();
-        if (!error) { i.token = data.token; remember('invite', i.id, row); }
-      }
-    }
-    const liveInv = new Set((S.invites || []).map(i => i.id));
-    for (const k of Object.keys(SNAP)) {
-      if (!k.startsWith('invite:')) continue;
-      const r = JSON.parse(SNAP[k]);
-      if (!liveInv.has(r.id)) { await db.from('invites').delete().eq('id', r.id); delete SNAP[k]; }
-    }
+    // Запрошення створює й видаляє Edge Function / окремі виклики — тут нічого не синхронізуємо.
 
     setSync('ok');
   } catch (e) {
@@ -2048,7 +2036,6 @@ function openOnline(){
 }
 
 const roleOptions = sel => Object.keys(ROLE).map(r=>`<option value="${r}" ${r===sel?'selected':''}>${ROLE[r]}</option>`).join('');
-const inviteLink = t => `https://sklad.dgfilati.online/join/${t}`;
 let rmArm=null;
 function openSettings(){
   const admin = can('users');
@@ -2067,8 +2054,7 @@ function openSettings(){
     ${admin&&inv.length?`<div class="box"><h3>Очікують підтвердження (${inv.length})</h3>
       ${inv.map(i=>`<div class="urow"><div style="flex:1;min-width:0"><b>${esc(i.name||i.email)}</b><div class="sub" style="color:var(--muted);font-size:13px;overflow-wrap:anywhere">${esc(i.email)} · ${ROLE[i.role]} · надіслано ${fmtDate(i.at)}</div>
         <div class="btns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
-          <button class="btn small ghost" data-copyinv="${i.id}">Копіювати посилання</button>
-          <a class="btn small ghost" href="mailto:${encodeURIComponent(i.email)}?subject=${encodeURIComponent('Запрошення до складу Diamant Group Filati')}&body=${encodeURIComponent('Вітаю! Вас запрошено до складського обліку Diamant Group Filati з роллю «'+ROLE[i.role]+'». Перейдіть за посиланням, щоб увійти: '+inviteLink(i.token))}" target="_blank" rel="noopener" style="text-decoration:none">Надіслати ще раз</a>
+          <button class="btn small ghost" data-resendinv="${i.id}">Надіслати ще раз</button>
           <button class="btn small ghost" data-cancelinv="${i.id}">Скасувати</button>
         </div></div></div>`).join('')}
     </div>`:''}
@@ -2091,7 +2077,36 @@ function openSettings(){
     </div>`);
   rmArm=null;
 }
-function sendInvite(){
+/* Лист надсилає Edge Function invite-user (працює під service_role).
+   Клієнт лише просить; рядок у invites створює сама функція. */
+async function inviteViaServer(email, name, role){
+  try{
+    const { data, error } = await db.functions.invoke('invite-user', { body:{ email, name, role } });
+    if(error){
+      let msg = '';
+      try { msg = (await error.context.json()).error; } catch(_){}
+      return { ok:false, msg: msg || 'Не вдалося надіслати лист. Спробуйте ще раз.' };
+    }
+    if(data && data.error) return { ok:false, msg:data.error };
+    return { ok:true };
+  }catch(e){
+    return { ok:false, msg:'Немає зв\'язку із сервером.' };
+  }
+}
+
+async function reloadInvites(){
+  const { data } = await db.from('invites').select('*').is('accepted_at', null);
+  S.invites = (data||[]).map(i=>({ id:i.id, email:i.email, name:i.name||'', role:i.role, token:i.token, at:i.created_at, by:i.created_by }));
+  Object.keys(SNAP).forEach(k=>{ if(k.startsWith('invite:')) delete SNAP[k]; });
+  S.invites.forEach(i=>remember('invite', i.id, { id:i.id, email:i.email, name:i.name, role:i.role }));
+}
+
+function busy(sel, on, label){
+  const b = document.querySelector(sel); if(!b) return;
+  b.disabled = on; if(label) b.textContent = label;
+}
+
+async function sendInvite(){
   const email=$('#iEmail').value.trim().toLowerCase(), name=$('#iName').value.trim(), role=$('#iRole').value;
   const fe=m=>{$('#ierr').innerHTML=`<div class="err">${m}</div>`;};
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fe('Перевірте адресу email.');
@@ -2099,24 +2114,32 @@ function sendInvite(){
   S.invites=S.invites||[];
   if(S.invites.some(i=>i.email===email)) return fe('Запрошення на цю адресу вже надіслано і чекає підтвердження.');
   if(activeUsers().length + S.invites.length >= 10) return fe('Досягнуто ліміту в 10 людей. Видаліть когось або скасуйте запрошення.');
-  S.invites.push({id:uid(),email,name,role,token:uid()+uid(),at:now(),by:S.current});
-  if(save()){ toast('Запрошення надіслано на '+email); openSettings(); }
+
+  busy('[data-invite]', true, 'Надсилаю…');
+  const r = await inviteViaServer(email, name, role);
+  busy('[data-invite]', false, 'Надіслати запрошення');
+  if(!r.ok) return fe(r.msg);
+  await reloadInvites();
+  toast('Лист із запрошенням надіслано на '+email);
+  openSettings();
 }
-async function copyInvite(id){
+
+async function resendInvite(id){
   const i=S.invites.find(x=>x.id===id); if(!i) return;
-  try{ await navigator.clipboard.writeText(inviteLink(i.token)); toast('Посилання скопійовано'); }
-  catch(e){ toast(inviteLink(i.token)); }
+  busy('[data-resendinv="'+id+'"]', true, 'Надсилаю…');
+  const r = await inviteViaServer(i.email, i.name, i.role);
+  busy('[data-resendinv="'+id+'"]', false, 'Надіслати ще раз');
+  toast(r.ok ? 'Лист надіслано ще раз на '+i.email : r.msg);
 }
-function acceptInvite(id){
+
+async function cancelInvite(id){
   const i=S.invites.find(x=>x.id===id); if(!i) return;
-  const nu={id:'u'+uid(), name:i.name||i.email.split('@')[0], role:i.role, email:i.email};
-  S.users.push(nu); S.seen=S.seen||{}; S.seen[nu.id]=Date.now();
+  const { error } = await db.from('invites').delete().eq('id', id);
+  if(error){ toast('Не вдалося скасувати: '+error.message); return; }
+  delete SNAP[snapKey('invite', id)];
   S.invites=S.invites.filter(x=>x.id!==id);
-  if(save()){ toast(nu.name+' приєднався(-лась)'); render(); openSettings(); }
-}
-function cancelInvite(id){
-  S.invites=S.invites.filter(x=>x.id!==id);
-  if(save()){ toast('Запрошення скасовано, посилання більше не діє'); openSettings(); }
+  toast('Запрошення скасовано');
+  openSettings();
 }
 function setRole(uidv, role){
   const u=S.users.find(x=>x.id===uidv); if(!u) return;
@@ -2908,7 +2931,7 @@ document.addEventListener('click', e=>{
   if(d.costdel){ costDel(t); return; }
   if(d.costadd){ costAdd(d.costadd); return; }
   if('invite' in d){ sendInvite(); return; }
-  if(d.copyinv){ copyInvite(d.copyinv); return; }
+  if(d.resendinv){ resendInvite(d.resendinv); return; }
   if(d.cancelinv){ cancelInvite(d.cancelinv); return; }
   if(d.rmuser){ removeUser(t); return; }
   if('dexport' in d){ exportDebt(); return; }
