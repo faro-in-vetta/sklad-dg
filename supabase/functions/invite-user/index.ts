@@ -10,6 +10,13 @@
 //   { mode:'password', user_id, password }
 //   { mode:'login',    user_id, login }
 //   { mode:'remove',   user_id }
+//   { mode:'debug',     on }                 — перемикач режиму налагодження
+//   { mode:'purge_order', order_id }         — видалити заявку назавжди
+//   { mode:'purge_sku',   sku_id }           — видалити SKU назавжди
+//   { mode:'purge_user',  user_id }          — видалити акаунт назавжди
+//
+// Видалення назавжди робить лише адмін. Поки ввімкнений режим налагодження —
+// будь-що; після вимкнення — лише те, за чим не стоїть рух товару чи гроші.
 //
 // Видалення не стирає профіль: ім'я лишається в історії складу, а логін
 // звільняється — службова адреса перейменовується, і той самий логін можна
@@ -63,6 +70,112 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}))
     const mode = String(body.mode || 'create')
+
+    const isAdmin = me.role === 'admin'
+    const debugOn = async () => {
+      const { data } = await admin.from('app_settings').select('value').eq('key', 'debug_mode').maybeSingle()
+      return data?.value === true
+    }
+
+    // ---------- перемикач режиму налагодження ----------
+    if (mode === 'debug') {
+      if (!isAdmin) return reply({ error: 'Режим налагодження перемикає лише адмін' }, 403)
+      const on = body.on === true
+      const { error } = await admin.from('app_settings')
+        .upsert({ key: 'debug_mode', value: on, updated_at: new Date().toISOString(), updated_by: user.id })
+      if (error) return reply({ error: error.message }, 400)
+      return reply({ ok: true, debug: on })
+    }
+
+    // ---------- видалити заявку назавжди ----------
+    if (mode === 'purge_order') {
+      if (!isAdmin) return reply({ error: 'Видаляє назавжди лише адмін' }, 403)
+      const id = String(body.order_id || '')
+      if (!id) return reply({ error: 'Не вказано заявку' }, 400)
+
+      const { data: o } = await admin
+        .from('orders').select('id, status, pick_at').eq('id', id).single()
+      if (!o) return reply({ error: 'Такої заявки немає' }, 404)
+
+      const dbg = await debugOn()
+      const { count: opsCount } = await admin
+        .from('ops').select('id', { count: 'exact', head: true }).eq('order_id', id)
+
+      if (!dbg) {
+        if ((opsCount ?? 0) > 0)
+          return reply({ error: 'По заявці був рух товару — її можна лише анулювати, не видалити' }, 400)
+        if (!(o.status === 'cancelled' || (o.status === 'active' && !o.pick_at)))
+          return reply({ error: 'Видалити можна лише анульовану або ще не взяту в збірку заявку' }, 400)
+      }
+
+      if ((opsCount ?? 0) > 0) await admin.from('ops').delete().eq('order_id', id)
+      const { error } = await admin.from('orders').delete().eq('id', id)   // рядки, оплати, повернення й події підуть каскадом
+      if (error) return reply({ error: error.message }, 400)
+      return reply({ ok: true })
+    }
+
+    // ---------- видалити SKU назавжди ----------
+    if (mode === 'purge_sku') {
+      if (!isAdmin) return reply({ error: 'Видаляє назавжди лише адмін' }, 403)
+      const id = String(body.sku_id || '')
+      if (!id) return reply({ error: 'Не вказано SKU' }, 400)
+
+      const dbg = await debugOn()
+      const { count: opsCount } = await admin
+        .from('ops').select('id', { count: 'exact', head: true }).eq('sku_id', id)
+      const { count: lineCount } = await admin
+        .from('order_lines').select('id', { count: 'exact', head: true }).eq('sku_id', id)
+
+      if (!dbg && ((opsCount ?? 0) > 0 || (lineCount ?? 0) > 0))
+        return reply({ error: 'По цьому SKU є рух або заявки — картку можна лише прибрати з каталогу' }, 400)
+
+      if ((lineCount ?? 0) > 0) await admin.from('order_lines').delete().eq('sku_id', id)
+      if ((opsCount ?? 0) > 0)  await admin.from('ops').delete().eq('sku_id', id)
+      await admin.from('sku_costs').delete().eq('sku_id', id)
+      await admin.from('audit').delete().eq('sku_id', id)
+      const { error } = await admin.from('skus').delete().eq('id', id)
+      if (error) return reply({ error: error.message }, 400)
+      return reply({ ok: true })
+    }
+
+    // ---------- видалити акаунт назавжди ----------
+    if (mode === 'purge_user') {
+      if (!isAdmin) return reply({ error: 'Видаляє назавжди лише адмін' }, 403)
+      const uid = String(body.user_id || '')
+      if (!uid) return reply({ error: 'Не вказано користувача' }, 400)
+      if (uid === user.id) return reply({ error: 'Себе видалити не можна' }, 400)
+
+      const dbg = await debugOn()
+
+      // де на людину лишилися посилання
+      const traces: Array<[string, string]> = [
+        ['ops', 'created_by'], ['orders', 'created_by'], ['skus', 'created_by'],
+        ['audit', 'created_by'], ['payments', 'created_by'], ['order_events', 'created_by'],
+      ]
+      let used = 0
+      for (const [t, c] of traces) {
+        const { count } = await admin.from(t).select('id', { count: 'exact', head: true }).eq(c, uid)
+        used += count ?? 0
+      }
+
+      if (!dbg && used > 0)
+        return reply({ error: 'За цією людиною є записи в історії — доступ можна лише вимкнути' }, 400)
+
+      if (used > 0) {
+        // прибираємо підпис, щоб записи не тримали профіль
+        for (const [t, c] of traces) await admin.from(t).update({ [c]: null }).eq(c, uid)
+        for (const c of ['pick_by', 'picked_by', 'approved_by', 'shipped_by', 'cancelled_by'])
+          await admin.from('orders').update({ [c]: null }).eq(c, uid)
+        await admin.from('skus').update({ deleted_by: null }).eq('deleted_by', uid)
+        await admin.from('sku_costs').update({ created_by: null }).eq('created_by', uid)
+        await admin.from('returns').update({ created_by: null }).eq('created_by', uid)
+        await admin.from('invites').update({ created_by: null }).eq('created_by', uid)
+      }
+
+      const { error } = await admin.auth.admin.deleteUser(uid)   // профіль зникне каскадом
+      if (error) return reply({ error: error.message }, 400)
+      return reply({ ok: true })
+    }
 
     // ---------- зміна пароля ----------
     if (mode === 'password') {

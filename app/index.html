@@ -807,7 +807,7 @@ const lineRowOf = (o, l, i) => ({
 
 /* ---------- завантаження ---------- */
 async function hydrate() {
-  const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au] = await Promise.all([
+  const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au, st] = await Promise.all([
     db.from('profiles').select('*'),
     db.from('invites').select('*').is('accepted_at', null),
     db.from('skus').select('*'),
@@ -818,7 +818,8 @@ async function hydrate() {
     db.from('payments').select('*'),
     db.from('returns').select('*'),
     db.from('order_events').select('*'),
-    db.from('audit').select('*').order('created_at', { ascending: false }).limit(2000)
+    db.from('audit').select('*').order('created_at', { ascending: false }).limit(2000),
+    db.from('app_settings').select('*')
   ]);
   const err = [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au].find(r => r.error);
   if (err) throw err.error;
@@ -833,6 +834,7 @@ async function hydrate() {
     ops: (op.data || []).map(fromOp),
     reserves: (or_.data || []).map(r => fromOrder(r, ol.data || [], pa.data || [], rt.data || [], ev.data || [])),
     audit: (au.data || []).map(a => ({ id: a.id, sku: a.sku_id, act: a.act, text: a.text, who: a.created_by, at: a.created_at })),
+    debug: ((st && st.data) || []).some(r => r.key === 'debug_mode' && r.value === true),
     customFibers: [], orderSeqByYear: {}
   };
   S.skus.forEach(x => { x.comp = x.comp || []; (x.comp).forEach(c => { if (!FIBER_TYPE[c.f] && !S.customFibers.includes(c.f)) S.customFibers.push(c.f); }); });
@@ -1394,6 +1396,7 @@ function openOrderView(id){
       </div>
     </div>
     ${canEditOrder(o)?`<button class="btn plat" data-oedit="${o.id}"><span class="dot" style="background:var(--gold)"></span>Змінити заявку</button>`:''}
+    ${me().role==='admin'?`<button class="btn ghost small" data-opurge="${o.id}" style="width:100%;margin-top:8px">Видалити заявку назавжди</button>`:''}
     ${o.status==='active'&&!canEditOrder(o)?`<p class="hint">${['res','pick'].includes(oStage(o))?'Поки склад не підтвердив збірку, оплату й дозвіл на відвантаження не проводимо: кількість ще може змінитися.':'Заявка вже в роботі, змінювати її не можна. Щоб змінити, анулюйте й створіть нову.'}</p>`:''}
     ${(()=>{const b=orderActions(o); return b.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${b.join('')}</div>`:''})()}
     <div class="box"><h3>Історія заявки</h3>
@@ -2080,7 +2083,8 @@ function openSettings(){
         <div class="sub" style="color:var(--muted);font-size:13px;overflow-wrap:anywhere">${esc(loginOf(u.email||''))}</div>
         ${admin?`<div style="display:flex;gap:6px;margin-top:6px;align-items:center">
           <select data-urole="${u.id}" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 8px;font-size:14px" ${u.id===S.current?'disabled title="Свою роль змінити не можна"':''}>${Object.keys(ROLE).map(r=>`<option value="${r}" ${r===u.role?'selected':''}>${ROLE[r]}</option>`).join('')}</select>
-          ${u.id===S.current?'':`<button class="btn small ghost" data-rmuser="${u.id}">Видалити</button>`}
+          ${u.id===S.current?'':`<button class="btn small ghost" data-rmuser="${u.id}">Вимкнути</button>`}
+          ${u.id!==S.current&&me().role==='admin'?`<button class="btn small ghost" data-purgeuser="${u.id}">Видалити назавжди</button>`:''}
         </div>`:`<div class="sub" style="font-size:13px">${ROLE[u.role]}</div>`}
       </div></div>`).join('')}
     </div>
@@ -2090,6 +2094,12 @@ function openSettings(){
       <label class="f">Новий пароль<input id="pPass" type="text" autocomplete="off" placeholder="щонайменше 8 символів"></label>
       <button class="btn small ghost" data-genpass="pPass" style="width:100%;margin:-2px 0 10px">Згенерувати пароль</button>
       <button class="btn" data-setpass style="width:100%">Зберегти пароль</button>
+    </div>`:''}
+    ${me().role==='admin'?`<div class="box"><h3>Режим налагодження</h3>
+      <p class="hint" style="margin:0 0 8px">${S.debug
+        ? 'Увімкнений. Адмін може видаляти назавжди заявки, SKU й акаунти — зручно, поки система не в роботі. Перед реальним стартом вимкніть.'
+        : 'Вимкнений. Видалити назавжди можна лише те, за чим не стоїть рух товару чи гроші. Решта — через анулювання, повернення й коригування.'}</p>
+      <button class="btn ${S.debug?'out':'ghost'}" data-debug="${S.debug?'off':'on'}" style="width:100%">${S.debug?'Вимкнути режим налагодження':'Увімкнути режим налагодження'}</button>
     </div>`:''}
     <div class="box"><h3>Що дозволяє кожна роль</h3>
       <dl class="meta">${Object.keys(ROLE).map(r=>`<dt>${ROLE[r]}</dt><dd>${ROLE_DESC[r]}</dd>`).join('')}</dl>
@@ -2181,6 +2191,51 @@ async function sendInvite(){
   credsCard('iout', login, password);
 }
 
+/* --- режим налагодження й видалення назавжди (тільки адмін) --- */
+let purgeArm = null;
+
+function armed(btn, key, label){
+  if(purgeArm === key) return true;
+  purgeArm = key;
+  document.querySelectorAll('[data-opurge],[data-purgeuser]').forEach(b=>{
+    b.classList.add('ghost'); b.classList.remove('out');
+  });
+  btn.textContent = label; btn.classList.remove('ghost'); btn.classList.add('out');
+  return false;
+}
+
+async function setDebug(on){
+  const r = await callAccess({ mode:'debug', on });
+  if(!r.ok){ toast(r.msg); return; }
+  S.debug = on;
+  toast(on ? 'Режим налагодження ввімкнено' : 'Режим налагодження вимкнено');
+  openSettings();
+}
+
+async function purgeOrder(btn, id){
+  if(!armed(btn, 'o'+id, 'Точно видалити назавжди?')) return;
+  purgeArm = null;
+  btn.disabled = true; btn.textContent = 'Видаляю…';
+  const r = await callAccess({ mode:'purge_order', order_id:id });
+  if(!r.ok){ btn.disabled=false; btn.textContent='Видалити заявку назавжди'; toast(r.msg); return; }
+  closeSheet();
+  try { await hydrate(); } catch(e) { console.error(e); }
+  render();
+  toast('Заявку видалено назавжди');
+}
+
+async function purgeUser(btn, id){
+  const u = S.users.find(x=>x.id===id);
+  if(!armed(btn, 'u'+id, 'Точно видалити назавжди?')) return;
+  purgeArm = null;
+  btn.disabled = true; btn.textContent = 'Видаляю…';
+  const r = await callAccess({ mode:'purge_user', user_id:id });
+  if(!r.ok){ btn.disabled=false; btn.textContent='Видалити назавжди'; toast(r.msg); return; }
+  try { await hydrate(); } catch(e) { console.error(e); }
+  render(); openSettings();
+  toast((u ? u.name : 'Акаунт') + ' видалено назавжди');
+}
+
 async function setPass(){
   const uid=$('#pUser').value, password=$('#pPass').value;
   const fe=m=>{$('#perr').innerHTML=`<div class="err">${m}</div>`;};
@@ -2225,8 +2280,9 @@ async function removeUser(btn){
 function deleteSku(el){
   const s=skuById(el.dataset.delsku); if(!s) return;
   if(!can('delsku')){ toast('Видаляти SKU можуть лише Адмін і Головний бухгалтер'); return; }
+  const hard = S.debug && me().role==='admin';
   const l=levels(s.id);
-  if(Math.abs(l.kg)>=0.001 || l.cn!==0 || l.rk>=0.001){
+  if(!hard && (Math.abs(l.kg)>=0.001 || l.cn!==0 || l.rk>=0.001)){
     toast(l.rk>=0.001 ? 'Є активна заявка з резервом. Спочатку відвантажте або анулюйте її.' : `Залишок ще ${fmtKg(l.kg)} кг / ${fmtN(l.cn)} к. Видалити можна лише при нульовому залишку.`);
     return;
   }
@@ -2234,15 +2290,27 @@ function deleteSku(el){
     <div class="box">
       <p style="margin:0 0 6px">Ви дійсно хочете видалити SKU?</p>
       <p style="margin:0;font-weight:700">${esc(s.maker||'')}${s.maker?' · ':''}${esc(s.art)}${s.color?' · '+esc(s.color):''}</p>
-      <p class="hint" style="margin:8px 0 0">Картка й фото зникнуть з каталогу. Історія операцій і звіти збережуться.</p>
+      <p class="hint" style="margin:8px 0 0">${hard
+        ? 'Режим налагодження: картка, увесь її рух і рядки заявок зникнуть назавжди. Відновити не вийде.'
+        : 'Картка й фото зникнуть з каталогу. Історія операцій і звіти збережуться.'}</p>
     </div>
     <div class="pair">
       <button class="btn ghost" data-close>Ні</button>
       <button class="btn out" data-delyes="${s.id}">Так</button>
     </div>`);
 }
-function doDeleteSku(id){
+async function doDeleteSku(id){
   const s=skuById(id); if(!s || !can('delsku')) return;
+
+  if(S.debug && me().role==='admin'){              // назавжди, разом із рухом
+    closeSheet();
+    const r = await callAccess({ mode:'purge_sku', sku_id:id });
+    if(!r.ok){ toast(r.msg); return; }
+    try { await hydrate(); } catch(e) { console.error(e); }
+    render(); toast(s.art + ' видалено назавжди');
+    return;
+  }
+
   const l=levels(id);
   if(Math.abs(l.kg)>=0.001 || l.cn!==0 || l.rk>=0.001){ closeSheet(); toast('Залишок змінився, видалення скасовано'); return; }
   audit(s.id,'delete','Картку видалено (залишок нульовий)');
@@ -2998,6 +3066,9 @@ document.addEventListener('click', e=>{
   if(d.costadd){ costAdd(d.costadd); return; }
   if('invite' in d){ sendInvite(); return; }
   if(d.genpass){ fillPass(d.genpass); return; }
+  if(d.debug){ setDebug(d.debug==='on'); return; }
+  if(d.opurge){ purgeOrder(t, d.opurge); return; }
+  if(d.purgeuser){ purgeUser(t, d.purgeuser); return; }
   if('setpass' in d){ setPass(); return; }
   if(d.copycreds){ copyCreds(d.copycreds); return; }
   if(d.rmuser){ removeUser(t); return; }
