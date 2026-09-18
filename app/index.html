@@ -1623,7 +1623,7 @@ function invoiceDocx(o){
   // Спершу ваги ліворуч, під таблицею, далі гроші праворуч.
   const weights =
       wP([{t:'Вага нетто: ',sz:17},{t:fmtKg(oKg(o))+' кг',b:true,sz:17}],{space:20})
-    + wP([{t:'Конуси: ',sz:17},{t:`${fmtN(oCn(o))} шт × ${fmtG(CONE_KG)} = ${fmtKg2(oConesKg(o))} кг`,b:true,sz:17}],{space:20})
+    + wP([{t:'Конуси: ',sz:17},{t:`${fmtN(oCn(o))} шт × ${fmtKg2(CONE_KG)} кг = ${fmtKg2(oConesKg(o))} кг`,b:true,sz:17}],{space:20})
     + wP([{t:'Коробки: ',sz:17},{t:`${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг`,b:true,sz:17}],{space:20})
     + wP([{t:'Вага брутто: ',sz:17},{t:fmtKg2(oGross(o))+' кг',b:true,sz:17}],{space:160});
 
@@ -1688,7 +1688,7 @@ function openInvoice(id){
       <thead><tr><th class="c">№</th><th>Бренд</th><th>Артикул</th><th>Колір</th><th>Nm</th><th>Складники</th><th class="c">Кг</th><th class="c">Конусів</th><th class="c">Ціна, €/кг</th><th class="c">Сума, €</th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="ip-w">
         <div>Вага нетто: <b>${fmtKg(oKg(o))} кг</b></div>
-        <div>Конуси: <b>${fmtN(oCn(o))} шт × ${fmtG(CONE_KG)} = ${fmtKg2(oConesKg(o))} кг</b></div>
+        <div>Конуси: <b>${fmtN(oCn(o))} шт × ${fmtKg2(CONE_KG)} кг = ${fmtKg2(oConesKg(o))} кг</b></div>
         <div>Коробки: <b>${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг</b></div>
         <div>Вага брутто: <b>${fmtKg2(oGross(o))} кг</b></div>
       </div>
