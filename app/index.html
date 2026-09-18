@@ -3091,11 +3091,10 @@ function cancelReserve(id){
 function refreshAfter(skuId){ render(); if($('#sheet').classList.contains('open')) openSku(skuId); }
 
 /* scanner */
-let reader=null, scanTarget=null;
-function openScan(target){
-  scanTarget = target||null;
+let reader=null;
+function openScan(){
   markNav('scanBtn');
-  openSheet(`${head(scanTarget?'Код постачальника':'Сканер')}
+  openSheet(`${head('Сканер')}
     <video class="video" id="vid" playsinline muted></video>
     <p class="hint" id="scanMsg" style="margin-top:10px">Наведіть камеру на штрихкод.</p>
     <div class="scan-alt">
@@ -3114,15 +3113,11 @@ function found(code){
   code = String(code).trim(); if(!code) return;
   stopScan();
   if(navigator.vibrate) try{navigator.vibrate(60)}catch(e){}
-  if(scanTarget==='sku'){
-    const art=$('#fArt')?.value; closeSheet();
-    openSkuForm(); $('#fArt').value = art||''; $('#fCode').value = code; toast('Код підставлено');
-    return;
-  }
   const s = S.skus.find(x=>x.code===code && !x.deleted);
   closeSheet();
-  if(s) openSku(s.id);
-  else { toast(`Код ${code} не знайдено`); if(can('sku')){ openSkuForm(); $('#fCode').value=code; } }
+  if(s){ openSku(s.id); return; }
+  // Штрихкоди присвоюються автоматично, тому чужий код у нову картку не підставляємо.
+  toast(`Код ${code} немає в каталозі`);
 }
 async function scanFromFile(file){
   $('#scanMsg').textContent='Розпізнаю…';
