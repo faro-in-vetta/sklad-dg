@@ -3095,18 +3095,49 @@ let reader=null;
 function openScan(){
   markNav('scanBtn');
   openSheet(`${head('Сканер')}
-    <video class="video" id="vid" playsinline muted></video>
+    <video class="video" id="vid" playsinline autoplay muted></video>
     <p class="hint" id="scanMsg" style="margin-top:10px">Наведіть камеру на штрихкод.</p>
     <div class="scan-alt">
       <label class="btn ghost filebtn">Сфотографувати код<input type="file" accept="image/*" capture="environment" id="scanFile"></label>
       <div style="display:flex;gap:8px"><input id="manualCode" placeholder="Або введіть код" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:11px 12px"><button class="btn" id="manualGo">Знайти</button></div>
     </div>`);
   if(!window.ZXing){ $('#scanMsg').textContent='Бібліотека сканера не завантажилась. Введіть код вручну.'; return; }
+  startCamera();
+}
+
+/* Окремо, бо на телефоні є два підводні камені:
+   без facingMode вмикається фронтальна камера, а дозвіл на камеру
+   доводиться пояснювати людині зрозумілими словами. */
+async function startCamera(){
+  const msg = t => { const el=$('#scanMsg'); if(el) el.textContent=t; };
+  const why = e => {
+    const n = (e && (e.name || e.constructor?.name)) || '';
+    if(n==='NotAllowedError' || n==='SecurityError')
+      return 'Доступ до камери заборонено. Дозвольте камеру для цього сайту в налаштуваннях браузера й оновіть сторінку.';
+    if(n==='NotFoundError' || n==='OverconstrainedError')
+      return 'Камеру не знайдено. Сфотографуйте код кнопкою нижче або введіть його.';
+    if(n==='NotReadableError')
+      return 'Камера зайнята іншим застосунком. Закрийте його й спробуйте ще раз.';
+    return 'Камера недоступна' + (e && e.message ? ': ' + e.message : '') + '. Сфотографуйте код кнопкою нижче.';
+  };
+
   try{
     reader = new ZXing.BrowserMultiFormatReader();
-    reader.decodeFromVideoDevice(undefined, 'vid', (res)=>{ if(res) found(res.getText()); })
-      .catch(()=>{ $('#scanMsg').textContent='Камера тут недоступна. Сфотографуйте код кнопкою нижче або введіть його.'; });
-  }catch(e){ $('#scanMsg').textContent='Камера тут недоступна. Сфотографуйте код кнопкою нижче або введіть його.'; }
+    const onRes = res => { if(res) found(res.getText()); };
+
+    if(typeof reader.decodeFromConstraints === 'function'){
+      // задня камера, вища роздільність — дрібні штрихкоди на конусах інакше не читаються
+      await reader.decodeFromConstraints(
+        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+        'vid', onRes);
+    } else {
+      await reader.decodeFromVideoDevice(undefined, 'vid', onRes);
+    }
+    msg('Наведіть камеру на штрихкод.');
+  }catch(e){
+    console.warn('scanner', e);
+    msg(why(e));
+  }
 }
 function stopScan(){ try{ reader && reader.reset(); }catch(e){} reader=null; }
 function found(code){
