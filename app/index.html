@@ -534,7 +534,6 @@ nav.tabs button{padding-bottom:2px}
 .odl-f input.over{border-color:var(--red);background:var(--red-soft)}
 .hint.neg{color:var(--red)}
 
-.ip-lbl{color:var(--muted);font-size:12px}
 .invprev{background:#fff;color:#111;border:1px solid var(--line);border-radius:10px;padding:14px 14px 12px;font-size:13px}
 .invprev .ip-top{border-bottom:2.5px solid #B68C5A;padding-bottom:6px;margin-bottom:10px}
 .invprev .ip-co{font-family:var(--serif);font-size:20px;font-weight:600;color:#111}
@@ -543,9 +542,9 @@ nav.tabs button{padding-bottom:2px}
 .invprev .ip-meta div{margin-bottom:2px}
 .invprev .ip-meta span{color:#777}
 .invprev .ip-s{font-size:11px;color:#777}
-.invprev table.ip-t{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;color:#111}
-.invprev table.ip-t th{background:#F3EADC;border:1px solid #D9CBB8;padding:5px;text-align:left;font-weight:600}
-.invprev table.ip-t td{border:1px solid #D9CBB8;padding:5px;vertical-align:middle}
+.invprev table.ip-t{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px;color:#111;table-layout:fixed}
+.invprev table.ip-t th{background:#F3EADC;border:1px solid #D9CBB8;padding:4px 5px;text-align:left;font-weight:600;font-size:10px}
+.invprev table.ip-t td{border:1px solid #D9CBB8;padding:4px 5px;vertical-align:middle;overflow-wrap:anywhere}
 .invprev table.ip-t .c{text-align:center}
 .invprev .ip-tot{text-align:right;margin-top:10px}
 .invprev .ip-tot .big{font-size:15px;margin-top:4px}
@@ -1588,23 +1587,29 @@ function wCell(content, o){
   o=o||{};
   return `<w:tc><w:tcPr><w:tcW w:w="${o.w||1000}" w:type="dxa"/>${o.fill?`<w:shd w:val="clear" w:fill="${o.fill}"/>`:''}<w:vAlign w:val="center"/><w:tcBorders>${['top','left','bottom','right'].map(s=>`<w:${s} w:val="single" w:sz="6" w:color="D9CBB8"/>`).join('')}</w:tcBorders></w:tcPr>${content}</w:tc>`;
 }
-/* Опис пряжі в документі: підписані рядки, як у шапці картки SKU.
-   Порожні поля пропускаємо — колір і Nm не обов'язкові. */
-function yarnLines(x){
-  return [['Brand: ', x.maker], ['Art.: ', x.art], ['Color: ', x.color],
-          ['Nm: ', x.meter]].filter(([,v]) => String(v||'').trim());
-}
-
 function invoiceDocx(o){
-  const W=[460,2600,1900,950,950,1400,1520];
-  const th=(t,i)=>wCell(wP(t,{b:true,sz:18,align:(i===1||i===2)?'left':'center',space:0}),{w:W[i],fill:'F3EADC'});
-  const head=`<w:tr><w:trPr><w:tblHeader/></w:trPr>${['№','Пряжа','Складники','Кг','Конусів','Ціна, €/кг','Сума, €'].map(th).join('')}</w:tr>`;
+  // Кожне поле пряжі — власна колонка, рядок лишається в один рівень.
+  // Шрифт дрібніший, ніж був, бо колонок стало більше.
+  const W=[400,1150,1400,1000,620,1700,800,800,900,1010];
+  const LEFT=new Set([1,2,3,5]);            // текстові колонки вирівнюємо ліворуч
+  const th=(t,i)=>wCell(wP(t,{b:true,sz:16,align:LEFT.has(i)?'left':'center',space:0}),{w:W[i],fill:'F3EADC'});
+  const head=`<w:tr><w:trPr><w:tblHeader/></w:trPr>${['№','Бренд','Артикул','Колір','Nm','Складники','Кг','Конусів','Ціна, €/кг','Сума, €'].map(th).join('')}</w:tr>`;
   const rows=o.lines.map((li,i)=>{
     const x=skuById(li.sku)||{}, q=lq(li), c=lc(li);
-    const desc=yarnLines(x).map(([k,v])=>wP([{t:k,sz:17,color:'777777'},{t:String(v),b:true,sz:18}],{space:0})).join('')
-      || wP([{t:'—',sz:18}],{space:0});
-    const comp=wP([{t:compText(x.comp)||'—',sz:17,color:'555555'}],{space:0});
-    return `<w:tr>${wCell(wP(String(i+1),{sz:20,align:'center',space:0}),{w:W[0]})}${wCell(desc,{w:W[1]})}${wCell(comp,{w:W[2]})}${wCell(wP(fmtKg(q),{sz:20,align:'center',space:0}),{w:W[3]})}${wCell(wP(fmtN(c),{sz:20,align:'center',space:0}),{w:W[4]})}${wCell(wP(li.sample?'—':fmtEur(li.price),{sz:20,align:'center',space:0}),{w:W[5]})}${wCell(wP(li.sample?'пробник':fmtEur(q*li.price),{sz:20,align:'center',space:0}),{w:W[6]})}</w:tr>`;
+    const txt=(v,o2)=>wP([{t:String(v??'').trim()||'—',sz:17,...(o2||{})}],{space:0});
+    const num=v=>wP(String(v),{sz:17,align:'center',space:0});
+    return `<w:tr>`
+      + wCell(num(i+1),{w:W[0]})
+      + wCell(txt(x.maker),{w:W[1]})
+      + wCell(txt(x.art,{b:true}),{w:W[2]})
+      + wCell(txt(x.color),{w:W[3]})
+      + wCell(txt(x.meter),{w:W[4]})
+      + wCell(txt(compText(x.comp),{color:'555555',sz:16}),{w:W[5]})
+      + wCell(num(fmtKg(q)),{w:W[6]})
+      + wCell(num(fmtN(c)),{w:W[7]})
+      + wCell(num(li.sample?'—':fmtEur(li.price)),{w:W[8]})
+      + wCell(num(li.sample?'пробник':fmtEur(q*li.price)),{w:W[9]})
+      + `</w:tr>`;
   }).join('');
   const table=`<w:tbl><w:tblPr><w:tblW w:w="9780" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${W.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${head}${rows}</w:tbl>`;
   const pay = allSmp(o)&&!oShip(o) ? 'Без оплати (пробники)' : (o.terms==='prepay'?'Передоплата':`Відтермінування ${o.days} дн.${o.due?`, оплатити до ${fmtDate(o.due)}`:''}`);
@@ -1652,11 +1657,14 @@ function invoiceDocx(o){
 function openInvoice(id){
   const o=oById(id); if(!o||!seeSale()) return;
   const pay = allSmp(o)&&!oShip(o) ? 'Без оплати (пробники)' : (o.terms==='prepay'?'Передоплата':`Відтермінування ${o.days} дн.${o.due?`, оплатити до ${fmtDate(o.due)}`:''}`);
+  const cell=v=>esc(String(v??'').trim())||'—';
   const rows=o.lines.map((li,i)=>{ const x=skuById(li.sku)||{}, q=lq(li), c=lc(li);
-    const desc=yarnLines(x).map(([k,v])=>`<div><span class="ip-lbl">${k}</span><b>${esc(String(v))}</b></div>`).join('') || '—';
     return `<tr><td class="c">${i+1}</td>
-      <td>${desc}</td>
-      <td class="ip-s">${esc(compText(x.comp))||'—'}</td>
+      <td>${cell(x.maker)}</td>
+      <td><b>${cell(x.art)}</b></td>
+      <td>${cell(x.color)}</td>
+      <td>${cell(x.meter)}</td>
+      <td class="ip-s">${cell(compText(x.comp))}</td>
       <td class="c">${fmtKg(q)}</td><td class="c">${fmtN(c)}</td>
       <td class="c">${li.sample?'—':fmtEur(li.price)}</td>
       <td class="c">${li.sample?'пробник':fmtEur(q*li.price)}</td></tr>`;}).join('');
@@ -1670,7 +1678,8 @@ function openInvoice(id){
         <div><span>Дата відвантаження:</span> <b>${o.shippedAt?fmtDate(o.shippedAt):'—'}</b></div>
         <div><span>Умови оплати:</span> <b>${pay}</b></div>
       </div>
-      <div class="tbl-wrap"><table class="ip-t"><thead><tr><th class="c">№</th><th>Пряжа</th><th>Складники</th><th class="c">Кг</th><th class="c">Конусів</th><th class="c">Ціна, €/кг</th><th class="c">Сума, €</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="tbl-wrap"><table class="ip-t"><colgroup><col style="width:4%"><col style="width:12%"><col style="width:15%"><col style="width:11%"><col style="width:7%"><col style="width:18%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:9%"></colgroup>
+      <thead><tr><th class="c">№</th><th>Бренд</th><th>Артикул</th><th>Колір</th><th>Nm</th><th>Складники</th><th class="c">Кг</th><th class="c">Конусів</th><th class="c">Ціна, €/кг</th><th class="c">Сума, €</th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="ip-tot">
         <div><span>Товар:</span> <b>${fmtEur(oSum(o))}</b></div>
         ${oShip(o)?`<div><span>Доставка:</span> <b>${fmtEur(oShip(o))}</b></div>`:''}
