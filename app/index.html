@@ -2181,13 +2181,22 @@ function setRole(uidv, role){
   if(CAN[u.role].users && !CAN[role].users && admins.length<=1){ toast('Має лишитися хоча б один Адмін або Головний бухгалтер'); openSettings(); return; }
   u.role=role; if(save()){ toast(u.name+': '+ROLE[role]); render(); }
 }
-function removeUser(btn){
+/* Вимкнення доступу. Профіль лишається — ім'я має бути видно в історії складу.
+   Логін при цьому звільняється: службову адресу відводить убік сама функція,
+   тож той самий логін можна віддати новій людині. */
+async function removeUser(btn){
   const u=S.users.find(x=>x.id===btn.dataset.rmuser); if(!u) return;
   if(rmArm!==u.id){ rmArm=u.id; document.querySelectorAll('[data-rmuser]').forEach(b=>{b.textContent='Видалити';b.classList.add('ghost');b.classList.remove('out');}); btn.textContent='Точно видалити?'; btn.classList.remove('ghost'); btn.classList.add('out'); return; }
   const admins=activeUsers().filter(x=>CAN[x.role].users);
   if(CAN[u.role].users && admins.length<=1){ toast('Не можна видалити останнього адміна'); return; }
-  u.removed=true; u.removedAt=now(); u.removedBy=S.current;
-  if(save()){ toast(u.name+' більше не має доступу'); render(); openSettings(); }
+
+  btn.disabled=true; btn.textContent='Вимикаю…';
+  const r = await callAccess({ mode:'remove', user_id:u.id });
+  if(!r.ok){ btn.disabled=false; btn.textContent='Видалити'; toast(r.msg); return; }
+
+  await reloadUsers();
+  toast(u.name + ' більше не має доступу, логін вільний');
+  render(); openSettings();
 }
 
 function deleteSku(el){

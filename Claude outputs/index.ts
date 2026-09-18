@@ -9,6 +9,11 @@
 //   { mode:'create',   login, name, role, password }
 //   { mode:'password', user_id, password }
 //   { mode:'login',    user_id, login }
+//   { mode:'remove',   user_id }
+//
+// Видалення не стирає профіль: ім'я лишається в історії складу, а логін
+// звільняється — службова адреса перейменовується, і той самий логін можна
+// віддати новій людині.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.58.0'
 
@@ -71,6 +76,41 @@ Deno.serve(async (req) => {
       return reply({ ok: true })
     }
 
+    // ---------- вимкнення доступу зі звільненням логіна ----------
+    if (mode === 'remove') {
+      const uid = String(body.user_id || '')
+      if (!uid) return reply({ error: 'Не вказано користувача' }, 400)
+      if (uid === user.id) return reply({ error: 'Себе вимкнути не можна' }, 400)
+
+      const { data: target } = await admin
+        .from('profiles').select('id, email, role, removed').eq('id', uid).single()
+      if (!target) return reply({ error: 'Такого користувача немає' }, 404)
+      if (target.removed) return reply({ ok: true })
+
+      // має лишитися хоча б один адмін або головний бухгалтер
+      if (['admin', 'accountant'].includes(target.role)) {
+        const { count } = await admin
+          .from('profiles').select('id', { count: 'exact', head: true })
+          .in('role', ['admin', 'accountant']).eq('removed', false)
+        if ((count ?? 0) <= 1) return reply({ error: 'Має лишитися хоча б один адмін або головний бухгалтер' }, 400)
+      }
+
+      // звільняємо логін: службову адресу відводимо вбік, у профілі лишаємо як було
+      const tag = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+      const freed = `freed-${tag}@${DOMAIN}`
+      const { error: eMail } = await admin.auth.admin.updateUserById(uid, {
+        email: freed, email_confirm: true,
+        password: crypto.randomUUID() + crypto.randomUUID(),   // старий пароль більше не діє
+      })
+      if (eMail) return reply({ error: 'Не вдалося звільнити логін: ' + eMail.message }, 400)
+
+      const { error: eProf } = await admin.from('profiles')
+        .update({ removed: true, removed_at: new Date().toISOString() }).eq('id', uid)
+      if (eProf) return reply({ error: eProf.message }, 400)
+
+      return reply({ ok: true })
+    }
+
     // ---------- зміна логіна ----------
     if (mode === 'login') {
       const uid = String(body.user_id || '')
@@ -103,9 +143,11 @@ Deno.serve(async (req) => {
 
     const email = mailOf(login)
 
+    // зайнятим логін вважається лише поки людина працює; у вимкнених
+    // профілях адреса лишається для історії, але доступ уже звільнений
     const { data: exists } = await admin
-      .from('profiles').select('id, removed').eq('email', email).maybeSingle()
-    if (exists) return reply({ error: exists.removed ? 'Такий логін уже був і вимкнений' : 'Такий логін уже зайнятий' }, 409)
+      .from('profiles').select('id').eq('email', email).eq('removed', false).maybeSingle()
+    if (exists) return reply({ error: 'Такий логін уже зайнятий' }, 409)
 
     // рядок invites — звідси тригер handle_new_user візьме ім'я й роль
     const { data: open } = await admin
