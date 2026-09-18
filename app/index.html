@@ -2824,6 +2824,15 @@ function compTotal(){
 /* Наступний штрихкод: DG0000001 і далі по наростаючій.
    Рахуємо від найбільшого вже зайнятого номера, враховуючи й видалені
    картки, щоб код ніколи не використався вдруге. */
+/* Назва кольору йде за вибраним відтінком. Номер, який комірник
+   дописав руками ("Blu notte 0412"), при зміні відтінку зберігається. */
+function setColorName(shade){
+  const el = $('#fColor'); if(!el) return;
+  const m = /(\S+)\s*$/.exec(el.value.trim());
+  const tail = m && /\d/.test(m[1]) ? ' ' + m[1] : ' ';
+  el.value = shade + tail;
+}
+
 function nextSkuCode(){
   let max = 0;
   (S.skus||[]).forEach(x=>{
@@ -3171,7 +3180,7 @@ document.addEventListener('click', e=>{
     draftHex=d.sw.toLowerCase();
     $('#fHex').value=d.sw.toLowerCase(); $('#hexPrev').style.background=d.sw; $('#hexName').textContent=d.swn+' · '+d.sw;
     document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed', b===t));
-    if(!$('#fColor').value.trim()) $('#fColor').value=d.swn+' ';
+    setColorName(d.swn);
     return;
   }
   if(d.rmphoto!==undefined){ draftPhotos.splice(+d.rmphoto,1); drawSlots(); return; }
