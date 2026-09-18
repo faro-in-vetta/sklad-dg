@@ -181,6 +181,17 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .box h3{margin:0 0 8px;font-size:16px}
 .meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 .meta dt{color:var(--muted)}.meta dd{margin:0}
+/* компактні відступи — лише всередині .compact (панель «Доступ і дані») */
+.compact .box{padding:10px 12px;margin-bottom:8px}
+.compact .box h3{font-size:16px;margin:0 0 6px}
+.compact label.f{margin-bottom:8px;font-size:13px}
+.compact label.f input,.compact label.f select,.compact label.f textarea{padding:8px 10px;margin-top:3px}
+.compact .hint{margin:-4px 0 8px;font-size:12px;line-height:1.35}
+.compact .urow{padding:8px 0;gap:10px}
+.compact .btn{padding:9px 12px}
+.compact .btn.small{padding:6px 9px;font-size:13px}
+.compact .meta{gap:3px 10px;font-size:13px}
+.compact .err{padding:8px 10px;margin-bottom:8px;font-size:13px}
 .barcode{background:#fff;border-radius:10px;padding:6px;text-align:center;overflow-x:auto}
 .barcode svg{max-width:100%;height:auto}
 
@@ -2039,7 +2050,7 @@ function openSettings(){
   const admin = can('users');
   const users = activeUsers();
   const inv = (S.invites||[]);
-  openSheet(`${head('Доступ і дані')}
+  openSheet(`${head('Доступ і дані')}<div class="compact">
     ${admin?`<div class="box"><h3>Додати людину</h3>
       <div id="ierr"></div><div id="iout"></div>
       <label class="f">Логін<input id="iEmail" type="text" autocapitalize="none" spellcheck="false" autocomplete="off" placeholder="oleh"></label>
@@ -2074,7 +2085,7 @@ function openSettings(){
     <div class="box"><h3>Ви в системі</h3>
       <div class="urow">${avatar(me(),'big')}<div style="flex:1;min-width:0"><b>${esc(me().name)}</b><div class="sub" style="color:var(--muted);font-size:13px">${esc(loginOf(ME?ME.email:''))} · ${ROLE[me().role]}</div></div></div>
       <button class="btn ghost" id="logoutBtn" style="width:100%;margin-top:8px">Вийти</button>
-    </div>`);
+    </div></div>`);
   rmArm=null;
 }
 /* Доступи створює Edge Function invite-user (працює під service_role).
