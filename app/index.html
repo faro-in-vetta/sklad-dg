@@ -1620,15 +1620,20 @@ function invoiceDocx(o){
     ['Дата відвантаження: ', o.shippedAt?fmtDate(o.shippedAt):'—'],
     ['Умови оплати: ', pay]
   ].map(([k,v])=>wP([{t:k,color:'777777',sz:17},{t:v,b:true,sz:17}],{space:40})).join('');
-  const tot = [['Товар:', fmtEur(oSum(o))]]
+  // Спершу ваги ліворуч, під таблицею, далі гроші праворуч.
+  const weights =
+      wP([{t:'Вага нетто: ',sz:17},{t:fmtKg(oKg(o))+' кг',b:true,sz:17}],{space:20})
+    + wP([{t:'Конуси: ',sz:17},{t:`${fmtN(oCn(o))} шт × ${fmtG(CONE_KG)} = ${fmtKg2(oConesKg(o))} кг`,b:true,sz:17}],{space:20})
+    + wP([{t:'Коробки: ',sz:17},{t:`${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг`,b:true,sz:17}],{space:20})
+    + wP([{t:'Вага брутто: ',sz:17},{t:fmtKg2(oGross(o))+' кг',b:true,sz:17}],{space:160});
+
+  const money = [['Товар:', fmtEur(oSum(o))]]
     .concat(oShip(o)?[['Доставка:', fmtEur(oShip(o))]]:[])
     .map(([k,v])=>wP([{t:k+' ',sz:17},{t:v,b:true,sz:17}],{align:'right',space:40})).join('')
     + wP([{t:'Разом до оплати: ',sz:17},{t:fmtEur(oTotal(o)),b:true,sz:17,color:'8A6030'}],{align:'right',space:120})
-    + (oPaid(o)>0&&!o.paid?wP([{t:'Оплачено: ',sz:17},{t:fmtEur(oPaid(o)),b:true,sz:17},{t:'  ·  Залишок: ',sz:17},{t:fmtEur(oOwed(o)),b:true,sz:17,color:'A5362C'}],{align:'right',space:120}):'')
-    + wP([{t:'Вага нетто: ',sz:17},{t:fmtKg(oKg(o))+' кг',b:true,sz:17}],{space:20})
-    + wP([{t:'Конуси: ',sz:17},{t:`${fmtN(oCn(o))} шт × ${fmtG(CONE_KG)} = ${fmtKg2(oConesKg(o))} кг`,b:true,sz:17}],{space:20})
-    + wP([{t:'Коробки: ',sz:17},{t:`${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг`,b:true,sz:17}],{space:20})
-    + wP([{t:'Вага брутто: ',sz:17},{t:fmtKg2(oGross(o))+' кг',b:true,sz:17}],{space:200})
+    + (oPaid(o)>0&&!o.paid?wP([{t:'Оплачено: ',sz:17},{t:fmtEur(oPaid(o)),b:true,sz:17},{t:'  ·  Залишок: ',sz:17},{t:fmtEur(oOwed(o)),b:true,sz:17,color:'A5362C'}],{align:'right',space:120}):'');
+
+  const tot = weights + money
     + `<w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p><w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p>`;
   const body =
     wP([{t:'Diamant Group Filati',b:true,sz:38,font:'Georgia'}],{space:0})
@@ -1639,7 +1644,7 @@ function invoiceDocx(o){
     + table
     + `<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>`
     + tot
-    + (o.comment?wP([{t:'Коментар: ',color:'777777',sz:19},{t:o.comment,sz:19}]):'')
+    + (o.comment?wP([{t:'Коментар: ',color:'777777',sz:17},{t:o.comment,sz:17}]):'')
     + (hasSmp(o)?wP([{t:'Пробники надані безкоштовно.',sz:17,color:'777777'}],{space:40}):'')
     + `<w:p><w:pPr><w:spacing w:after="20"/></w:pPr>
         <w:hyperlink r:id="rIdSite"><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="8A6030"/><w:u w:val="single"/></w:rPr><w:t>dgfilati.online</w:t></w:r></w:hyperlink>
@@ -1681,6 +1686,12 @@ function openInvoice(id){
       </div>
       <div class="tbl-wrap"><table class="ip-t"><colgroup><col style="width:4%"><col style="width:12%"><col style="width:15%"><col style="width:11%"><col style="width:7%"><col style="width:18%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:9%"></colgroup>
       <thead><tr><th class="c">№</th><th>Бренд</th><th>Артикул</th><th>Колір</th><th>Nm</th><th>Складники</th><th class="c">Кг</th><th class="c">Конусів</th><th class="c">Ціна, €/кг</th><th class="c">Сума, €</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="ip-w">
+        <div>Вага нетто: <b>${fmtKg(oKg(o))} кг</b></div>
+        <div>Конуси: <b>${fmtN(oCn(o))} шт × ${fmtG(CONE_KG)} = ${fmtKg2(oConesKg(o))} кг</b></div>
+        <div>Коробки: <b>${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг</b></div>
+        <div>Вага брутто: <b>${fmtKg2(oGross(o))} кг</b></div>
+      </div>
       <div class="ip-tot">
         <div><span>Товар:</span> <b>${fmtEur(oSum(o))}</b></div>
         ${oShip(o)?`<div><span>Доставка:</span> <b>${fmtEur(oShip(o))}</b></div>`:''}
@@ -1689,12 +1700,6 @@ function openInvoice(id){
       </div>
       ${o.comment?`<div class="ip-s" style="margin-top:8px">Коментар: ${esc(o.comment)}</div>`:''}
       ${hasSmp(o)?`<div class="ip-s">Пробники надані безкоштовно.</div>`:''}
-      <div class="ip-w">
-        <div>Вага нетто: <b>${fmtKg(oKg(o))} кг</b></div>
-        <div>Конуси: <b>${fmtN(oCn(o))} шт × ${fmtG(CONE_KG)} = ${fmtKg2(oConesKg(o))} кг</b></div>
-        <div>Коробки: <b>${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг</b></div>
-        <div>Вага брутто: <b>${fmtKg2(oGross(o))} кг</b></div>
-      </div>
       <div class="ip-f">dgfilati.online</div>
     </div>
     <div class="pair" style="margin-top:12px">
