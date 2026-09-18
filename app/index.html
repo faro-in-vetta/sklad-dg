@@ -784,7 +784,7 @@ function fromOrder(r, lines, pays, rets, evs) {
     shippedAt: r.shipped_at, shippedBy: r.shipped_by,
     cancelledAt: r.cancelled_at, cancelledBy: r.cancelled_by, cancelReason: r.cancel_reason || '',
     lines: ls,
-    payments: pays.filter(p => p.order_id === r.id).map(p => ({ id: p.id, amount: +p.amount, at: p.paid_on, by: p.created_by })),
+    payments: pays.filter(p => p.order_id === r.id).map(p => ({ id: p.id, amount: +p.amount, at: p.paid_on, by: p.created_by, note: p.comment || '' })),
     returns: rets.filter(x => x.order_id === r.id).map(x => ({ id: x.id, at: x.returned_on, reason: x.reason || '', sum: +x.amount || 0, by: x.created_by })),
     events: evs.filter(e => e.order_id === r.id).sort((a, b) => a.created_at.localeCompare(b.created_at))
       .map(e => ({ id: e.id, at: e.created_at, who: e.created_by, text: e.text }))
@@ -966,7 +966,7 @@ async function pushChanges() {
       for (const p of (o.payments || [])) {
         p.id = p.id || crypto.randomUUID();
         if (!SNAP[snapKey('pay', p.id)]) {
-          const row2 = { id: p.id, order_id: o.id, amount: +p.amount, paid_on: dOnly(p.at) };
+          const row2 = { id: p.id, order_id: o.id, amount: +p.amount, paid_on: dOnly(p.at), comment: p.note || null };
           const { error } = await db.from('payments').insert(row2);
           if (!error) remember('pay', p.id, row2);
         }
@@ -1938,12 +1938,13 @@ function openPaid(id){
       <div class="ototl"><span>Разом по заявці</span><b class="num">${fmtEur(oTotal(o))}</b></div>
       <div class="ototl"><span>Уже оплачено</span><b class="num">${fmtEur(paid)}</b></div>
       <div class="ototl big"><span>Залишок</span><b class="num">${fmtEur(owed)}</b></div>
-      ${(o.payments||[]).length?`<div style="margin-top:8px">${o.payments.map(p=>`<div class="sub num" style="color:var(--muted);font-size:12.5px">${fmtDate(p.at)} — ${fmtEur(p.amount)} · ${esc(uname(p.by))}</div>`).join('')}</div>`:''}
+      ${(o.payments||[]).length?`<div style="margin-top:8px">${o.payments.map(p=>`<div class="sub num" style="color:var(--muted);font-size:12.5px">${fmtDate(p.at)} — ${fmtEur(p.amount)} · ${esc(uname(p.by))}${p.note?` · ${esc(p.note)}`:''}</div>`).join('')}</div>`:''}
     </div>
     <div class="pair">
       <label class="f">Сума, €<input id="pAmt" type="number" inputmode="decimal" min="0.01" step="0.01" value="${owed.toFixed(2)}"></label>
       <label class="f">Дата надходження<input id="pDate" type="date" value="${todayStr()}"></label>
     </div>
+    <label class="f">Коментар<textarea id="pNote" rows="2" placeholder="Номер переказу, банк, уточнення — необов'язково"></textarea></label>
     <p class="hint">Можна вносити частинами: залишок перерахується, а заявка лишиться в дебіторці, доки не оплачена повністю.</p>
     <button class="btn in" data-pdsave="${id}" style="width:100%">Відмітити оплату</button>`);
 }
@@ -1955,10 +1956,12 @@ function savePaid(id){
   if(!(amt>0)) return fe('Вкажіть суму оплати.');
   if(amt>oOwed(o)+0.009) return fe(`Більше, ніж залишок ${fmtEur(oOwed(o))}.`);
   o.payments=o.payments||[];
-  o.payments.push({id:uid(), amount:amt, at:dateToIso(dv), by:S.current});
+  const note=($('#pNote')?.value||'').trim();
+  o.payments.push({id:uid(), amount:amt, at:dateToIso(dv), by:S.current, note});
   const owed=oOwed(o);
-  if(owed<=0.009){ o.paid=true; o.paidAt=dateToIso(dv); o.paidBy=S.current; oev(o,`Оплату отримано ${fmtDate(o.paidAt)}: ${fmtEur(amt)}, заявку оплачено повністю`); }
-  else oev(o,`Часткова оплата ${fmtDate(dateToIso(dv))}: ${fmtEur(amt)}, залишок ${fmtEur(owed)}`);
+  const tail = note ? ` · ${note}` : '';
+  if(owed<=0.009){ o.paid=true; o.paidAt=dateToIso(dv); o.paidBy=S.current; oev(o,`Оплату отримано ${fmtDate(o.paidAt)}: ${fmtEur(amt)}, заявку оплачено повністю${tail}`); }
+  else oev(o,`Часткова оплата ${fmtDate(dateToIso(dv))}: ${fmtEur(amt)}, залишок ${fmtEur(owed)}${tail}`);
   if(save()){ toast('№ '+orderNo(o)+(owed<=0.009?': оплачено':`: залишок ${fmtEur(owed)}`)); refreshOrders(); }
 }
 function openReturn(id){
