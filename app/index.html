@@ -548,7 +548,7 @@ nav.tabs button{padding-bottom:2px}
 .invprev table.ip-t td{border:1px solid #D9CBB8;padding:4px 5px;vertical-align:middle;overflow-wrap:anywhere}
 .invprev table.ip-t .c{text-align:center}
 .invprev .ip-tot{text-align:right;margin-top:10px;font-size:11px}
-.invprev .ip-tot .big{font-size:13px;margin-top:4px}
+.invprev .ip-tot .big{margin-top:4px}
 .invprev .ip-tot .big b{color:#8A6030}
 .invprev .ip-w{margin-top:12px;line-height:1.5;font-size:11px}
 .invprev .ip-f{margin-top:14px;font-size:11px}
@@ -1623,12 +1623,12 @@ function invoiceDocx(o){
   const tot = [['Товар:', fmtEur(oSum(o))]]
     .concat(oShip(o)?[['Доставка:', fmtEur(oShip(o))]]:[])
     .map(([k,v])=>wP([{t:k+' ',sz:17},{t:v,b:true,sz:17}],{align:'right',space:40})).join('')
-    + wP([{t:'Разом до оплати: ',sz:20},{t:fmtEur(oTotal(o)),b:true,sz:22,color:'8A6030'}],{align:'right',space:120})
+    + wP([{t:'Разом до оплати: ',sz:17},{t:fmtEur(oTotal(o)),b:true,sz:17,color:'8A6030'}],{align:'right',space:120})
     + (oPaid(o)>0&&!o.paid?wP([{t:'Оплачено: ',sz:17},{t:fmtEur(oPaid(o)),b:true,sz:17},{t:'  ·  Залишок: ',sz:17},{t:fmtEur(oOwed(o)),b:true,sz:17,color:'A5362C'}],{align:'right',space:120}):'')
     + wP([{t:'Вага нетто: ',sz:17},{t:fmtKg(oKg(o))+' кг',b:true,sz:17}],{space:20})
     + wP([{t:'Конуси: ',sz:17},{t:`${fmtN(oCn(o))} шт × ${fmtG(CONE_KG)} = ${fmtKg2(oConesKg(o))} кг`,b:true,sz:17}],{space:20})
     + wP([{t:'Коробки: ',sz:17},{t:`${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг`,b:true,sz:17}],{space:20})
-    + wP([{t:'Вага брутто: ',sz:18},{t:fmtKg2(oGross(o))+' кг',b:true,sz:18}],{space:200})
+    + wP([{t:'Вага брутто: ',sz:17},{t:fmtKg2(oGross(o))+' кг',b:true,sz:17}],{space:200})
     + `<w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p><w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p>`;
   const body =
     wP([{t:'Diamant Group Filati',b:true,sz:38,font:'Georgia'}],{space:0})
