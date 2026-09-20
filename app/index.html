@@ -2109,7 +2109,7 @@ const ROLE = {admin:'Адмін', accountant:'Головний бухгалте�
 const ROLE_DESC = {
   admin:'усі права без винятку, плюс доступ до людей, режиму налагодження та видалення назавжди',
   accountant:'усі робочі права: ціни й собівартість, дозвіл на відвантаження, відмітка оплат, повернення, анулювання, дебіторка, аналітика, експорт. Людей і доступи не створює й не вимикає',
-  storekeeper:'прихід товару, нові SKU й фото, коригування залишків, збірка та відвантаження заявок, пробники. Цін продажу й дебіторки не бачить',
+  storekeeper:'прихід товару, нові SKU й фото, коригування залишків, збірка та відвантаження заявок, пробники. Цін продажу, дебіторки та історії не бачить',
   manager:'каталог із цінами продажу, створення та редагування власних заявок, пробники, дебіторка. Собівартості не бачить, залишків не змінює',
   client:'ті самі права, що в менеджера, але бачить лише свої заявки й власну дебіторку. Чужих замовлень і сум не бачить'
 };
@@ -2131,6 +2131,10 @@ const CAN = {
    в профілі (колонка client) — і та сама умова продубльована правилами
    доступу в базі, щоб фільтр не можна було обійти через API. */
 const isClient = () => me().role === 'client';
+/* Історію бачать ті, хто відповідає за гроші й товар загалом. Комірникові
+   вона ні до чого: його справа — прихід, збірка й відвантаження, а в
+   записах стоять чужі клієнти, ціни та рухи по інших заявках. */
+const seeHistory = () => !isClient() && me().role !== 'storekeeper';
 const myClient = () => String((me().client || '')).trim();
 const ownOrder = o => !isClient() || String(o.client||'').trim().toLowerCase() === myClient().toLowerCase();
 
@@ -2955,9 +2959,9 @@ function openOrderView(id){
     ${me().role==='admin'?`<button class="btn ghost small" data-opurge="${o.id}" style="width:100%;margin:18px 0 16px">Видалити заявку назавжди</button>`:''}
     ${o.status==='active'&&!canEditOrder(o)?`<p class="hint">${['res','pick'].includes(oStage(o))?'Поки склад не підтвердив збірку, оплату й дозвіл на відвантаження не проводимо: кількість ще може змінитися.':'Заявка вже в роботі, змінювати її не можна. Щоб змінити, анулюйте й створіть нову.'}</p>`:''}
     ${(()=>{const b=orderActions(o); return b.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${b.join('')}</div>`:''})()}
-    <div class="box"><h3>Історія заявки</h3>
+    ${me().role==='storekeeper'?'':`<div class="box"><h3>Історія заявки</h3>
       ${[...(o.events||[])].sort((x,y)=>x.at.localeCompare(y.at)).map(e=>`<div class="row"><div class="grow">${esc(e.text)}<div class="sub">${fmtDT(e.at)} · ${e.who?esc(uname(e.who)):'система'}</div></div></div>`).join('')||'<div class="sub">Записів немає.</div>'}
-    </div>`);
+    </div>`}`);
 }
 
 /* --- редактор заявки --- */
@@ -4282,15 +4286,15 @@ function openSku(id){
       </div>
       <button class="btn ghost small" data-print="${id}" style="width:100%">${t('sku.label')}</button>
     </div>
-    ${isClient()?'':`<div class="box"><h3>Історія</h3>
-      <div class="hfilt">${[['all','Усе'],['mv','Рух'],['ch','Зміни картки'],['rs','Заявки']].map(([k,n])=>`<button class="hf ${k==='all'?'on':''}" data-hf="${k}">${n}</button>`).join('')}</div>
-      <div id="hlist">${historyHtml(id,'all')}</div></div>`}
+    ${!seeHistory()?'':`<div class="box"><h3>Історія</h3>
+      <div class="hfilt">${[['all','Усе'],['mv','Рух'],['ch','Зміни картки'],['rs','Заявки']].map(([k,n])=>`<button class="hf" data-hf="${k}">${n}</button>`).join('')}</div>
+      <div id="hlist" hidden></div></div>`}
   `);
   drawBarcode('#bc', s.code);
 }
 function historyItems(id, noOrders){
   const it=[];
-  if(isClient()) return it;   // рух товару містить назви інших клієнтів і постачальників
+  if(!seeHistory()) return it;   // рух товару містить назви інших клієнтів, постачальників і ціни
   S.ops.filter(o=>o.sku===id).forEach(o=>it.push({k:'mv',at:o.at,html:opRow(o,false)}));
   (S.audit||[]).filter(a=>a.sku===id).forEach(a=>it.push({k:'ch',at:a.at,html:`<div class="row"><span class="tag chg">${({create:'створено',edit:'зміна',price:'ціна',delete:'видалено'})[a.act]||'зміна'}</span><div class="grow">${esc(a.text)}<div class="sub">${fmtDT(a.at)} · ${esc(uname(a.who))}</div></div></div>`}));
   if(!noOrders) S.reserves.filter(r=>(r.lines||[]).some(li=>li.sku===id)).forEach(o=>(o.events||[]).forEach(e=>it.push({k:'rs',at:e.at,html:`<div class="row"><span class="tag res">заявка</span><div class="grow">№ ${esc(orderNo(o))} · <b>${esc(o.client)}</b>: ${esc(e.text)}<div class="sub">${fmtDT(e.at)} · ${e.who?esc(uname(e.who)):'система'}</div></div></div>`})));
@@ -4952,7 +4956,20 @@ document.addEventListener('click', e=>{
   const d = t.dataset;
   if(d.tab){ if($('#sheet').classList.contains('open')) closeSheet(); tab=d.tab; render(); window.scrollTo(0,0); return; }
   if(d.jf){ jFilter=d.jf; viewJournal(); return; }
-  if(d.hf){ document.querySelectorAll('.hf').forEach(b=>b.classList.toggle('on',b===t)); const sid=$('[data-edit]')?.dataset.edit; if(sid) $('#hlist').innerHTML=historyHtml(sid,d.hf); return; }
+  if(d.hf){
+    /* Історія довга й потрібна не щоразу, тож за замовчуванням згорнута.
+       Кнопка розкриває саме свій зріз; повторне натискання — згортає. */
+    const box=$('#hlist'); const sid=$('[data-edit]')?.dataset.edit;
+    const off = t.classList.contains('on');
+    // тільки кнопки історії картки: клас .hf носять ще фільтри заявок і
+    // журналу, і раніше вони мовчки втрачали підсвічування
+    document.querySelectorAll('[data-hf]').forEach(b=>b.classList.toggle('on', !off && b===t));
+    if(box){
+      if(off){ box.hidden=true; box.innerHTML=''; }
+      else if(sid){ box.innerHTML=historyHtml(sid,d.hf); box.hidden=false; }
+    }
+    return;
+  }
   if(t.id==='compAdd'){ draftComp.push({f:'',p:''}); drawComp(); return; }
   if(d.cback!==undefined){ const x=draftComp[+d.cback]; x.manual=false; if(!fiberList().some(f=>f[0]===x.f)) x.f=''; drawComp(); return; }
   if(d.crm!==undefined){ draftComp.splice(+d.crm,1); drawComp(); return; }
