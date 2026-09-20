@@ -570,25 +570,15 @@ nav.tabs button{padding-bottom:2px}
 .invprev .ip-f{margin-top:14px;font-size:11px}
 .invprev .ip-f::after{content:'';display:block}
 
-/* Десять колонок у 340 пікселів не влазять: числа рвуться посеред цифри,
-   «20,00 €» перетворюється на три рядки. На телефоні лишаємо таблиці
-   природну ширину й даємо горизонтальну прокрутку — документ читається
-   так само, як на папері, просто гортається вбік.
-   Блок мусить стояти ПІСЛЯ базових правил .invprev: медіазапит не додає
-   ваги селектору, тож раніше table-layout:fixed нижче переважав і колонки
-   знову стискалися — саме тому на телефоні нічого не мінялося. */
+.ipfit{overflow:hidden}
+.ipfit>.invprev{transform-origin:top left}
 @media (max-width:640px){
-  .invprev{padding:12px 12px 10px;font-size:12px}
-  .invprev table.ip-t{table-layout:auto;width:auto;min-width:600px;font-size:10.5px;line-height:1.35}
-  .invprev table.ip-t th{font-size:9.5px;padding:5px 6px;white-space:nowrap}
-  .invprev table.ip-t td{padding:5px 6px;white-space:nowrap;overflow-wrap:normal}
-  .invprev table.ip-t th:nth-child(6),
-  .invprev table.ip-t td:nth-child(6){white-space:normal;min-width:118px}
-  .invprev table.ip-t colgroup{display:none}
-  .invprev .tbl-wrap{margin:0 -12px;padding:0 12px;
-    /* світла смужка праворуч підказує, що таблиця гортається */
-    background:linear-gradient(to left, rgba(0,0,0,.06), rgba(0,0,0,0) 22px) right center / 22px 100% no-repeat}
-  .invprev .ip-meta,.invprev .ip-tot,.invprev .ip-w,.invprev .ip-f{font-size:10.5px}
+  /* документ малюється у ширині IP_W, тож розкладка та сама, що на ПК —
+     лише цифри не дозволяємо рвати посеред числа */
+  .invprev table.ip-t{min-width:0}
+  .invprev table.ip-t td{overflow-wrap:normal}
+  .invprev table.ip-t td.c{white-space:nowrap}
+  .invprev .tbl-wrap{overflow:visible;margin:0;padding:0;background:none}
 }
 
 body.locked{overflow:hidden}
@@ -3091,17 +3081,17 @@ function openInvoice(id){
   const pay = allSmp(o)&&!oShip(o) ? 'Без оплати (пробники)' : (o.terms==='prepay'?'Передоплата':`Відтермінування ${o.days} дн.${o.due?`, оплатити до ${fmtDate(o.due)}`:''}`);
   const cell=v=>esc(String(v??'').trim())||'—';
   const rows=o.lines.map((li,i)=>{ const x=skuById(li.sku)||{}, q=lq(li), c=lc(li);
-    return `<tr><td class="c">${i+1}</td>
-      <td>${cell(x.maker)}</td>
-      <td>${cell(x.art)}</td>
-      <td>${cell(x.color)}</td>
-      <td>${cell(x.meter)}</td>
-      <td class="ip-s">${cell(compText(x.comp))}</td>
-      <td class="c">${fmtKg(q)}</td><td class="c">${fmtN(c)}</td>
-      <td class="c">${li.sample?'—':fmtEur(li.price)}</td>
-      <td class="c">${li.sample?'пробник':fmtEur(q*li.price)}</td></tr>`;}).join('');
+    return `<tr><td class="c" data-l="Позиція">${i+1}</td>
+      <td data-l="Бренд">${cell(x.maker)}</td>
+      <td data-l="Артикул">${cell(x.art)}</td>
+      <td data-l="Колір">${cell(x.color)}</td>
+      <td data-l="Nm">${cell(x.meter)}</td>
+      <td class="ip-s" data-l="Складники">${cell(compText(x.comp))}</td>
+      <td class="c" data-l="Кг">${fmtKg(q)}</td><td class="c" data-l="Конусів">${fmtN(c)}</td>
+      <td class="c" data-l="Ціна, €/кг">${li.sample?'—':fmtEur(li.price)}</td>
+      <td class="c" data-l="Сума, €">${li.sample?'пробник':fmtEur(q*li.price)}</td></tr>`;}).join('');
   openSheet(`${head('Замовлення № '+orderNo(o))}
-    <div class="invprev">
+    <div class="ipfit"><div class="invprev">
       <div class="ip-top"><div class="ip-co">Diamant Group Filati</div><div class="ip-sub">Premium Italian Stock Yarn</div></div>
       <div class="ip-h1">Замовлення № ${orderNo(o)}</div>
       <div class="ip-meta">
@@ -3127,12 +3117,37 @@ function openInvoice(id){
       ${o.comment?`<div class="ip-s" style="margin-top:8px">Коментар: ${esc(o.comment)}</div>`:''}
       ${hasSmp(o)?`<div class="ip-s">Пробники надані безкоштовно.</div>`:''}
       <div class="ip-f">dgfilati.online</div>
-    </div>
+    </div></div>
     <div class="pair" style="margin-top:12px">
       <button class="btn ghost" data-close>Закрити</button>
       <button class="btn" data-invsave="${o.id}">Зберегти у Word</button>
     </div>`);
+  fitInv();
 }
+
+/* Документ малюється у своїй природній ширині (IP_W), а на телефоні
+   пропорційно зменшується цілком — як аркуш, який тримаєш далі від очей.
+   Нічого не рветься, нічого не гортається вбік; дрібні місця користувач
+   наближає пальцями, бо масштабування сторінки не заблоковане. */
+const IP_W = 660;
+function fitInv(){
+  const box = document.querySelector('#panel .ipfit');
+  if(!box) return;
+  const el = box.querySelector('.invprev');
+  if(!el) return;
+  const avail = box.clientWidth;
+  if(!avail) return;
+  if(avail >= IP_W){                      // на ПК лишаємо як було
+    el.style.width=''; el.style.transform=''; box.style.height='';
+    return;
+  }
+  const z = avail / IP_W;
+  el.style.width = IP_W + 'px';
+  el.style.transform = 'scale(' + z + ')';
+  box.style.height = Math.ceil(el.offsetHeight * z) + 'px';
+}
+addEventListener('resize', fitInv);
+addEventListener('orientationchange', ()=>setTimeout(fitInv, 120));
 async function exportInvoice(id){
   const o=oById(id); if(!o||!seeSale()) return;
   let bytes;
@@ -4535,8 +4550,10 @@ function openScan(){
   markNav('scanBtn');
   openSheet(`${head('Сканер')}
     <video class="video" id="vid" playsinline autoplay muted></video>
-    <p class="hint" id="scanMsg" style="margin-top:10px">Наведіть камеру на штрихкод.</p>
+    <p class="hint" id="scanMsg" style="margin-top:10px">Вмикаю камеру…</p>
+    <p class="hint" id="scanErr" style="margin-top:-6px;display:none;opacity:.75;font-size:12px"></p>
     <div class="scan-alt">
+      <button class="btn ghost" id="camRetry" style="display:none">Увімкнути камеру</button>
       <label class="btn ghost filebtn">Сканувати код<input type="file" accept="image/*" capture="environment" id="scanFile"></label>
       <div style="display:flex;gap:8px"><input id="manualCode" placeholder="Або введіть код" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:11px 12px"><button class="btn" id="manualGo">Знайти</button></div>
     </div>`);
@@ -4566,36 +4583,79 @@ function inAppBrowser(){
 
 async function startCamera(){
   const msg = t => { const el=$('#scanMsg'); if(el) el.textContent=t; };
+  const det = e => {
+    const el=$('#scanErr'); if(!el) return;
+    if(!e){ el.style.display='none'; el.textContent=''; return; }
+    const n=(e && (e.name||e.constructor&&e.constructor.name))||'Error';
+    el.textContent = 'Технічно: ' + n + (e.message ? ' — ' + e.message : '');
+    el.style.display='block';
+  };
+  const retry = on => { const b=$('#camRetry'); if(b) b.style.display = on ? 'block' : 'none'; };
   const why = e => {
-    const n = (e && (e.name || e.constructor?.name)) || '';
+    const n = (e && (e.name || e.constructor&&e.constructor.name)) || '';
     if(n==='NotAllowedError' || n==='SecurityError')
-      return 'Доступ до камери заборонено. Дозвольте камеру для цього сайту в налаштуваннях браузера й оновіть сторінку.';
+      return 'Доступ до камери заборонено. Дозвольте камеру для цього сайту в налаштуваннях браузера, потім натисніть «Увімкнути камеру».';
     if(n==='NotFoundError' || n==='OverconstrainedError')
       return 'Камеру не знайдено. Скористайтеся кнопкою «Сканувати код» нижче або введіть його вручну.';
     if(n==='NotReadableError')
-      return 'Камера зайнята іншим застосунком. Закрийте його й спробуйте ще раз.';
-    return 'Камера недоступна' + (e && e.message ? ': ' + e.message : '') + '. Скористайтеся кнопкою «Сканувати код» нижче.';
+      return 'Камера зайнята іншим застосунком або вкладкою. Закрийте їх і натисніть «Увімкнути камеру».';
+    return 'Камера недоступна. Скористайтеся кнопкою «Сканувати код» нижче.';
   };
+
+  det(null); retry(false);
+  const vid = $('#vid');
+  if(!vid) return;
+
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    msg('Цей браузер не дає сайтам доступ до камери. Скористайтеся кнопкою «Сканувати код» нижче.');
+    det({name:'NoMediaDevices', message:'navigator.mediaDevices недоступний, протокол ' + location.protocol});
+    return;
+  }
+
+  /* Потік беремо самі, а не через бібліотеку: так браузер показує звичний
+     запит дозволу, а помилка приходить з точною назвою — інакше ZXing
+     ховає її за власним винятком і людина бачить лише «не працює». */
+  let stream=null;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }, audio:false });
+  }catch(e1){
+    try{ stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false }); }
+    catch(e2){ msg(why(e2)); det(e2); retry(true); return; }
+  }
+  camStream = stream;
+
+  try{
+    vid.setAttribute('playsinline','');
+    vid.muted = true;
+    vid.srcObject = stream;
+    await vid.play();
+  }catch(e){ det(e); }
 
   try{
     reader = new ZXing.BrowserMultiFormatReader();
     const onRes = res => { if(res) found(res.getText()); };
-
-    if(typeof reader.decodeFromConstraints === 'function'){
-      // задня камера, вища роздільність — дрібні штрихкоди на конусах інакше не читаються
-      await reader.decodeFromConstraints(
-        { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } },
-        'vid', onRes);
+    if(typeof reader.decodeFromStream === 'function'){
+      await reader.decodeFromStream(stream, 'vid', onRes);
+    } else if(typeof reader.decodeFromVideoElement === 'function'){
+      await reader.decodeFromVideoElement(vid, onRes);
     } else {
       await reader.decodeFromVideoDevice(undefined, 'vid', onRes);
     }
     msg('Наведіть камеру на штрихкод.');
   }catch(e){
     console.warn('scanner', e);
-    msg(why(e));
+    msg(why(e)); det(e); retry(true);
   }
 }
-function stopScan(){ try{ reader && reader.reset(); }catch(e){} reader=null; }
+let camStream=null;
+function stopScan(){
+  try{ reader && reader.reset(); }catch(e){}
+  reader=null;
+  try{ camStream && camStream.getTracks().forEach(t=>t.stop()); }catch(e){}
+  camStream=null;
+  const v=$('#vid'); if(v){ try{ v.srcObject=null; }catch(e){} }
+}
 function found(code){
   code = String(code).trim(); if(!code) return;
   stopScan();
@@ -4711,6 +4771,7 @@ document.addEventListener('click', e=>{
       if(from&&to&&from>to){ $('#xerr').innerHTML='<div class="err">Дата «з» пізніша за дату «по».</div>'; break; }
       $('#xerr').innerHTML=''; exportXlsx({sheets,from,to}); break; }
     case 'manualGo': found($('#manualCode').value); break;
+    case 'camRetry': stopScan(); startCamera(); break;
     case 'logoutBtn': doLogout(); break;
   }
 });
