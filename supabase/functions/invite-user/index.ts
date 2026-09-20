@@ -65,8 +65,11 @@ Deno.serve(async (req) => {
     const admin = createClient(URL_, SERVICE, { auth: { persistSession: false } })
     const { data: me } = await admin
       .from('profiles').select('role, removed').eq('id', user.id).single()
-    if (!me || me.removed || !['admin', 'accountant'].includes(me.role))
-      return reply({ error: 'Доступи створює лише адмін або головний бухгалтер' }, 403)
+    // Доступи роздає тільки адмін. У головного бухгалтера повні робочі
+    // права, але ключ від системи — окремо і в одних руках; список людей
+    // він бачить, змінювати не може.
+    if (!me || me.removed || me.role !== 'admin')
+      return reply({ error: 'Створювати й вимикати доступи може лише адмін' }, 403)
 
     const body = await req.json().catch(() => ({}))
     const mode = String(body.mode || 'create')
@@ -200,12 +203,12 @@ Deno.serve(async (req) => {
       if (!target) return reply({ error: 'Такого користувача немає' }, 404)
       if (target.removed) return reply({ ok: true })
 
-      // має лишитися хоча б один адмін або головний бухгалтер
-      if (['admin', 'accountant'].includes(target.role)) {
+      // має лишитися хоча б один адмін, інакше систему нікому буде відкрити
+      if (target.role === 'admin') {
         const { count } = await admin
           .from('profiles').select('id', { count: 'exact', head: true })
-          .in('role', ['admin', 'accountant']).eq('removed', false)
-        if ((count ?? 0) <= 1) return reply({ error: 'Має лишитися хоча б один адмін або головний бухгалтер' }, 400)
+          .eq('role', 'admin').eq('removed', false)
+        if ((count ?? 0) <= 1) return reply({ error: 'Має лишитися хоча б один адмін' }, 400)
       }
 
       // звільняємо логін: службову адресу відводимо вбік, у профілі лишаємо як було

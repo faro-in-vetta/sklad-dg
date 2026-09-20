@@ -1075,6 +1075,7 @@ const PHRASES = {
     'Маржа цього місяця':'Margine del mese',
     'Маржа, €':'Margine, €',
     'Має лишитися хоча б один Адмін або Головний бухгалтер':'Deve restare almeno un amministratore o capo contabile',
+    'Має лишитися хоча б один Адмін':'Deve restare almeno un amministratore',
     'Менеджер':'Commerciale',
     'Меринос':'Merino',
     'Мериносова вовна':'Lana merino',
@@ -1641,6 +1642,7 @@ const PHRASES = {
     'Маржа цього місяця':'Margin this month',
     'Маржа, €':'Margin, €',
     'Має лишитися хоча б один Адмін або Головний бухгалтер':'At least one admin or chief accountant must remain',
+    'Має лишитися хоча б один Адмін':'At least one admin must remain',
     'Менеджер':'Manager',
     'Меринос':'Merino',
     'Мериносова вовна':'Merino wool',
@@ -2090,15 +2092,19 @@ USERS[0].email='alessandro@example.com'; USERS[1].email='marina@example.com'; US
 const ROLE = {admin:'Адмін', accountant:'Головний бухгалтер', storekeeper:'Комірник', manager:'Менеджер', client:'Клієнт'};
 const ROLE_DESC = {
   admin:'усі права без винятку, плюс доступ до людей, режиму налагодження та видалення назавжди',
-  accountant:'усі робочі права: ціни й собівартість, дозвіл на відвантаження, відмітка оплат, повернення, анулювання, дебіторка, аналітика, експорт',
+  accountant:'усі робочі права: ціни й собівартість, дозвіл на відвантаження, відмітка оплат, повернення, анулювання, дебіторка, аналітика, експорт. Людей і доступи не створює й не вимикає',
   storekeeper:'прихід товару, нові SKU й фото, коригування залишків, збірка та відвантаження заявок, пробники. Цін продажу й дебіторки не бачить',
   manager:'каталог із цінами продажу, створення та редагування власних заявок, пробники, дебіторка. Собівартості не бачить, залишків не змінює',
   client:'ті самі права, що в менеджера, але бачить лише свої заявки й власну дебіторку. Чужих замовлень і сум не бачить'
 };
 const ALL = {sku:1,in:1,adj:1,order:1,pick:1,ship:1,fin:1,smp:1,users:1,delsku:1};
+/* Доступи роздає лише адмін. У головного бухгалтера повні робочі права —
+   гроші, ціни, відвантаження, — але створювати й вимикати людей він не може:
+   це окремий ключ від системи, і він має бути в одних руках. */
+const ACCOUNTANT = Object.assign({}, ALL); delete ACCOUNTANT.users;
 const CAN = {
   admin:ALL,
-  accountant:ALL,
+  accountant:ACCOUNTANT,
   storekeeper:{sku:1,in:1,adj:1,pick:1,ship:1,smp:1},
   manager:{order:1,smp:1},
   client:{order:1,smp:1}          // права ті самі, що в менеджера; звужує їх не роль, а прив'язка до клієнта
@@ -3932,8 +3938,8 @@ function setClientName(uidv, val){
 
 function setRole(uidv, role){
   const u=S.users.find(x=>x.id===uidv); if(!u) return;
-  const admins=activeUsers().filter(x=>CAN[x.role].users);
-  if(CAN[u.role].users && !CAN[role].users && admins.length<=1){ toast('Має лишитися хоча б один Адмін або Головний бухгалтер'); openSettings(); return; }
+  const admins=activeUsers().filter(x=>CAN[x.role] && CAN[x.role].users);
+  if(CAN[u.role] && CAN[u.role].users && !(CAN[role]||{}).users && admins.length<=1){ toast('Має лишитися хоча б один Адмін'); openSettings(); return; }
   u.role=role;
   if(role!=='client') u.client='';          // прив'язка має сенс лише для клієнта
   if(save()){ toast(u.name+': '+ROLE[role]); render();
