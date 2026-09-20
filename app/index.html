@@ -2838,7 +2838,7 @@ function openOrderView(id){
       </div>
     </div>
     ${canEditOrder(o)?`<button class="btn plat" data-oedit="${o.id}"><span class="dot" style="background:var(--gold)"></span>Змінити заявку</button>`:''}
-    ${me().role==='admin'?`<button class="btn ghost small" data-opurge="${o.id}" style="width:100%;margin-top:8px">Видалити заявку назавжди</button>`:''}
+    ${me().role==='admin'?`<button class="btn ghost small" data-opurge="${o.id}" style="width:100%;margin:18px 0 16px">Видалити заявку назавжди</button>`:''}
     ${o.status==='active'&&!canEditOrder(o)?`<p class="hint">${['res','pick'].includes(oStage(o))?'Поки склад не підтвердив збірку, оплату й дозвіл на відвантаження не проводимо: кількість ще може змінитися.':'Заявка вже в роботі, змінювати її не можна. Щоб змінити, анулюйте й створіть нову.'}</p>`:''}
     ${(()=>{const b=orderActions(o); return b.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${b.join('')}</div>`:''})()}
     <div class="box"><h3>Історія заявки</h3>
