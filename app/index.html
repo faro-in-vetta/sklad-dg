@@ -318,7 +318,24 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .pricebox .v{font-size:18px;font-weight:700}
 @media (max-width:420px){.pricebox .v{font-size:16px}}
 .gear{background:var(--surface);border:1px solid var(--line);border-radius:50%;width:38px;height:38px;flex:none;display:grid;place-items:center;color:var(--ink)}
-.tbl-wrap{overflow-x:auto;margin:0 -4px}
+.tbl-wrap{overflow-x:auto;margin:0 -4px;-webkit-overflow-scrolling:touch}
+/* Десять колонок у 340 пікселів не влазять: числа рвуться посеред цифри,
+   «20,00 €» перетворюється на три рядки. На телефоні лишаємо таблиці
+   природну ширину й даємо горизонтальну прокрутку — документ читається
+   так само, як на папері, просто гортається вбік. */
+@media (max-width:640px){
+  .invprev table.ip-t{table-layout:auto;min-width:640px}
+  .invprev table.ip-t th,
+  .invprev table.ip-t td{white-space:nowrap;padding:5px 6px}
+  .invprev table.ip-t th:nth-child(6),
+  .invprev table.ip-t td:nth-child(6){white-space:normal;min-width:130px}
+  .invprev table.ip-t colgroup{display:none}
+  .invprev .tbl-wrap{margin:0 -14px;padding:0 14px;
+    /* світла смужка праворуч підказує, що таблиця гортається */
+    background:linear-gradient(to left, rgba(0,0,0,.06), rgba(0,0,0,0) 22px) right center / 22px 100% no-repeat}
+  .invprev table.ip-t{font-size:10.5px;min-width:560px}
+  .invprev table.ip-t th{font-size:10px}
+}
 table.t{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}
 table.t th,table.t td{padding:7px 6px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
 table.t th{color:var(--muted);font-weight:500;border-top:0}
@@ -559,7 +576,7 @@ nav.tabs button{padding-bottom:2px}
 .invprev .ip-meta div{margin-bottom:2px}
 .invprev .ip-meta span{color:#777}
 .invprev .ip-s{font-size:11px;color:#777}
-.invprev table.ip-t{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px;color:#111;table-layout:fixed}
+.invprev table.ip-t{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px;color:#111;table-layout:fixed;font-variant-numeric:tabular-nums}
 .invprev table.ip-t th{background:#F3EADC;border:1px solid #D9CBB8;padding:4px 5px;text-align:left;font-weight:700;font-size:10px}
 .invprev table.ip-t td{border:1px solid #D9CBB8;padding:4px 5px;vertical-align:middle;overflow-wrap:anywhere}
 .invprev table.ip-t .c{text-align:center}
@@ -980,14 +997,16 @@ const PHRASES = {
     'Зібрано · чекає передоплати':'Preparato · in attesa di acconto',
     'Камера зайнята іншим застосунком. Закрийте його й спробуйте ще раз.':'La fotocamera è usata da un\'altra app. Chiudila e riprova.',
     'Камера недоступна':'Fotocamera non disponibile',
-    'Камеру не знайдено. Сфотографуйте код кнопкою нижче або введіть його.':'Fotocamera non trovata. Fotografa il codice col pulsante qui sotto oppure inseriscilo.',
+    'Камеру не знайдено. Скористайтеся кнопкою «Сканувати код» нижче або введіть його вручну.':'Fotocamera non trovata. Usa il pulsante «Scansiona il codice» qui sotto oppure inseriscilo a mano.',
+    '. Скористайтеся кнопкою «Сканувати код» нижче.':'. Usa il pulsante «Scansiona il codice» qui sotto.',
+    'Кнопка «Сканувати код» нижче працює й тут.':'Il pulsante «Scansiona il codice» qui sotto funziona anche qui.',
     'Картка й фото зникнуть з каталогу. Історія операцій і звіти збережуться.':'La scheda e le foto spariscono dal catalogo. Lo storico dei movimenti e i report restano.',
     'Картку видалено (залишок нульовий)':'Scheda eliminata (giacenza a zero)',
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
     'Клієнт:':'Cliente:',
-    'Код не розпізнано. Сфотографуйте ближче, рівно й при кращому світлі.':'Codice non riconosciuto. Riprova più da vicino, dritto e con più luce.',
+    'Код не розпізнано. Наведіть ближче, рівно й при кращому світлі.':'Codice non riconosciuto. Riprova più da vicino, dritto e con più luce.',
     'Коли ліміт буде вичерпано, нові фото перестануть зберігатися. Час переходити на Pro.':'Quando il limite sarà esaurito, le nuove foto non si salveranno più. È ora di passare a Pro.',
     'Колір':'Colore',
     'Колір — назва й номер, необов’язково':'Colore — nome e numero, facoltativo',
@@ -1176,7 +1195,7 @@ const PHRASES = {
     'Сума складу має бути 100%.':'La composizione deve sommare a 100%.',
     'Сума, €':'Importo, €',
     'Суму доставки внесе бухгалтер при погодженні відвантаження.':'L\'importo della spedizione lo inserisce il contabile al momento dell\'autorizzazione.',
-    'Сфотографувати код':'Fotografa il codice',
+    'Сканувати код':'Scansiona il codice',
     'Сховище заповнене на':'L\'archivio è pieno al',
     'Сірі й чорні':'Grigi e neri',
     'Так, анулювати':'Sì, annulla',
@@ -1532,14 +1551,16 @@ const PHRASES = {
     'Зібрано · чекає передоплати':'Picked · awaiting prepayment',
     'Камера зайнята іншим застосунком. Закрийте його й спробуйте ще раз.':'The camera is in use by another app. Close it and try again.',
     'Камера недоступна':'Camera unavailable',
-    'Камеру не знайдено. Сфотографуйте код кнопкою нижче або введіть його.':'Camera not found. Photograph the code with the button below, or type it in.',
+    'Камеру не знайдено. Скористайтеся кнопкою «Сканувати код» нижче або введіть його вручну.':'Camera not found. Use the «Scan the code» button below, or type it in manually.',
+    '. Скористайтеся кнопкою «Сканувати код» нижче.':'. Use the «Scan the code» button below.',
+    'Кнопка «Сканувати код» нижче працює й тут.':'The «Scan the code» button below works here too.',
     'Картка й фото зникнуть з каталогу. Історія операцій і звіти збережуться.':'The card and photos disappear from the catalogue. Movement history and reports are kept.',
     'Картку видалено (залишок нульовий)':'Card deleted (stock at zero)',
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
     'Клієнт:':'Customer:',
-    'Код не розпізнано. Сфотографуйте ближче, рівно й при кращому світлі.':'Code not recognised. Try closer, straight on and in better light.',
+    'Код не розпізнано. Наведіть ближче, рівно й при кращому світлі.':'Code not recognised. Try closer, straight on and in better light.',
     'Коли ліміт буде вичерпано, нові фото перестануть зберігатися. Час переходити на Pro.':'Once the limit is reached, new photos will stop saving. Time to move to Pro.',
     'Колір':'Colour',
     'Колір — назва й номер, необов’язково':'Colour — name and number, optional',
@@ -1728,7 +1749,7 @@ const PHRASES = {
     'Сума складу має бути 100%.':'The composition must add up to 100%.',
     'Сума, €':'Amount, €',
     'Суму доставки внесе бухгалтер при погодженні відвантаження.':'The accountant enters the delivery amount when approving the shipment.',
-    'Сфотографувати код':'Photograph the code',
+    'Сканувати код':'Scan the code',
     'Сховище заповнене на':'Storage is',
     'Сірі й чорні':'Greys and blacks',
     'Так, анулювати':'Yes, cancel it',
@@ -4512,9 +4533,15 @@ function openScan(){
     <video class="video" id="vid" playsinline autoplay muted></video>
     <p class="hint" id="scanMsg" style="margin-top:10px">Наведіть камеру на штрихкод.</p>
     <div class="scan-alt">
-      <label class="btn ghost filebtn">Сфотографувати код<input type="file" accept="image/*" capture="environment" id="scanFile"></label>
+      <label class="btn ghost filebtn">Сканувати код<input type="file" accept="image/*" capture="environment" id="scanFile"></label>
       <div style="display:flex;gap:8px"><input id="manualCode" placeholder="Або введіть код" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:11px 12px"><button class="btn" id="manualGo">Знайти</button></div>
     </div>`);
+  if(inAppBrowser()){
+    $('#scanMsg').innerHTML = 'Ви відкрили склад усередині месенджера, а він не дає сайтам доступ до камери. '
+      + 'Натисніть «…» угорі й виберіть «Відкрити в Safari» або «Відкрити в Chrome» — там сканер працює. '
+      + '<b>Кнопка «Сканувати код» нижче працює й тут.</b>';
+    return;
+  }
   if(!window.ZXing){ $('#scanMsg').textContent='Бібліотека сканера не завантажилась. Введіть код вручну.'; return; }
   startCamera();
 }
@@ -4522,6 +4549,17 @@ function openScan(){
 /* Окремо, бо на телефоні є два підводні камені:
    без facingMode вмикається фронтальна камера, а дозвіл на камеру
    доводиться пояснювати людині зрозумілими словами. */
+/* Вбудовані браузери месенджерів не дають сайтам камеру — це їхнє
+   обмеження, не наше. Розпізнаємо їх, щоб сказати людині по суті,
+   а не показувати загальне «доступ заборонено». */
+function inAppBrowser(){
+  const ua = navigator.userAgent || '';
+  if(/(FBAN|FBAV|Instagram|Line\/|Viber|WhatsApp|Telegram|TikTok|OKApp|VKAndroidApp|MicroMessenger)/i.test(ua)) return true;
+  // Telegram на iOS не підписується в UA, але лишає по собі свій місток
+  if(window.TelegramWebviewProxy || window.TelegramWebview) return true;
+  return false;
+}
+
 async function startCamera(){
   const msg = t => { const el=$('#scanMsg'); if(el) el.textContent=t; };
   const why = e => {
@@ -4529,10 +4567,10 @@ async function startCamera(){
     if(n==='NotAllowedError' || n==='SecurityError')
       return 'Доступ до камери заборонено. Дозвольте камеру для цього сайту в налаштуваннях браузера й оновіть сторінку.';
     if(n==='NotFoundError' || n==='OverconstrainedError')
-      return 'Камеру не знайдено. Сфотографуйте код кнопкою нижче або введіть його.';
+      return 'Камеру не знайдено. Скористайтеся кнопкою «Сканувати код» нижче або введіть його вручну.';
     if(n==='NotReadableError')
       return 'Камера зайнята іншим застосунком. Закрийте його й спробуйте ще раз.';
-    return 'Камера недоступна' + (e && e.message ? ': ' + e.message : '') + '. Сфотографуйте код кнопкою нижче.';
+    return 'Камера недоступна' + (e && e.message ? ': ' + e.message : '') + '. Скористайтеся кнопкою «Сканувати код» нижче.';
   };
 
   try{
@@ -4571,7 +4609,7 @@ async function scanFromFile(file){
     const r = new ZXing.BrowserMultiFormatReader();
     const res = await r.decodeFromImageUrl(url);
     found(res.getText());
-  }catch(e){ $('#scanMsg').textContent='Код не розпізнано. Сфотографуйте ближче, рівно й при кращому світлі.'; }
+  }catch(e){ $('#scanMsg').textContent='Код не розпізнано. Наведіть ближче, рівно й при кращому світлі.'; }
   finally{ URL.revokeObjectURL(url); }
 }
 
