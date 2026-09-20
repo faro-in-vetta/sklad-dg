@@ -4555,7 +4555,7 @@ function openScan(){
     <p class="hint" id="scanErr" style="margin-top:-6px;display:none;opacity:.75;font-size:12px"></p>
     <div class="scan-alt">
       <button class="btn ghost" id="camRetry" style="display:none">Увімкнути камеру</button>
-      <label class="btn ghost filebtn">Сканувати код<input type="file" accept="image/*" capture="environment" id="scanFile"></label>
+      <label class="btn ghost filebtn">Сканувати код<input type="file" accept="image/*" id="scanFile"></label>
       <div style="display:flex;gap:8px"><input id="manualCode" placeholder="Або введіть код" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:11px 12px"><button class="btn" id="manualGo">Знайти</button></div>
     </div>`);
   if(inAppBrowser()){
@@ -4651,28 +4651,33 @@ async function startCamera(){
   }
   camStream = stream;
 
+  /* Потік віддаємо бібліотеці НЕторканим. Якщо підключити його до <video>
+     самому й запустити відтворення, ZXing потім чекає на подію «playing»,
+     яка вже відбулася — і декодер мовчки зависає назавжди: картинка йде,
+     а штрихкоди не читаються. Саме це й було. */
   try{
-    vid.setAttribute('playsinline','');
-    vid.muted = true;
-    vid.srcObject = stream;
-    await vid.play();
-  }catch(e){ det(e); }
-
-  try{
-    reader = new ZXing.BrowserMultiFormatReader();
+    reader = new ZXing.BrowserMultiFormatReader(scanHints(), 150);
+    reader.timeBetweenScansMillis = 150;
     const onRes = res => { if(res) found(res.getText()); };
-    if(typeof reader.decodeFromStream === 'function'){
-      await reader.decodeFromStream(stream, 'vid', onRes);
-    } else if(typeof reader.decodeFromVideoElement === 'function'){
-      await reader.decodeFromVideoElement(vid, onRes);
-    } else {
-      await reader.decodeFromVideoDevice(undefined, 'vid', onRes);
-    }
+    await reader.decodeFromStream(stream, 'vid', onRes);
     msg('Наведіть камеру на штрихкод.');
   }catch(e){
     console.warn('scanner', e);
     msg(why(e)); det(e); retry(true);
   }
+}
+
+/* Обмежуємо перелік форматів: декодер не гадає між двома десятками
+   кодувань, а цілеспрямовано шукає ті, що реально є на етикетках —
+   від цього розпізнавання помітно швидше й надійніше. */
+function scanHints(){
+  try{
+    const F = ZXing.BarcodeFormat, H = ZXing.DecodeHintType;
+    const m = new Map();
+    m.set(H.POSSIBLE_FORMATS, [F.CODE_128, F.CODE_39, F.CODE_93, F.EAN_13, F.EAN_8, F.UPC_A, F.ITF, F.QR_CODE, F.DATA_MATRIX]);
+    m.set(H.TRY_HARDER, true);
+    return m;
+  }catch(e){ return undefined; }
 }
 let camStream=null;
 function stopScan(){
@@ -4727,14 +4732,68 @@ function found(code){
   }
 }
 async function scanFromFile(file){
-  $('#scanMsg').textContent='Розпізнаю…';
-  const url = URL.createObjectURL(file);
+  const el = $('#scanMsg');
+  const say = t => { if(el) el.innerHTML = t; };
+  say('Розпізнаю…');
+
+  /* Знімок з телефона — це 12 мегапікселів, де штрихкод займає смужку
+     посередині. ZXing на такому розмірі часто здається, тому зменшуємо
+     кадр, підсилюємо контраст і пробуємо кілька поворотів: етикетку
+     нерідко фотографують боком. */
   try{
-    const r = new ZXing.BrowserMultiFormatReader();
-    const res = await r.decodeFromImageUrl(url);
-    found(res.getText());
-  }catch(e){ $('#scanMsg').textContent='Код не розпізнано. Наведіть ближче, рівно й при кращому світлі.'; }
-  finally{ URL.revokeObjectURL(url); }
+    const img = await loadImage(file);
+    const reader2 = new ZXing.BrowserMultiFormatReader(scanHints());
+    for(const deg of [0, 90, 270, 180]){
+      for(const hard of [false, true]){
+        const url = frameToUrl(img, deg, hard);
+        try{
+          const res = await reader2.decodeFromImageUrl(url);
+          if(res){ found(res.getText()); return; }
+        }catch(e){ /* цей варіант не вийшов — пробуємо наступний */ }
+      }
+    }
+    say('Код не розпізнано. Зніміть ближче: штрихкод має займати більшу частину кадру, рівно й без відблисків.');
+  }catch(e){
+    say('Не вдалося прочитати знімок. Спробуйте ще раз.');
+  }
+}
+
+function loadImage(file){
+  return new Promise((ok, bad)=>{
+    const url = URL.createObjectURL(file);
+    const im = new Image();
+    im.onload = ()=>{ URL.revokeObjectURL(url); ok(im); };
+    im.onerror = e =>{ URL.revokeObjectURL(url); bad(e); };
+    im.src = url;
+  });
+}
+
+function frameToUrl(img, deg, hard){
+  const MAX = 1400;
+  let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+  const k = Math.min(1, MAX / Math.max(w, h));
+  w = Math.round(w * k); h = Math.round(h * k);
+  const swap = (deg === 90 || deg === 270);
+  const c = document.createElement('canvas');
+  c.width  = swap ? h : w;
+  c.height = swap ? w : h;
+  const x = c.getContext('2d');
+  x.save();
+  x.translate(c.width/2, c.height/2);
+  x.rotate(deg * Math.PI / 180);
+  x.drawImage(img, -w/2, -h/2, w, h);
+  x.restore();
+  if(hard){
+    // сірий кадр із різким порогом — рятує знімки з тінню або відблиском
+    const d = x.getImageData(0,0,c.width,c.height), a = d.data;
+    for(let i=0;i<a.length;i+=4){
+      const g = (a[i]*0.299 + a[i+1]*0.587 + a[i+2]*0.114);
+      const v = g > 128 ? 255 : 0;
+      a[i]=a[i+1]=a[i+2]=v;
+    }
+    x.putImageData(d,0,0);
+  }
+  return c.toDataURL('image/png');
 }
 
 /* toast */
