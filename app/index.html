@@ -1007,9 +1007,10 @@ const PHRASES = {
     'Зібрано · чекає передоплати':'Preparato · in attesa di acconto',
     'Камера зайнята іншим застосунком. Закрийте його й спробуйте ще раз.':'La fotocamera è usata da un\'altra app. Chiudila e riprova.',
     'Камера недоступна':'Fotocamera non disponibile',
-    'Камеру не знайдено. Скористайтеся кнопкою «Сканувати код» нижче або введіть його вручну.':'Fotocamera non trovata. Usa il pulsante «Scansiona il codice» qui sotto oppure inseriscilo a mano.',
-    '. Скористайтеся кнопкою «Сканувати код» нижче.':'. Usa il pulsante «Scansiona il codice» qui sotto.',
-    'Кнопка «Сканувати код» нижче працює й тут.':'Il pulsante «Scansiona il codice» qui sotto funziona anche qui.',
+    'Камеру не знайдено. Введіть код вручну в полі нижче.':'Fotocamera non trovata. Inserisci il codice a mano nel campo qui sotto.',
+    'Камера недоступна. Введіть код вручну в полі нижче.':'Fotocamera non disponibile. Inserisci il codice a mano nel campo qui sotto.',
+    'Код можна ввести вручну в полі нижче.':'Puoi inserire il codice a mano nel campo qui sotto.',
+    'Наведіть штрихкод у рамку.':'Inquadra il codice a barre nel riquadro.',
     'Картка й фото зникнуть з каталогу. Історія операцій і звіти збережуться.':'La scheda e le foto spariscono dal catalogo. Lo storico dei movimenti e i report restano.',
     'Картку видалено (залишок нульовий)':'Scheda eliminata (giacenza a zero)',
     'Каталог':'Catalogo',
@@ -1205,7 +1206,6 @@ const PHRASES = {
     'Сума складу має бути 100%.':'La composizione deve sommare a 100%.',
     'Сума, €':'Importo, €',
     'Суму доставки внесе бухгалтер при погодженні відвантаження.':'L\'importo della spedizione lo inserisce il contabile al momento dell\'autorizzazione.',
-    'Сканувати код':'Scansiona il codice',
     'Сховище заповнене на':'L\'archivio è pieno al',
     'Сірі й чорні':'Grigi e neri',
     'Так, анулювати':'Sì, annulla',
@@ -1561,9 +1561,10 @@ const PHRASES = {
     'Зібрано · чекає передоплати':'Picked · awaiting prepayment',
     'Камера зайнята іншим застосунком. Закрийте його й спробуйте ще раз.':'The camera is in use by another app. Close it and try again.',
     'Камера недоступна':'Camera unavailable',
-    'Камеру не знайдено. Скористайтеся кнопкою «Сканувати код» нижче або введіть його вручну.':'Camera not found. Use the «Scan the code» button below, or type it in manually.',
-    '. Скористайтеся кнопкою «Сканувати код» нижче.':'. Use the «Scan the code» button below.',
-    'Кнопка «Сканувати код» нижче працює й тут.':'The «Scan the code» button below works here too.',
+    'Камеру не знайдено. Введіть код вручну в полі нижче.':'Camera not found. Type the code in manually in the field below.',
+    'Камера недоступна. Введіть код вручну в полі нижче.':'Camera unavailable. Type the code in manually in the field below.',
+    'Код можна ввести вручну в полі нижче.':'You can type the code in manually in the field below.',
+    'Наведіть штрихкод у рамку.':'Point the barcode into the frame.',
     'Картка й фото зникнуть з каталогу. Історія операцій і звіти збережуться.':'The card and photos disappear from the catalogue. Movement history and reports are kept.',
     'Картку видалено (залишок нульовий)':'Card deleted (stock at zero)',
     'Каталог':'Catalogue',
@@ -1759,7 +1760,6 @@ const PHRASES = {
     'Сума складу має бути 100%.':'The composition must add up to 100%.',
     'Сума, €':'Amount, €',
     'Суму доставки внесе бухгалтер при погодженні відвантаження.':'The accountant enters the delivery amount when approving the shipment.',
-    'Сканувати код':'Scan the code',
     'Сховище заповнене на':'Storage is',
     'Сірі й чорні':'Greys and blacks',
     'Так, анулювати':'Yes, cancel it',
@@ -4576,13 +4576,12 @@ function openScan(){
     <p class="hint" id="scanErr" style="margin-top:-6px;display:none;opacity:.75;font-size:12px"></p>
     <div class="scan-alt">
       <button class="btn ghost" id="camRetry" style="display:none">Увімкнути камеру</button>
-      <label class="btn ghost filebtn">Сканувати код<input type="file" accept="image/*" id="scanFile"></label>
       <div style="display:flex;gap:8px"><input id="manualCode" placeholder="Або введіть код" style="flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:11px 12px"><button class="btn" id="manualGo">Знайти</button></div>
     </div>`);
   if(inAppBrowser()){
     $('#scanMsg').innerHTML = 'Ви відкрили склад усередині месенджера, а він не дає сайтам доступ до камери. '
       + 'Натисніть «…» угорі й виберіть «Відкрити в Safari» або «Відкрити в Chrome» — там сканер працює. '
-      + '<b>Кнопка «Сканувати код» нижче працює й тут.</b>';
+      + '<b>Код можна ввести вручну в полі нижче.</b>';
     return;
   }
   if(!window.ZXing){ $('#scanMsg').textContent='Бібліотека сканера не завантажилась. Введіть код вручну.'; return; }
@@ -4643,10 +4642,10 @@ async function startCamera(){
     if(n==='NotAllowedError' || n==='SecurityError')
       return 'Доступ до камери заборонено.<br>' + camHelp();
     if(n==='NotFoundError' || n==='OverconstrainedError')
-      return 'Камеру не знайдено. Скористайтеся кнопкою «Сканувати код» нижче або введіть його вручну.';
+      return 'Камеру не знайдено. Введіть код вручну в полі нижче.';
     if(n==='NotReadableError')
       return 'Камера зайнята іншим застосунком або вкладкою. Закрийте їх і натисніть «Увімкнути камеру».';
-    return 'Камера недоступна. Скористайтеся кнопкою «Сканувати код» нижче.';
+    return 'Камера недоступна. Введіть код вручну в полі нижче.';
   };
 
   det(null); retry(false);
@@ -4654,7 +4653,7 @@ async function startCamera(){
   if(!vid) return;
 
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    msg('Цей браузер не дає сайтам доступ до камери. Скористайтеся кнопкою «Сканувати код» нижче.');
+    msg('Цей браузер не дає сайтам доступ до камери. Введіть код вручну в полі нижче.');
     det({name:'NoMediaDevices', message:'navigator.mediaDevices недоступний, протокол ' + location.protocol});
     return;
   }
@@ -4801,71 +4800,6 @@ function found(code){
     toast(`Код ${code} немає в каталозі`);
   }
 }
-async function scanFromFile(file){
-  const el = $('#scanMsg');
-  const say = t => { if(el) el.innerHTML = t; };
-  say('Розпізнаю…');
-
-  /* Знімок з телефона — це 12 мегапікселів, де штрихкод займає смужку
-     посередині. ZXing на такому розмірі часто здається, тому зменшуємо
-     кадр, підсилюємо контраст і пробуємо кілька поворотів: етикетку
-     нерідко фотографують боком. */
-  try{
-    const img = await loadImage(file);
-    const reader2 = new ZXing.BrowserMultiFormatReader(scanHints());
-    for(const deg of [0, 90, 270, 180]){
-      for(const hard of [false, true]){
-        const url = frameToUrl(img, deg, hard);
-        try{
-          const res = await reader2.decodeFromImageUrl(url);
-          if(res){ found(res.getText()); return; }
-        }catch(e){ /* цей варіант не вийшов — пробуємо наступний */ }
-      }
-    }
-    say('Код не розпізнано. Зніміть ближче: штрихкод має займати більшу частину кадру, рівно й без відблисків.');
-  }catch(e){
-    say('Не вдалося прочитати знімок. Спробуйте ще раз.');
-  }
-}
-
-function loadImage(file){
-  return new Promise((ok, bad)=>{
-    const url = URL.createObjectURL(file);
-    const im = new Image();
-    im.onload = ()=>{ URL.revokeObjectURL(url); ok(im); };
-    im.onerror = e =>{ URL.revokeObjectURL(url); bad(e); };
-    im.src = url;
-  });
-}
-
-function frameToUrl(img, deg, hard){
-  const MAX = 1400;
-  let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-  const k = Math.min(1, MAX / Math.max(w, h));
-  w = Math.round(w * k); h = Math.round(h * k);
-  const swap = (deg === 90 || deg === 270);
-  const c = document.createElement('canvas');
-  c.width  = swap ? h : w;
-  c.height = swap ? w : h;
-  const x = c.getContext('2d');
-  x.save();
-  x.translate(c.width/2, c.height/2);
-  x.rotate(deg * Math.PI / 180);
-  x.drawImage(img, -w/2, -h/2, w, h);
-  x.restore();
-  if(hard){
-    // сірий кадр із різким порогом — рятує знімки з тінню або відблиском
-    const d = x.getImageData(0,0,c.width,c.height), a = d.data;
-    for(let i=0;i<a.length;i+=4){
-      const g = (a[i]*0.299 + a[i+1]*0.587 + a[i+2]*0.114);
-      const v = g > 128 ? 255 : 0;
-      a[i]=a[i+1]=a[i+2]=v;
-    }
-    x.putImageData(d,0,0);
-  }
-  return c.toDataURL('image/png');
-}
-
 /* toast */
 let tt;
 function toast(m){ const t=$('#toast'); t.textContent=m; t.style.display='block'; clearTimeout(tt); tt=setTimeout(()=>t.style.display='none',2600); }
@@ -4976,7 +4910,6 @@ document.addEventListener('change', async e=>{
     if(c&&sp&&$('#fMk')) $('#fMk').textContent='Націнка: '+fmtPct((sp-c)/c*100);
   }
   if(t.id==='fHex'){ draftHex=t.value; $('#hexPrev').style.background=t.value; $('#hexName').textContent=t.value; document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed','false')); }
-  if(t.id==='scanFile' && t.files[0]) scanFromFile(t.files[0]);
   if(t.dataset && t.dataset.cf!==undefined){ const i=+t.dataset.cf; if(t.value==='__manual'){ draftComp[i].f=''; draftComp[i].manual=true; drawComp(); $(`[data-cfm="${i}"]`)?.focus(); } else { draftComp[i].f=t.value; drawComp(); } }
   if(t.dataset && t.dataset.lsm!==undefined){ syncOD(); OD.lines[+t.dataset.lsm].sample=t.checked; drawOrderEditor(); }
   if(t.id==='odTerms'){ syncOD(); drawOrderEditor(); }
