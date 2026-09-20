@@ -577,7 +577,7 @@ nav.tabs button{padding-bottom:2px}
      лише цифри не дозволяємо рвати посеред числа */
   .invprev table.ip-t{min-width:0}
   .invprev table.ip-t td{overflow-wrap:normal}
-  .invprev table.ip-t td.c{white-space:nowrap}
+  .invprev table.ip-t td.c{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .invprev .tbl-wrap{overflow:visible;margin:0;padding:0;background:none}
 }
 
@@ -3007,7 +3007,7 @@ function wCell(content, o){
 function invoiceDocx(o){
   // Кожне поле пряжі — власна колонка, рядок лишається в один рівень.
   // Шрифт дрібніший, ніж був, бо колонок стало більше.
-  const W=[400,1150,1400,1000,620,1700,800,800,900,1010];
+  const W=[391,978,1174,978,587,1565,685,880,1174,1368]; // ті самі частки, що й у колонках на екрані
   const LEFT=new Set([1,2,3,5]);            // текстові колонки вирівнюємо ліворуч
   const th=(t,i)=>wCell(wP(t,{b:true,sz:16,align:LEFT.has(i)?'left':'center',space:0}),{w:W[i],fill:'F3EADC'});
   const head=`<w:tr><w:trPr><w:tblHeader/></w:trPr>${['№','Бренд','Артикул','Колір','Nm','Складники','Кг','Конусів','Ціна, €/кг','Сума, €'].map(th).join('')}</w:tr>`;
@@ -3100,7 +3100,7 @@ function openInvoice(id){
         <div><span>Дата відвантаження:</span> <b>${o.shippedAt?fmtDate(o.shippedAt):'—'}</b></div>
         <div><span>Умови оплати:</span> <b>${pay}</b></div>
       </div>
-      <div class="tbl-wrap"><table class="ip-t"><colgroup><col style="width:4%"><col style="width:12%"><col style="width:15%"><col style="width:11%"><col style="width:7%"><col style="width:18%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:9%"></colgroup>
+      <div class="tbl-wrap"><table class="ip-t"><colgroup><col style="width:4%"><col style="width:10%"><col style="width:12%"><col style="width:10%"><col style="width:6%"><col style="width:16%"><col style="width:7%"><col style="width:9%"><col style="width:12%"><col style="width:14%"></colgroup>
       <thead><tr><th class="c">№</th><th>Бренд</th><th>Артикул</th><th>Колір</th><th>Nm</th><th>Складники</th><th class="c">Кг</th><th class="c">Конусів</th><th class="c">Ціна, €/кг</th><th class="c">Сума, €</th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="ip-w">
         <div>Вага нетто: <b>${fmtKg(oKg(o))} кг</b></div>
@@ -4581,8 +4581,33 @@ function inAppBrowser(){
   return false;
 }
 
+/* Дозвіл на камеру відкликається в різних місцях на різних платформах,
+   і «дозвольте в налаштуваннях» людині нічого не каже. Пишемо шлях
+   кроками — під ту систему, з якої зайшли. */
+function camHelp(){
+  const ua = navigator.userAgent || '';
+  const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  const chromeIos = ios && /CriOS/i.test(ua);
+  if(chromeIos){
+    return 'Chrome на iPhone: <b>Налаштування iPhone → Chrome → Камера</b> має бути увімкнена. '
+      + 'Далі в Chrome: <b>••• → Налаштування → Налаштування вмісту → Камера → Дозволити</b>. '
+      + 'Потім натисніть «Увімкнути камеру».<br>'
+      + 'Якщо не допомогло — відкрийте <b>sklad.faroinvetta.com у Safari</b>: там камера працює напевно.';
+  }
+  if(ios){
+    return 'Safari на iPhone: натисніть <b>«АА» ліворуч від адреси → Налаштування веб-сайту → Камера → Дозволити</b>, '
+      + 'і перевірте <b>Налаштування iPhone → Safari → Камера</b>. Потім натисніть «Увімкнути камеру».';
+  }
+  if(/Android/i.test(ua)){
+    return 'Android: натисніть <b>значок замка ліворуч від адреси → Дозволи → Камера → Дозволити</b>, '
+      + 'потім «Увімкнути камеру». Якщо камери немає в списку — <b>Налаштування Chrome → Налаштування сайтів → Камера</b>.';
+  }
+  return 'Дозвольте камеру для цього сайту в налаштуваннях браузера (значок замка ліворуч від адреси), '
+    + 'потім натисніть «Увімкнути камеру».';
+}
+
 async function startCamera(){
-  const msg = t => { const el=$('#scanMsg'); if(el) el.textContent=t; };
+  const msg = t => { const el=$('#scanMsg'); if(el) el.innerHTML=t; };
   const det = e => {
     const el=$('#scanErr'); if(!el) return;
     if(!e){ el.style.display='none'; el.textContent=''; return; }
@@ -4594,7 +4619,7 @@ async function startCamera(){
   const why = e => {
     const n = (e && (e.name || e.constructor&&e.constructor.name)) || '';
     if(n==='NotAllowedError' || n==='SecurityError')
-      return 'Доступ до камери заборонено. Дозвольте камеру для цього сайту в налаштуваннях браузера, потім натисніть «Увімкнути камеру».';
+      return 'Доступ до камери заборонено.<br>' + camHelp();
     if(n==='NotFoundError' || n==='OverconstrainedError')
       return 'Камеру не знайдено. Скористайтеся кнопкою «Сканувати код» нижче або введіть його вручну.';
     if(n==='NotReadableError')
