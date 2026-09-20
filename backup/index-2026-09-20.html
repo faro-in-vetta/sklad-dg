@@ -53,22 +53,6 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-/* На телефоні будь-яке поле дрібніше за 16px змушує Safari наближати екран
-   при фокусі — саме через це «з'їжджав масштаб». Тому на сенсорних екранах
-   усі поля рівно 16px, а щільність тримаємо меншими відступами. */
-@media (pointer:coarse){
-  input,select,textarea{font-size:16px !important}
-  .odl-f input{padding:8px 6px !important}
-  .odates{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .odates select{grid-column:1 / -1}
-  .odates input{padding:6px 0 !important}
-  .odates label span{font-size:12px}
-  /* палець має куди влучити */
-  .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
-  .btn.small{min-height:36px}
-  .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
-  .pair > .btn{width:100%}
-}
 body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45;padding-bottom:88px;overflow-x:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -590,7 +574,7 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
       </div>
       <button class="online" id="onlineBtn" aria-label="Хто зараз у базі"></button>
       <span id="syncDot" class="syncdot ok" title="Усі зміни збережено"></span>
-      <button class="gear" id="settingsBtn" aria-label="Доступ і експорт"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="gear" id="settingsBtn" aria-label="Доступ і експорт"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg></button>
     </div>
     <div class="search" id="searchBar">
       <div class="qwrap"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="q" type="search" placeholder="Артикул, бренд, колір, код" aria-label="Пошук"></div>
@@ -606,19 +590,19 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
 
 <nav class="tabs"><div class="in">
   <button data-tab="catalog" aria-current="true">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="nl" data-i18n="nav.catalog">Склад<br>залишки</span></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="nl">Склад<br>залишки</span></button>
   <button data-tab="reserves">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span data-i18n="nav.orders">Заявки</span></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12v18l-6-4-6 4z"/></svg>Заявки</button>
   <button data-tab="debt">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18v12H3zM3 11h18"/><circle cx="8" cy="15" r="1.4"/></svg><span data-i18n="nav.debt">Дебіторка</span></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h18v12H3zM3 11h18"/><circle cx="8" cy="15" r="1.4"/></svg>Дебіторка</button>
   <button id="scanBtn" class="tabbtn" aria-current="false">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke-width="1.5"/></svg><span data-i18n="nav.scan">Сканер</span></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3"/><path d="M7 8v8M10 8v8M13 8v8M16.5 8v8" stroke-width="1.5"/></svg>Сканер</button>
   <button data-tab="journal">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span data-i18n="nav.journal">Історія</span></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Історія</button>
   <button data-tab="stats">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span data-i18n="nav.stats">Аналітика</span></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Аналітика</button>
   <button id="exportBtn" class="tabbtn" aria-current="false">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg><span data-i18n="nav.export">Експорт</span></button>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Експорт</button>
 </div></nav>
 
 <div class="sheet" id="sheet"><div class="panel" id="panel" role="dialog" aria-modal="true"></div></div>
@@ -626,12 +610,12 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
   <form class="auth-card" id="authForm" autocomplete="on">
     <img class="dglogo" src="" alt="" id="authLogo" width="52" height="52">
     <div class="dgname" style="font-size:22px">Diamant Group Filati</div>
-    <div class="dgsub" style="margin-bottom:14px" data-i18n="app.sub">Premium Italian Stock Yarn</div>
-    <label class="f"><span data-i18n="auth.login">Логін</span><input id="authEmail" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
-    <label class="f"><span data-i18n="auth.pass">Пароль</span><input id="authPass" type="password" autocomplete="current-password"></label>
+    <div class="dgsub" style="margin-bottom:14px">Premium Italian Stock Yarn</div>
+    <label class="f">Логін<input id="authEmail" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+    <label class="f">Пароль<input id="authPass" type="password" autocomplete="current-password"></label>
     <div class="err" id="authErr" style="min-height:0;padding:0;background:none;color:var(--red);margin:-4px 0 10px"></div>
-    <button class="btn" id="authBtn" type="submit" style="width:100%" data-i18n="auth.enter">Увійти</button>
-    <p class="hint" style="margin:10px 0 0;text-align:center" data-i18n="auth.hint">Логін і пароль видає адміністратор складу.</p>
+    <button class="btn" id="authBtn" type="submit" style="width:100%">Увійти</button>
+    <p class="hint" style="margin:10px 0 0;text-align:center">Логін і пароль видає адміністратор складу.</p>
   </form>
 </div>
 <div class="toast" id="toast"></div>
@@ -640,1376 +624,6 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
 <script>
 (function(){
 const KEY = 'sklad-pryazhi-proto-v16';
-
-/* Тема інтерфейсу. Вибір зберігається на цьому пристрої: на комп'ютері
-   зручна світла, на телефоні в цеху — темна, і це різні пристрої. */
-/* ---------- мова інтерфейсу ----------
-   Перекладається все, крім даних складу: назви виробників, артикули,
-   кольори й склад пряжі — це те, що вписав комірник, і воно лишається
-   як є будь-якою мовою. */
-const LANG_KEY = 'sklad-lang';
-const LANGS = [['uk','Українська'],['it','Italiano'],['en','English']];
-
-const I18N = {
-  uk: {
-    'app.sub':'Premium Italian Stock Yarn',
-    'auth.login':'Логін', 'auth.pass':'Пароль', 'auth.enter':'Увійти',
-    'auth.hint':'Логін і пароль видає адміністратор складу.',
-    'auth.bad':'Невірний логін або пароль.', 'auth.need':'Вкажіть логін і пароль.',
-    'auth.noprofile':'Профіль не знайдено, зверніться до адміністратора',
-    'auth.off':'Доступ вимкнено',
-    'nav.catalog':'Склад<br>залишки', 'nav.orders':'Заявки', 'nav.debt':'Дебіторка',
-    'nav.scan':'Сканер', 'nav.journal':'Історія', 'nav.stats':'Аналітика', 'nav.export':'Експорт',
-    'set.title':'Доступ і дані', 'set.look':'Оформлення',
-    'set.light':'Світла', 'set.dark':'Темна', 'set.device':'Вибір діє лише на цьому пристрої.',
-    'set.lang':'Мова інтерфейсу',
-    'set.langnote':'Назви виробників, артикули й кольори не перекладаються — вони лишаються такими, як їх внесли.',
-    'cat.sum':'{n} SKU · на складі {kg} кг · вільно {free} кг',
-    'cat.sale':'Ціна прод.', 'cat.free':'вільно', 'cat.resv':'резерв',
-    'cat.none':'Нічого не знайдено. Перевірте артикул або відскануйте код.',
-    'cat.empty':'Каталог порожній. Додайте перший SKU кнопкою «+ SKU».',
-    'cat.search':'Пошук: артикул, бренд, колір, код',
-    'cat.add':'+ SKU', 'cat.del':'Видалити SKU',
-    'sku.stock':'На складі', 'sku.resv':'У резерві', 'sku.free':'Вільно',
-    'sku.buy':'Закупівля', 'sku.sell':'Продаж', 'sku.markup':'Націнка',
-    'sku.in':'Прихід', 'sku.adj':'Коригування залишків',
-    'sku.edit':'Коригування картки SKU', 'sku.label':'Етикетка для друку (PDF)',
-    'sku.hist':'Історія по цьому SKU', 'unit.kg':'кг', 'unit.cn':'к',
-    'sku.cones':'конусів', 'sku.from':'від', 'sku.editcost':'Змінити ціни закупівлі',
-    'sku.editsale':'Змінити ціну продажу', 'close':'Закрити',
-  },
-  it: {
-    'app.sub':'Premium Italian Stock Yarn',
-    'auth.login':'Nome utente', 'auth.pass':'Password', 'auth.enter':'Accedi',
-    'auth.hint':"Nome utente e password vengono forniti dall'amministratore del magazzino.",
-    'auth.bad':'Nome utente o password non validi.', 'auth.need':'Inserisci nome utente e password.',
-    'auth.noprofile':"Profilo non trovato, contatta l'amministratore",
-    'auth.off':'Accesso disattivato',
-    'nav.catalog':'Magazzino<br>giacenze', 'nav.orders':'Ordini', 'nav.debt':'Crediti',
-    'nav.scan':'Scanner', 'nav.journal':'Storico', 'nav.stats':'Analisi', 'nav.export':'Esporta',
-    'set.title':'Accessi e dati', 'set.look':'Aspetto',
-    'set.light':'Chiaro', 'set.dark':'Scuro', 'set.device':'La scelta vale solo su questo dispositivo.',
-    'set.lang':"Lingua dell'interfaccia",
-    'set.langnote':'Marchi, codici articolo e colori non vengono tradotti: restano come sono stati inseriti.',
-    'cat.sum':'{n} SKU · in magazzino {kg} kg · disponibili {free} kg',
-    'cat.sale':'Prezzo vend.', 'cat.free':'disponibili', 'cat.resv':'impegnati',
-    'cat.none':"Nessun risultato. Controlla l'articolo o scansiona il codice.",
-    'cat.empty':'Catalogo vuoto. Aggiungi il primo SKU con il pulsante «+ SKU».',
-    'cat.search':'Cerca: articolo, marchio, colore, codice',
-    'cat.add':'+ SKU', 'cat.del':'Elimina SKU',
-    'sku.stock':'In magazzino', 'sku.resv':'Impegnato', 'sku.free':'Disponibile',
-    'sku.buy':'Acquisto', 'sku.sell':'Vendita', 'sku.markup':'Ricarico',
-    'sku.in':'Carico', 'sku.adj':'Rettifica giacenza',
-    'sku.edit':'Modifica scheda SKU', 'sku.label':'Etichetta da stampare (PDF)',
-    'sku.hist':'Storico di questo SKU', 'unit.kg':'kg', 'unit.cn':'coni',
-    'sku.cones':'coni', 'sku.from':'dal', 'sku.editcost':"Modifica prezzi d'acquisto",
-    'sku.editsale':'Modifica prezzo di vendita', 'close':'Chiudi',
-  },
-  en: {
-    'app.sub':'Premium Italian Stock Yarn',
-    'auth.login':'Username', 'auth.pass':'Password', 'auth.enter':'Sign in',
-    'auth.hint':'Your username and password are issued by the warehouse administrator.',
-    'auth.bad':'Wrong username or password.', 'auth.need':'Enter your username and password.',
-    'auth.noprofile':'Profile not found, please contact the administrator',
-    'auth.off':'Access disabled',
-    'nav.catalog':'Stock<br>on hand', 'nav.orders':'Orders', 'nav.debt':'Receivables',
-    'nav.scan':'Scanner', 'nav.journal':'History', 'nav.stats':'Analytics', 'nav.export':'Export',
-    'set.title':'Access and data', 'set.look':'Appearance',
-    'set.light':'Light', 'set.dark':'Dark', 'set.device':'This choice applies to this device only.',
-    'set.lang':'Interface language',
-    'set.langnote':'Maker names, article codes and colours are not translated — they stay exactly as entered.',
-    'cat.sum':'{n} SKU · in stock {kg} kg · free {free} kg',
-    'cat.sale':'Sale price', 'cat.free':'free', 'cat.resv':'reserved',
-    'cat.none':'Nothing found. Check the article or scan the code.',
-    'cat.empty':'The catalogue is empty. Add the first SKU with the «+ SKU» button.',
-    'cat.search':'Search: article, brand, colour, code',
-    'cat.add':'+ SKU', 'cat.del':'Delete SKU',
-    'sku.stock':'In stock', 'sku.resv':'Reserved', 'sku.free':'Free',
-    'sku.buy':'Cost', 'sku.sell':'Sale', 'sku.markup':'Margin',
-    'sku.in':'Goods in', 'sku.adj':'Stock adjustment',
-    'sku.edit':'Edit SKU card', 'sku.label':'Label for printing (PDF)',
-    'sku.hist':'History for this SKU', 'unit.kg':'kg', 'unit.cn':'cones',
-    'sku.cones':'cones', 'sku.from':'from', 'sku.editcost':'Change cost prices',
-    'sku.editsale':'Change sale price', 'close':'Close',
-  },
-};
-
-/* ---------- переклад готової сторінки ----------
-   Далі в коді написи лишаються українськими — це джерело правди.
-   Коли обрана інша мова, цей шар підміняє текст уже намальованої
-   сторінки за словником PHRASES. Так переклад не може зламати
-   жодного розрахунку: логіка працює з тими самими рядками, що й досі.
-   PHRASES заповнюється нижче, одразу після словника інтерфейсу. */
-const PHRASES = {
-  it: {
-    'Зібрано · чекає оплати':'Preparato · in attesa di pagamento',
-    'оплати':'di pagamento',
-    'чекає оплати':'in attesa di pagamento',
-    'чекає дозволу':'in attesa di autorizzazione',
-    'чекає передоплати':'in attesa di acconto',
-    'не оплачено':'non pagato',
-    'оплачено':'pagato',
-    'оплачено частково':'pagato parzialmente',
-    'Термін':'Termine',
-    'термін':'termine',
-    'заявка №':'ordine n.',
-    'Заявка №':'Ordine n.',
-    'Заявку №':'Ordine n.',
-    'Анулювати №':'Annulla n.',
-    'позиція':'riga',
-    'товар у резерві':'merce impegnata',
-    'Заявку створено':'Ordine creato',
-    'Заявку створено:':'Ordine creato:',
-    '(з доставкою)':'(spedizione inclusa)',
-    '(надлишок)':'(eccedenza)',
-    '(нестача)':'(mancanza)',
-    '+ Додати до заявки':'+ Aggiungi all\'ordine',
-    '+ Додати складник':'+ Aggiungi fibra',
-    '+ додати':'+ aggiungi',
-    'SKU видалено':'SKU eliminato',
-    'SKU додано':'SKU aggiunto',
-    '· суму ще не внесено':'· importo non ancora inserito',
-    '· частина як пробники':'· in parte campionatura',
-    '· є пробники':'· con campionatura',
-    'Є активна заявка з резервом. Спочатку відвантажте або анулюйте її.':'C\'è un ordine attivo con merce impegnata. Prima spediscilo o annullalo.',
-    'Ім\'я':'Nome',
-    'Інвентаризація':'Inventario',
-    'Історія':'Storico',
-    'Історія заявки':'Storico dell\'ordine',
-    'Історія змін':'Storico modifiche',
-    'Або введіть код':'Oppure inserisci il codice',
-    'Адмін':'Amministratore',
-    'Акаунт':'Account',
-    'Акрил':'Acrilico',
-    'Альпака':'Alpaca',
-    'Аналітика':'Analisi',
-    'Ангора':'Angora',
-    'Анульовано':'Annullato',
-    'Анульовані':'Annullati',
-    'Анулювання заявки №':'Annullamento dell\'ordine n.',
-    'Анулювати':'Annulla',
-    'Аркуш':'Foglio',
-    'Артикул':'Articolo',
-    'Бавовна':'Cotone',
-    'База даних':'Database',
-    'Бебі альпака':'Baby alpaca',
-    'Без відтінку':'Senza tonalità',
-    'Без оплати':'Senza pagamento',
-    'Без оплати (пробники)':'Senza pagamento (campionatura)',
-    'Бренд':'Marchio',
-    'Брутто, кг':'Lordo, kg',
-    'Бібліотека Excel не завантажилась':'La libreria Excel non si è caricata',
-    'Бібліотека сканера не завантажилась. Введіть код вручну.':'La libreria dello scanner non si è caricata. Inserisci il codice a mano.',
-    'Бібліотеки друку не завантажились':'Le librerie di stampa non si sono caricate',
-    'Білі й бежеві':'Bianchi e beige',
-    'Вага брутто:':'Peso lordo:',
-    'Вага коробок, кг':'Peso dei colli, kg',
-    'Вага нетто:':'Peso netto:',
-    'Ваша роль дозволяє додавати лише пробники. Позначте всі позиції як пробники.':'Il tuo ruolo permette solo la campionatura. Segna tutte le righe come campione.',
-    'Верблюжа':'Cammello',
-    'Верблюжа вовна':'Lana di cammello',
-    'Весь час':'Tutto',
-    'Взяти в збірку':'Prendi in preparazione',
-    'Взято в збірку':'Preso in preparazione',
-    'Ви в системі':'Sei collegato come',
-    'Ви дійсно хочете видалити SKU?':'Vuoi davvero eliminare questo SKU?',
-    'Виберіть, що вивантажити':'Scegli che cosa scaricare',
-    'Вибрати зі списку':'Scegli dall\'elenco',
-    'Вивантажити в Excel':'Scarica in Excel',
-    'Видалення ціни не змінює проведені приходи й залишки.':'Eliminare un prezzo non tocca i carichi registrati né le giacenze.',
-    'Видалено':'Eliminato',
-    'Видалити':'Elimina',
-    'Видалити SKU?':'Eliminare lo SKU?',
-    'Видалити заявку назавжди':'Elimina l\'ordine definitivamente',
-    'Видалити назавжди':'Elimina definitivamente',
-    'Видалити ціну':'Elimina prezzo',
-    'Видаляти SKU можуть лише Адмін і Головний бухгалтер':'Solo l\'amministratore e il capo contabile possono eliminare uno SKU',
-    'Видаляю…':'Elimino…',
-    'Видати пробники':'Consegna campionatura',
-    'Вийти':'Esci',
-    'Вимикаю…':'Disattivo…',
-    'Вимкнути':'Disattiva',
-    'Виробник':'Marchio',
-    'Виручка':'Ricavi',
-    'Виручка цього місяця':'Ricavi del mese',
-    'Виручка, €':'Ricavi, €',
-    'Вкажіть або згенеруйте штрихкод.':'Indica o genera il codice a barre.',
-    'Вкажіть артикул.':'Indica l\'articolo.',
-    'Вкажіть вагу в кг.':'Indica il peso in kg.',
-    'Вкажіть вагу коробок.':'Indica il peso dei colli.',
-    'Вкажіть виробника.':'Indica il marchio.',
-    'Вкажіть дату операції.':'Indica la data dell\'operazione.',
-    'Вкажіть дату повернення.':'Indica la data del reso.',
-    'Вкажіть клієнта.':'Indica il cliente.',
-    'Вкажіть кількість днів від 1 до 365.':'Indica un numero di giorni da 1 a 365.',
-    'Вкажіть кількість днів відтермінування (від 1 до 365).':'Indica i giorni di differimento (da 1 a 365).',
-    'Вкажіть кількість конусів або позначте «Частина конуса».':'Indica il numero di coni oppure segna «parte di un cono».',
-    'Вкажіть кількість конусів.':'Indica il numero di coni.',
-    'Вкажіть кількість коробок.':'Indica il numero di colli.',
-    'Вкажіть суму оплати.':'Indica l\'importo del pagamento.',
-    'Вкажіть термін резерву.':'Indica la durata dell\'impegno.',
-    'Вкажіть ціну більшу за нуль.':'Indica un prezzo maggiore di zero.',
-    'Вкажіть ціну продажу. Безкоштовні зразки проводьте через «Пробники».':'Indica il prezzo di vendita. I campioni gratuiti si registrano come campionatura.',
-    'Вкажіть, скільки повертається.':'Indica quanto torna indietro.',
-    'Вкажіть, скільки повертається. Товар стане на склад датою повернення, сума заявки зменшиться.':'Indica quanto torna indietro. La merce rientra in magazzino con la data del reso e l\'importo dell\'ordine diminuisce.',
-    'Вовна':'Lana',
-    'Волокно':'Fibra',
-    'Впишіть фактичні кг і конуси зі складу, якщо вони відрізняються від замовлених.':'Inserisci kg e coni effettivi del magazzino, se diversi da quelli ordinati.',
-    'Відвантаження з резерву':'Spedizione dall\'impegnato',
-    'Відвантажено':'Spedito',
-    'Відвантажено · не оплачено':'Spedito · non pagato',
-    'Відвантажено · оплачено':'Spedito · pagato',
-    'Відвантажено · оплачено частково':'Spedito · pagato parzialmente',
-    'Відвантажено · пробники':'Spedito · campionatura',
-    'Відвантажити':'Spedire',
-    'Відмітити оплату':'Registra il pagamento',
-    'Відсоток складника має бути від 0 до 100.':'La percentuale della fibra deve essere tra 0 e 100.',
-    'Відтермінування':'Pagamento differito',
-    'Відтермінування, дн.':'Differimento, gg',
-    'Відтінок для каталогу, необов’язково':'Tonalità per il catalogo, facoltativa',
-    'Вільно, кг':'Disponibile, kg',
-    'Вільно, конусів':'Disponibile, coni',
-    'Віскоза':'Viscosa',
-    'Галочкою позначена ціна, яка вважається закупівельною. Нова ціна з найпізнішою датою стає активною автоматично.':'La spunta indica il prezzo considerato di acquisto. Il prezzo con la data più recente diventa attivo automaticamente.',
-    'Головний бухгалтер':'Capo contabile',
-    'Готово до відвантаження':'Pronto per la spedizione',
-    'Готую етикетку…':'Preparo l\'etichetta…',
-    'Дата «з» пізніша за дату «по».':'La data iniziale è successiva a quella finale.',
-    'Дата видачі':'Data di consegna',
-    'Дата відвантаження':'Data di spedizione',
-    'Дата відвантаження:':'Data di spedizione:',
-    'Дата з':'Dal',
-    'Дата заявки:':'Data dell\'ordine:',
-    'Дата й час':'Data e ora',
-    'Дата надходження':'Data di accredito',
-    'Дата надходження передоплати':'Data di arrivo dell\'acconto',
-    'Дата операції':'Data operazione',
-    'Дата операції не може бути в майбутньому.':'La data dell\'operazione non può essere futura.',
-    'Дата оплати':'Data di pagamento',
-    'Дата по':'Al',
-    'Дата повернення':'Data del reso',
-    'Дата приходу':'Data di carico',
-    'Дата резерву':'Data dell\'impegno',
-    'Дебіторка':'Crediti',
-    'Деталі':'Dettagli',
-    'Джут':'Iuta',
-    'Для приходу вкажіть і кг, і кількість конусів.':'Per il carico indica sia i kg sia i coni.',
-    'Для руху товару, аналітики й історії змін. Порожні поля означають за весь час.':'Per movimenti, analisi e storico modifiche. I campi vuoti significano tutto il periodo.',
-    'До відправки':'Da spedire',
-    'Додайте пряжу кнопкою нижче.':'Aggiungi il filato con il pulsante qui sotto.',
-    'Додайте хоча б одну позицію з каталогу.':'Aggiungi almeno una riga dal catalogo.',
-    'Додати':'Aggiungi',
-    'Додати SKU':'Aggiungi SKU',
-    'Додати людину':'Aggiungi persona',
-    'Додати пряжу кнопкою нижче.':'Aggiungi il filato con il pulsante qui sotto.',
-    'Додати складник':'Aggiungi fibra',
-    'Додати ціну':'Aggiungi prezzo',
-    'Дозволено відвантаження з відтермінуванням 30 дн.':'Spedizione autorizzata con pagamento differito a 30 gg.',
-    'Дозволити відвантаження':'Autorizza la spedizione',
-    'Доставка':'Spedizione',
-    'Доставка від клієнтів (транзит), €':'Spedizioni a carico dei clienti (transito), €',
-    'Доставка за наш рахунок: сума не йде в інвойс і повністю зменшує маржу.':'Spedizione a nostro carico: non entra in fattura e riduce interamente il margine.',
-    'Доставка на заявку, €':'Spedizione dell\'ordine, €',
-    'Доставка, €':'Spedizione, €',
-    'Доставка:':'Spedizione:',
-    'Доставка: витрати':'Spedizione: costi',
-    'Доступ до камери заборонено. Дозвольте камеру для цього сайту в налаштуваннях браузера й оновіть сторінку.':'Accesso alla fotocamera negato. Consenti la fotocamera per questo sito nelle impostazioni del browser e ricarica la pagina.',
-    'Доступ створено':'Accesso creato',
-    'Досягнуто ліміту в 10 людей. Спершу видаліть когось.':'Raggiunto il limite di 10 persone. Rimuovine una prima.',
-    'Дія':'Azione',
-    'Експорт':'Esporta',
-    'Експорт в Excel':'Esporta in Excel',
-    'Експорт тут недоступний':'L\'esportazione non è disponibile qui',
-    'Еластан':'Elastan',
-    'Етикетка':'Etichetta',
-    'Етикетку збережено: відкрийте PDF і надрукуйте':'Etichetta salvata: apri il PDF e stampa',
-    'За наш рахунок':'A nostro carico',
-    'За наш рахунок: сума до інвойсу не додається.':'A nostro carico: non si aggiunge alla fattura.',
-    'За рахунок клієнта':'A carico del cliente',
-    'За рахунок клієнта: сума додається до інвойсу.':'A carico del cliente: si aggiunge alla fattura.',
-    'Завантаження тут недоступне':'Il download non è disponibile qui',
-    'Завантажити (6 аркушів)':'Scarica (6 fogli)',
-    'Зайнято більше трьох чвертей. Варто планувати перехід на платний тариф.':'Occupati più di tre quarti. Conviene pianificare il passaggio a un piano a pagamento.',
-    'Закрити':'Chiudi',
-    'Закупівельну ціну змінено':'Prezzo di acquisto modificato',
-    'Закупівля':'Acquisto',
-    'Закупівля, €':'Acquisto, €',
-    'Залишки':'Giacenze',
-    'Залишок':'Residuo',
-    'Залишок за собівартістю':'Giacenza al costo',
-    'Залишок змінився, видалення скасовано':'La giacenza è cambiata, eliminazione annullata',
-    'Залишок, €':'Residuo, €',
-    'Залишок:':'Residuo:',
-    'Замовлення збережено':'Ordine salvato',
-    'Замовлення №':'Ordine n.',
-    'Замовлення:':'Ordine:',
-    'Записів немає.':'Nessuna registrazione.',
-    'Зарезервовано':'Impegnato',
-    'Зарезервувати':'Impegna',
-    'Заявка':'Ordine',
-    'Заявка вже в роботі, змінювати її не можна. Щоб змінити, анулюйте й створіть нову.':'L\'ordine è già in lavorazione e non si modifica. Per cambiarlo, annullalo e creane uno nuovo.',
-    'Заявка з доставкою за рахунок клієнта: ця сума йде в інвойс, у витрати не потрапляє.':'Ordine con spedizione a carico del cliente: questo importo entra in fattura e non nei costi.',
-    'Заявка стане оплаченою, склад зможе відвантажити після збірки.':'L\'ordine risulterà pagato e il magazzino potrà spedirlo dopo la preparazione.',
-    'Заявки':'Ordini',
-    'Заявку':'Ordine',
-    'Заявку видалено назавжди':'Ordine eliminato definitivamente',
-    'Заявку на пробники':'Ordine di campionatura',
-    'Заявку створив менеджер:':'Ordine creato dal commerciale:',
-    'Заявок за цими умовами немає.':'Nessun ordine con questi criteri.',
-    'Зберегти':'Salva',
-    'Зберегти зміни':'Salva modifiche',
-    'Зберегти пароль':'Salva la password',
-    'Зберегти у Word':'Salva in Word',
-    'Збереження тут недоступне':'Il salvataggio non è disponibile qui',
-    'Зберігаю…':'Salvo…',
-    'Збірка':'In preparazione',
-    'Збірка на складі':'Preparazione in magazzino',
-    'Згенерувати пароль':'Genera password',
-    'Зелені':'Verdi',
-    'Змін немає.':'Nessuna modifica.',
-    'Зміна картки':'Modifica scheda',
-    'Зміни збережено':'Modifiche salvate',
-    'Зміни картки':'Modifiche scheda',
-    'Змінити дані доставки':'Modifica i dati di spedizione',
-    'Змінити заявку':'Modifica ordine',
-    'Змінити пароль':'Cambia password',
-    'Знайти':'Cerca',
-    'Зібрано':'Preparato',
-    'Зібрано · чекає':'Preparato · in attesa',
-    'Зібрано · чекає дозволу':'Preparato · in attesa di autorizzazione',
-    'Зібрано · чекає передоплати':'Preparato · in attesa di acconto',
-    'Камера зайнята іншим застосунком. Закрийте його й спробуйте ще раз.':'La fotocamera è usata da un\'altra app. Chiudila e riprova.',
-    'Камера недоступна':'Fotocamera non disponibile',
-    'Камеру не знайдено. Сфотографуйте код кнопкою нижче або введіть його.':'Fotocamera non trovata. Fotografa il codice col pulsante qui sotto oppure inseriscilo.',
-    'Картка й фото зникнуть з каталогу. Історія операцій і звіти збережуться.':'La scheda e le foto spariscono dal catalogo. Lo storico dei movimenti e i report restano.',
-    'Картку видалено (залишок нульовий)':'Scheda eliminata (giacenza a zero)',
-    'Каталог':'Catalogo',
-    'Кашемір':'Cashmere',
-    'Клієнт':'Cliente',
-    'Клієнт:':'Cliente:',
-    'Код не розпізнано. Сфотографуйте ближче, рівно й при кращому світлі.':'Codice non riconosciuto. Riprova più da vicino, dritto e con più luce.',
-    'Коли ліміт буде вичерпано, нові фото перестануть зберігатися. Час переходити на Pro.':'Quando il limite sarà esaurito, le nuove foto non si salveranno più. È ora di passare a Pro.',
-    'Колір':'Colore',
-    'Колір — назва й номер, необов’язково':'Colore — nome e numero, facoltativo',
-    'Коментар':'Commento',
-    'Коментар:':'Commento:',
-    'Кому (клієнт)':'Destinatario (cliente)',
-    'Комірник':'Magazziniere',
-    'Коноплі':'Canapa',
-    'Контрагент':'Controparte',
-    'Конуси:':'Coni:',
-    'Конусів':'Coni',
-    'Копіювати':'Copia',
-    'Коригування':'Rettifica',
-    'Коригування залишків':'Rettifica giacenze',
-    'Коригування картки SKU':'Modifica scheda SKU',
-    'Коричневі':'Marroni',
-    'Коробки:':'Colli:',
-    'Коробок':'Colli',
-    'Кілограми по місяцях':'Chilogrammi per mese',
-    'Кількість конусів може бути 0, якщо віддаєте частину конуса.':'I coni possono essere 0 se consegni parte di un cono.',
-    'Логін':'Nome utente',
-    'Логін: 3–32 символи, латиниця, цифри, крапка, дефіс або підкреслення.':'Nome utente: 3–32 caratteri latini, cifre, punto, trattino o trattino basso.',
-    'Льон':'Lino',
-    'Людина':'Persona',
-    'Люрекс':'Lurex',
-    'Ліміти тарифу зберігаються в таблиці app_settings — після переходу на Pro змініть там цифри на 102400 і 8192.':'I limiti del piano sono nella tabella app_settings: dopo il passaggio a Pro metti 102400 e 8192.',
-    'Маржа':'Margine',
-    'Маржа цього місяця':'Margine del mese',
-    'Маржа, €':'Margine, €',
-    'Має лишитися хоча б один Адмін або Головний бухгалтер':'Deve restare almeno un amministratore o capo contabile',
-    'Менеджер':'Commerciale',
-    'Меринос':'Merino',
-    'Мериносова вовна':'Lana merino',
-    'Металізоване волокно':'Fibra metallizzata',
-    'Минулий місяць':'Mese scorso',
-    'Модал':'Modal',
-    'Може:':'Può:',
-    'Можна вносити частинами: залишок перерахується, а заявка лишиться в дебіторці, доки не оплачена повністю.':'Si può pagare a rate: il residuo si ricalcola e l\'ordine resta tra i crediti finché non è saldato.',
-    'Мохер':'Mohair',
-    'Мохер кід':'Kid mohair',
-    'Мохер суперкід':'Superkid mohair',
-    'Місце майже скінчилося.':'Lo spazio sta per esaurirsi.',
-    'Місце у сховищі':'Spazio di archiviazione',
-    'Місяць':'Mese',
-    'На друк':'Stampa',
-    'На складі':'In magazzino',
-    'На складі, кг':'In magazzino, kg',
-    'На складі, конусів':'In magazzino, coni',
-    'Наведіть камеру на штрихкод.':'Inquadra il codice a barre.',
-    'Назва складника':'Nome della fibra',
-    'Назва, напр. WY Yak':'Nome, es. WY Yak',
-    'Націнка:':'Ricarico:',
-    'Наші витрати на доставку, €':'Nostri costi di spedizione, €',
-    'Не вдалося зберегти етикетку':'Impossibile salvare l\'etichetta',
-    'Не вдалося зберегти файл':'Impossibile salvare il file',
-    'Не вдалося зберегти:':'Impossibile salvare:',
-    'Не вдалося прочитати фото':'Impossibile leggere la foto',
-    'Не вдалося скопіювати':'Impossibile copiare',
-    'Не вдалося сформувати документ':'Impossibile generare il documento',
-    'Не вказано':'Non indicato',
-    'Не можна видалити останнього адміна':'Non si può eliminare l\'ultimo amministratore',
-    'Не оплачено накладних':'Documenti non pagati',
-    'Не оплачені':'Non pagati',
-    'Нейлон':'Nylon',
-    'Немає записів за вибраний період':'Nessuna registrazione nel periodo scelto',
-    'Немає неоплачених заявок':'Nessun ordine da incassare',
-    'Немає неоплачених заявок.':'Nessun ordine da incassare.',
-    'Нетто, кг':'Netto, kg',
-    'Новий SKU':'Nuovo SKU',
-    'Новий пароль':'Nuova password',
-    'Нічого не знайдено.':'Nessun risultato.',
-    'Оберіть волокно в кожному рядку складу.':'Scegli la fibra in ogni riga della composizione.',
-    'Оберіть складник…':'Scegli la fibra…',
-    'Операція':'Operazione',
-    'Оплата очікуватиметься після відвантаження, термін рахується від дати відвантаження.':'Il pagamento sarà atteso dopo la spedizione: il termine decorre dalla data di spedizione.',
-    'Оплатити до':'Da pagare entro',
-    'Оплату отримано':'Pagamento ricevuto',
-    'Оплачено':'Pagato',
-    'Оплачено, €':'Pagato, €',
-    'Оплачено:':'Pagato:',
-    'Оплачені':'Pagati',
-    'Очікуємо оплату':'In attesa di pagamento',
-    'Пароль':'Password',
-    'Пароль змінено':'Password modificata',
-    'Пароль — щонайменше 8 символів.':'La password deve avere almeno 8 caratteri.',
-    'Перевізник':'Corriere',
-    'Перевізник, €':'Corriere, €',
-    'Передайте це людині. Пароль більше ніде не показується — якщо загубиться, задайте новий.':'Consegna questi dati alla persona. La password non viene più mostrata: se si perde, impostane una nuova.',
-    'Передоплата':'Acconto',
-    'Передоплату отримано':'Acconto ricevuto',
-    'Передоплату отримано, відвантаження дозволено':'Acconto ricevuto, spedizione autorizzata',
-    'Передоплату отримано: заявка стане відвантаженою й оплаченою.':'Acconto ricevuto: l\'ordine risulterà spedito e pagato.',
-    'Переплата клієнта':'Credito del cliente',
-    'Період':'Periodo',
-    'Повернення':'Reso',
-    'Повернено':'Reso',
-    'Повернено, кг':'Reso, kg',
-    'Повернути кг':'Rendere kg',
-    'Повернути конусів':'Rendere coni',
-    'Позицій':'Righe',
-    'Поки склад не підтвердив збірку, оплату й дозвіл на відвантаження не проводимо: кількість ще може змінитися.':'Finché il magazzino non conferma la preparazione, non registriamo pagamenti né autorizzazioni: le quantità possono ancora cambiare.',
-    'Поліамід':'Poliammide',
-    'Поліестер':'Poliestere',
-    'Поліетилен':'Polietilene',
-    'Поліпропілен':'Polipropilene',
-    'Помаранчеві й жовті':'Arancioni e gialli',
-    'Помилка збереження':'Errore di salvataggio',
-    'Помісячно':'Per mese',
-    'Порожнє поле означає, що продаж рахується за фактичними відвантаженнями. Уже проведені розходи ця зміна не чіпає.':'Il campo vuoto significa che la vendita si calcola sulle spedizioni effettive. Le uscite già registrate non cambiano.',
-    'Постачальник':'Fornitore',
-    'Пошта не потрібна. Логін і пароль передайте людині особисто.':'L\'email non serve. Consegna nome utente e password di persona.',
-    'Прибрати позицію':'Rimuovi la riga',
-    'Примітка':'Nota',
-    'Присвоюється автоматично, по наростаючій. Змінити не можна.':'Assegnato automaticamente, in ordine crescente. Non modificabile.',
-    'Прихід':'Carico',
-    'Прихід, кг':'Carico, kg',
-    'Прихід, конусів':'Carico, coni',
-    'Причина':'Motivo',
-    'Причина анулювання':'Motivo dell\'annullamento',
-    'Пробник, без оплати':'Campione, senza pagamento',
-    'Пробники':'Campionatura',
-    'Пробники видано':'Campionatura consegnata',
-    'Пробники за собівартістю, €':'Campionatura al costo, €',
-    'Пробники надані безкоштовно.':'La campionatura è fornita gratuitamente.',
-    'Пробники, без оплати':'Campionatura, senza pagamento',
-    'Пробники, заявка №':'Campionatura, ordine n.',
-    'Пробники, кг':'Campionatura, kg',
-    'Пробники, €':'Campionatura, €',
-    'Пробники: заявка стане відвантаженою, оплата не потрібна.':'Campionatura: l\'ordine risulterà spedito, senza pagamento.',
-    'Провести':'Registra',
-    'Провести повернення':'Registra il reso',
-    'Провести продаж':'Registra la vendita',
-    'Продаж':'Vendita',
-    'Продажі, кг':'Vendite, kg',
-    'Продажі, конусів':'Vendite, coni',
-    'Прострочено':'Scaduto',
-    'Прострочено, дн.':'Scaduto da, gg',
-    'Підтвердити збірку':'Conferma preparazione',
-    'РАЗОМ':'TOTALE',
-    'Разом':'Totale',
-    'Разом до оплати':'Totale da pagare',
-    'Разом до оплати:':'Totale da pagare:',
-    'Разом не оплачено':'Totale non pagato',
-    'Разом по заявці':'Totale dell\'ordine',
-    'Разом по заявці, €':'Totale dell\'ordine, €',
-    'Рамі':'Ramié',
-    'Рахунки перевізників, €':'Fatture dei corrieri, €',
-    'Рахую…':'Calcolo…',
-    'Режим налагодження':'Modalità di collaudo',
-    'Режим налагодження ввімкнено':'Modalità di collaudo attivata',
-    'Режим налагодження вимкнено':'Modalità di collaudo disattivata',
-    'Режим налагодження: картка, увесь її рух і рядки заявок зникнуть назавжди. Відновити не вийде.':'Modalità di collaudo: la scheda, tutti i suoi movimenti e le righe d\'ordine spariranno per sempre. Non si recupera.',
-    'Резерв':'Impegnato',
-    'Резерв відвантажено':'Impegnato spedito',
-    'Резерв до':'Impegnato fino al',
-    'Резерв знято':'Impegno annullato',
-    'Резерв знімається, товар знову стане вільним.':'L\'impegno viene tolto e la merce torna disponibile.',
-    'Резерв, кг':'Impegnato, kg',
-    'Резерв, конусів':'Impegnato, coni',
-    'Розпізнаю…':'Riconosco…',
-    'Розрахунок перевізника, €':'Importo del corriere, €',
-    'Роль':'Ruolo',
-    'Рух':'Movimenti',
-    'Рух товару':'Movimenti merce',
-    'Різниці немає.':'Nessuna differenza.',
-    'Свій':'Personalizzato',
-    'Свій відтінок':'Tonalità personalizzata',
-    'Сервер не відповів. Спробуйте ще раз.':'Il server non ha risposto. Riprova.',
-    'Сині й голубі':'Blu e azzurri',
-    'Сканер':'Scanner',
-    'Склад':'Magazzino',
-    'Склад пряжі, % — необов’язково':'Composizione del filato, % — facoltativa',
-    'Складники':'Composizione',
-    'Скопійовано':'Copiato',
-    'Собівартість':'Costo del venduto',
-    'Собівартість, €':'Costo del venduto, €',
-    'Статус':'Stato',
-    'Створена':'Creato',
-    'Створено':'Creato',
-    'Створено картку':'Scheda creata',
-    'Створені':'Creati',
-    'Створити доступ':'Crea accesso',
-    'Створити заявку':'Crea ordine',
-    'Створюю…':'Creo…',
-    'Сума':'Importo',
-    'Сума складу має бути 100%.':'La composizione deve sommare a 100%.',
-    'Сума, €':'Importo, €',
-    'Суму доставки внесе бухгалтер при погодженні відвантаження.':'L\'importo della spedizione lo inserisce il contabile al momento dell\'autorizzazione.',
-    'Сфотографувати код':'Fotografa il codice',
-    'Сховище заповнене на':'L\'archivio è pieno al',
-    'Сірі й чорні':'Grigi e neri',
-    'Так, анулювати':'Sì, annulla',
-    'Такий штрихкод уже є в каталозі.':'Questo codice a barre esiste già nel catalogo.',
-    'Тенсел':'Tencel',
-    'Термін резерву вже минув.':'Il termine dell\'impegno è scaduto.',
-    'Тип волокна':'Tipo di fibra',
-    'Товар':'Merce',
-    'Товар, €':'Merce, €',
-    'Товар:':'Merce:',
-    'Точно видалити?':'Eliminare davvero?',
-    'Точно?':'Sicuro?',
-    'Увімкнути режим налагодження':'Attiva la modalità di collaudo',
-    'Уже оплачено':'Già pagato',
-    'Українська':'Українська',
-    'Умови оплати':'Condizioni di pagamento',
-    'Умови оплати:':'Condizioni di pagamento:',
-    'Усе':'Tutto',
-    'Усі':'Tutti',
-    'Усі зміни збережено':'Tutte le modifiche salvate',
-    'Усі позиції — пробники: без оплати, дозвіл бухгалтера не потрібен.':'Tutte le righe sono campionatura: senza pagamento e senza autorizzazione del contabile.',
-    'Файл збережено':'File salvato',
-    'Фактичний залишок збігається з обліком, коригувати нічого.':'La giacenza effettiva coincide con la contabilità: non c\'è nulla da rettificare.',
-    'Фактично кг':'Kg effettivi',
-    'Фактично конусів':'Coni effettivi',
-    'Фото':'Foto',
-    'Фото пряжі':'Foto del filato',
-    'Фото: замінено':'Foto: sostituita',
-    'Фіолетові':'Viola',
-    'Хто в базі зараз':'Chi è collegato adesso',
-    'Хто вніс':'Chi ha inserito',
-    'Цей місяць':'Questo mese',
-    'Цей резерв уже закритий.':'Questo impegno è già chiuso.',
-    'Цей рік':'Quest\'anno',
-    'Цін ще немає.':'Nessun prezzo inserito.',
-    'Ціна закупівлі, €/кг':'Prezzo di acquisto, €/kg',
-    'Ціна продажу ·':'Prezzo di vendita ·',
-    'Ціна продажу за прайсом, €/кг':'Prezzo di listino, €/kg',
-    'Ціна продажу, €/кг':'Prezzo di vendita, €/kg',
-    'Ціна, €/кг':'Prezzo, €/kg',
-    'Ціни закупівлі ·':'Prezzi di acquisto ·',
-    'Ціни закупівлі та продажу вносить бухгалтер або адмін.':'I prezzi di acquisto e vendita li inserisce il contabile o l\'amministratore.',
-    'Ціну видалено':'Prezzo eliminato',
-    'Ціну внесе бухгалтер':'Il prezzo lo inserisce il contabile',
-    'Ціну додано':'Prezzo aggiunto',
-    'Ціну можна лишити порожньою й додати пізніше в картці SKU.':'Il prezzo può restare vuoto e si aggiunge dopo nella scheda SKU.',
-    'Ціну продажу збережено':'Prezzo di vendita salvato',
-    'Частина конуса (кг без зміни кількості конусів)':'Parte di un cono (kg senza variare il numero di coni)',
-    'Чекає оплати':'In attesa di pagamento',
-    'Червоні й розові':'Rossi e rosa',
-    'Шовк':'Seta',
-    'Штрихкод':'Codice a barre',
-    'Що дозволяє кожна роль':'Che cosa permette ogni ruolo',
-    'Якщо не вказати, продаж і націнка рахуються за фактичними відвантаженнями.':'Se non indicato, vendita e ricarico si calcolano sulle spedizioni effettive.',
-    'аркуш':'foglio',
-    'аркуші':'fogli',
-    'аркушів':'fogli',
-    'без відтінку':'senza tonalità',
-    'бер':'mar',
-    'більше не має доступу, логін вільний':'non ha più accesso, il nome utente è libero',
-    'вер':'set',
-    'видалено з каталогу':'rimosso dal catalogo',
-    'видалено назавжди':'eliminato definitivamente',
-    'гру':'dic',
-    'доставка за наш рахунок':'spedizione a nostro carico',
-    'доставка за рахунок клієнта':'spedizione a carico del cliente',
-    'жов':'ott',
-    'за наш рахунок':'a nostro carico',
-    'за наш рахунок (витрати)':'a nostro carico (costo)',
-    'за рахунок клієнта':'a carico del cliente',
-    'заявка':'ordine',
-    'кві':'apr',
-    'коригування':'rettifica',
-    'лип':'lug',
-    'лис':'nov',
-    'лют':'feb',
-    'можна все':'accesso completo',
-    'можна все: дозвіл на відвантаження, відмітка оплат, анулювання':'accesso completo: autorizzazione delle spedizioni, registrazione dei pagamenti, annullamenti',
-    'не вдалося зберегти':'impossibile salvare',
-    'не вказано':'non indicato',
-    'неоплачені заявки, залишки й прострочення':'ordini non pagati, residui e scaduti',
-    'онлайн зараз':'online adesso',
-    'перегляд, створення заявок, пробники':'consultazione, creazione ordini, campionatura',
-    'повернення':'reso',
-    'позицій':'righe',
-    'позиція':'riga',
-    'позиції':'righe',
-    'помилка мережі':'errore di rete',
-    'помісячні підсумки':'totali per mese',
-    'прайс':'listino',
-    'прихід':'carico',
-    'прихід, нові SKU, коригування залишків, збірка й відвантаження заявок':'carichi, nuovi SKU, rettifiche, preparazione e spedizione degli ordini',
-    'прихід, продажі, пробники, коригування':'carichi, vendite, campionatura, rettifiche',
-    'пробник':'campione',
-    'пробники':'campionatura',
-    'продаж':'vendita',
-    'продажі':'vendite',
-    'прострочено':'scaduto',
-    'сер':'ago',
-    'сер. фактична':'media effettiva',
-    'стало платною позицією':'diventata riga a pagamento',
-    'стало пробником':'diventata campione',
-    'статуси, оплати, відвантаження':'stati, pagamenti, spedizioni',
-    'січ':'gen',
-    'тип: пробники → продаж':'tipo: campionatura → vendita',
-    'тип: продаж → пробники':'tipo: vendita → campionatura',
-    'тра':'mag',
-    'у терміні':'nei termini',
-    'усі SKU: кг, конуси, резерв, вільно, ціни, націнка':'tutti gli SKU: kg, coni, impegnato, disponibile, prezzi, ricarico',
-    'хто і що змінював у картках SKU, цінах і резервах':'chi ha modificato che cosa in schede SKU, prezzi e impegni',
-    'це ви':'sei tu',
-    'чер':'giu',
-    'щойно':'adesso',
-    '← До заявки':'← Torna all\'ordine',
-    '✎ Ввести вручну…':'✎ Inserisci a mano…',
-  },
-  en: {
-    'Зібрано · чекає оплати':'Picked · awaiting payment',
-    'оплати':'payment',
-    'чекає оплати':'awaiting payment',
-    'чекає дозволу':'awaiting approval',
-    'чекає передоплати':'awaiting prepayment',
-    'не оплачено':'unpaid',
-    'оплачено':'paid',
-    'оплачено частково':'partly paid',
-    'Термін':'Due',
-    'термін':'due',
-    'заявка №':'order no.',
-    'Заявка №':'Order no.',
-    'Заявку №':'Order no.',
-    'Анулювати №':'Cancel no.',
-    'позиція':'line',
-    'товар у резерві':'goods reserved',
-    'Заявку створено':'Order created',
-    'Заявку створено:':'Order created:',
-    '(з доставкою)':'(delivery included)',
-    '(надлишок)':'(surplus)',
-    '(нестача)':'(shortage)',
-    '+ Додати до заявки':'+ Add to the order',
-    '+ Додати складник':'+ Add fibre',
-    '+ додати':'+ add',
-    'SKU видалено':'SKU deleted',
-    'SKU додано':'SKU added',
-    '· суму ще не внесено':'· amount not entered yet',
-    '· частина як пробники':'· partly samples',
-    '· є пробники':'· includes samples',
-    'Є активна заявка з резервом. Спочатку відвантажте або анулюйте її.':'There is an active order holding stock. Ship or cancel it first.',
-    'Ім\'я':'Name',
-    'Інвентаризація':'Stocktake',
-    'Історія':'History',
-    'Історія заявки':'Order history',
-    'Історія змін':'Change history',
-    'Або введіть код':'Or enter the code',
-    'Адмін':'Admin',
-    'Акаунт':'Account',
-    'Акрил':'Acrylic',
-    'Альпака':'Alpaca',
-    'Аналітика':'Analytics',
-    'Ангора':'Angora',
-    'Анульовано':'Cancelled',
-    'Анульовані':'Cancelled',
-    'Анулювання заявки №':'Cancelling order no.',
-    'Анулювати':'Cancel',
-    'Аркуш':'Sheet',
-    'Артикул':'Article',
-    'Бавовна':'Cotton',
-    'База даних':'Database',
-    'Бебі альпака':'Baby alpaca',
-    'Без відтінку':'No shade',
-    'Без оплати':'No payment',
-    'Без оплати (пробники)':'No payment (samples)',
-    'Бренд':'Brand',
-    'Брутто, кг':'Gross, kg',
-    'Бібліотека Excel не завантажилась':'The Excel library did not load',
-    'Бібліотека сканера не завантажилась. Введіть код вручну.':'The scanner library did not load. Enter the code manually.',
-    'Бібліотеки друку не завантажились':'The printing libraries did not load',
-    'Білі й бежеві':'Whites and beiges',
-    'Вага брутто:':'Gross weight:',
-    'Вага коробок, кг':'Box weight, kg',
-    'Вага нетто:':'Net weight:',
-    'Ваша роль дозволяє додавати лише пробники. Позначте всі позиції як пробники.':'Your role allows samples only. Mark every line as a sample.',
-    'Верблюжа':'Camel',
-    'Верблюжа вовна':'Camel wool',
-    'Весь час':'All time',
-    'Взяти в збірку':'Start picking',
-    'Взято в збірку':'Picking started',
-    'Ви в системі':'You are signed in as',
-    'Ви дійсно хочете видалити SKU?':'Do you really want to delete this SKU?',
-    'Виберіть, що вивантажити':'Choose what to download',
-    'Вибрати зі списку':'Choose from the list',
-    'Вивантажити в Excel':'Download as Excel',
-    'Видалення ціни не змінює проведені приходи й залишки.':'Deleting a price does not affect posted goods-in or stock levels.',
-    'Видалено':'Deleted',
-    'Видалити':'Delete',
-    'Видалити SKU?':'Delete this SKU?',
-    'Видалити заявку назавжди':'Delete the order permanently',
-    'Видалити назавжди':'Delete permanently',
-    'Видалити ціну':'Delete price',
-    'Видаляти SKU можуть лише Адмін і Головний бухгалтер':'Only the admin and the chief accountant can delete an SKU',
-    'Видаляю…':'Deleting…',
-    'Видати пробники':'Issue samples',
-    'Вийти':'Sign out',
-    'Вимикаю…':'Disabling…',
-    'Вимкнути':'Disable',
-    'Виробник':'Maker',
-    'Виручка':'Revenue',
-    'Виручка цього місяця':'Revenue this month',
-    'Виручка, €':'Revenue, €',
-    'Вкажіть або згенеруйте штрихкод.':'Enter or generate a barcode.',
-    'Вкажіть артикул.':'Enter the article.',
-    'Вкажіть вагу в кг.':'Enter the weight in kg.',
-    'Вкажіть вагу коробок.':'Enter the box weight.',
-    'Вкажіть виробника.':'Enter the maker.',
-    'Вкажіть дату операції.':'Enter the operation date.',
-    'Вкажіть дату повернення.':'Enter the return date.',
-    'Вкажіть клієнта.':'Enter the customer.',
-    'Вкажіть кількість днів від 1 до 365.':'Enter a number of days from 1 to 365.',
-    'Вкажіть кількість днів відтермінування (від 1 до 365).':'Enter the deferral in days (1 to 365).',
-    'Вкажіть кількість конусів або позначте «Частина конуса».':'Enter the number of cones or tick “part of a cone”.',
-    'Вкажіть кількість конусів.':'Enter the number of cones.',
-    'Вкажіть кількість коробок.':'Enter the number of boxes.',
-    'Вкажіть суму оплати.':'Enter the payment amount.',
-    'Вкажіть термін резерву.':'Enter the reservation period.',
-    'Вкажіть ціну більшу за нуль.':'Enter a price greater than zero.',
-    'Вкажіть ціну продажу. Безкоштовні зразки проводьте через «Пробники».':'Enter the sale price. Free samples go through “Samples”.',
-    'Вкажіть, скільки повертається.':'Enter how much is coming back.',
-    'Вкажіть, скільки повертається. Товар стане на склад датою повернення, сума заявки зменшиться.':'Enter how much is coming back. The goods return to stock on the return date and the order total drops.',
-    'Вовна':'Wool',
-    'Волокно':'Fibre',
-    'Впишіть фактичні кг і конуси зі складу, якщо вони відрізняються від замовлених.':'Enter the actual kg and cones from the warehouse if they differ from those ordered.',
-    'Відвантаження з резерву':'Shipment from reserved stock',
-    'Відвантажено':'Shipped',
-    'Відвантажено · не оплачено':'Shipped · unpaid',
-    'Відвантажено · оплачено':'Shipped · paid',
-    'Відвантажено · оплачено частково':'Shipped · partly paid',
-    'Відвантажено · пробники':'Shipped · samples',
-    'Відвантажити':'Ship',
-    'Відмітити оплату':'Record the payment',
-    'Відсоток складника має бути від 0 до 100.':'The fibre percentage must be between 0 and 100.',
-    'Відтермінування':'Deferred payment',
-    'Відтермінування, дн.':'Deferral, days',
-    'Відтінок для каталогу, необов’язково':'Shade for the catalogue, optional',
-    'Вільно, кг':'Free, kg',
-    'Вільно, конусів':'Free, cones',
-    'Віскоза':'Viscose',
-    'Галочкою позначена ціна, яка вважається закупівельною. Нова ціна з найпізнішою датою стає активною автоматично.':'The tick marks the price treated as the cost price. The price with the latest date becomes active automatically.',
-    'Головний бухгалтер':'Chief accountant',
-    'Готово до відвантаження':'Ready to ship',
-    'Готую етикетку…':'Preparing label…',
-    'Дата «з» пізніша за дату «по».':'The start date is later than the end date.',
-    'Дата видачі':'Issue date',
-    'Дата відвантаження':'Shipping date',
-    'Дата відвантаження:':'Shipping date:',
-    'Дата з':'From',
-    'Дата заявки:':'Order date:',
-    'Дата й час':'Date and time',
-    'Дата надходження':'Received on',
-    'Дата надходження передоплати':'Prepayment date',
-    'Дата операції':'Operation date',
-    'Дата операції не може бути в майбутньому.':'The operation date cannot be in the future.',
-    'Дата оплати':'Payment date',
-    'Дата по':'To',
-    'Дата повернення':'Return date',
-    'Дата приходу':'Goods-in date',
-    'Дата резерву':'Reservation date',
-    'Дебіторка':'Receivables',
-    'Деталі':'Details',
-    'Джут':'Jute',
-    'Для приходу вкажіть і кг, і кількість конусів.':'For goods in, enter both kg and cones.',
-    'Для руху товару, аналітики й історії змін. Порожні поля означають за весь час.':'For movements, analytics and change history. Empty fields mean all time.',
-    'До відправки':'To ship',
-    'Додайте пряжу кнопкою нижче.':'Add yarn with the button below.',
-    'Додайте хоча б одну позицію з каталогу.':'Add at least one line from the catalogue.',
-    'Додати':'Add',
-    'Додати SKU':'Add SKU',
-    'Додати людину':'Add person',
-    'Додати пряжу кнопкою нижче.':'Add yarn with the button below.',
-    'Додати складник':'Add fibre',
-    'Додати ціну':'Add price',
-    'Дозволено відвантаження з відтермінуванням 30 дн.':'Shipment approved with 30-day deferred payment.',
-    'Дозволити відвантаження':'Approve shipment',
-    'Доставка':'Delivery',
-    'Доставка від клієнтів (транзит), €':'Delivery charged to customers (pass-through), €',
-    'Доставка за наш рахунок: сума не йде в інвойс і повністю зменшує маржу.':'Delivery at our cost: it does not go on the invoice and reduces the margin in full.',
-    'Доставка на заявку, €':'Delivery for the order, €',
-    'Доставка, €':'Delivery, €',
-    'Доставка:':'Delivery:',
-    'Доставка: витрати':'Delivery: cost',
-    'Доступ до камери заборонено. Дозвольте камеру для цього сайту в налаштуваннях браузера й оновіть сторінку.':'Camera access denied. Allow the camera for this site in your browser settings and reload the page.',
-    'Доступ створено':'Access created',
-    'Досягнуто ліміту в 10 людей. Спершу видаліть когось.':'The limit of 10 people is reached. Remove someone first.',
-    'Дія':'Action',
-    'Експорт':'Export',
-    'Експорт в Excel':'Export to Excel',
-    'Експорт тут недоступний':'Export is not available here',
-    'Еластан':'Elastane',
-    'Етикетка':'Label',
-    'Етикетку збережено: відкрийте PDF і надрукуйте':'Label saved: open the PDF and print it',
-    'За наш рахунок':'At our cost',
-    'За наш рахунок: сума до інвойсу не додається.':'At our cost: not added to the invoice.',
-    'За рахунок клієнта':'At the customer’s cost',
-    'За рахунок клієнта: сума додається до інвойсу.':'At the customer’s cost: added to the invoice.',
-    'Завантаження тут недоступне':'Download is not available here',
-    'Завантажити (6 аркушів)':'Download (6 sheets)',
-    'Зайнято більше трьох чвертей. Варто планувати перехід на платний тариф.':'More than three quarters used. Worth planning the move to a paid plan.',
-    'Закрити':'Close',
-    'Закупівельну ціну змінено':'Cost price changed',
-    'Закупівля':'Cost',
-    'Закупівля, €':'Cost, €',
-    'Залишки':'Stock levels',
-    'Залишок':'Balance',
-    'Залишок за собівартістю':'Stock at cost',
-    'Залишок змінився, видалення скасовано':'The stock level changed, deletion cancelled',
-    'Залишок, €':'Balance, €',
-    'Залишок:':'Balance:',
-    'Замовлення збережено':'Order saved',
-    'Замовлення №':'Order no.',
-    'Замовлення:':'Order:',
-    'Записів немає.':'No records.',
-    'Зарезервовано':'Reserved',
-    'Зарезервувати':'Reserve',
-    'Заявка':'Order',
-    'Заявка вже в роботі, змінювати її не можна. Щоб змінити, анулюйте й створіть нову.':'The order is already in progress and cannot be edited. To change it, cancel it and create a new one.',
-    'Заявка з доставкою за рахунок клієнта: ця сума йде в інвойс, у витрати не потрапляє.':'Order with delivery at the customer’s cost: this amount goes on the invoice, not into expenses.',
-    'Заявка стане оплаченою, склад зможе відвантажити після збірки.':'The order becomes paid and the warehouse can ship it once picked.',
-    'Заявки':'Orders',
-    'Заявку':'Order',
-    'Заявку видалено назавжди':'Order permanently deleted',
-    'Заявку на пробники':'Sample order',
-    'Заявку створив менеджер:':'Order created by:',
-    'Заявок за цими умовами немає.':'No orders match these filters.',
-    'Зберегти':'Save',
-    'Зберегти зміни':'Save changes',
-    'Зберегти пароль':'Save password',
-    'Зберегти у Word':'Save as Word',
-    'Збереження тут недоступне':'Saving is not available here',
-    'Зберігаю…':'Saving…',
-    'Збірка':'Picking',
-    'Збірка на складі':'Picking in the warehouse',
-    'Згенерувати пароль':'Generate password',
-    'Зелені':'Greens',
-    'Змін немає.':'No changes.',
-    'Зміна картки':'Card change',
-    'Зміни збережено':'Changes saved',
-    'Зміни картки':'Card changes',
-    'Змінити дані доставки':'Edit delivery details',
-    'Змінити заявку':'Edit order',
-    'Змінити пароль':'Change password',
-    'Знайти':'Find',
-    'Зібрано':'Picked',
-    'Зібрано · чекає':'Picked · waiting',
-    'Зібрано · чекає дозволу':'Picked · awaiting approval',
-    'Зібрано · чекає передоплати':'Picked · awaiting prepayment',
-    'Камера зайнята іншим застосунком. Закрийте його й спробуйте ще раз.':'The camera is in use by another app. Close it and try again.',
-    'Камера недоступна':'Camera unavailable',
-    'Камеру не знайдено. Сфотографуйте код кнопкою нижче або введіть його.':'Camera not found. Photograph the code with the button below, or type it in.',
-    'Картка й фото зникнуть з каталогу. Історія операцій і звіти збережуться.':'The card and photos disappear from the catalogue. Movement history and reports are kept.',
-    'Картку видалено (залишок нульовий)':'Card deleted (stock at zero)',
-    'Каталог':'Catalogue',
-    'Кашемір':'Cashmere',
-    'Клієнт':'Customer',
-    'Клієнт:':'Customer:',
-    'Код не розпізнано. Сфотографуйте ближче, рівно й при кращому світлі.':'Code not recognised. Try closer, straight on and in better light.',
-    'Коли ліміт буде вичерпано, нові фото перестануть зберігатися. Час переходити на Pro.':'Once the limit is reached, new photos will stop saving. Time to move to Pro.',
-    'Колір':'Colour',
-    'Колір — назва й номер, необов’язково':'Colour — name and number, optional',
-    'Коментар':'Comment',
-    'Коментар:':'Comment:',
-    'Кому (клієнт)':'Recipient (customer)',
-    'Комірник':'Storekeeper',
-    'Коноплі':'Hemp',
-    'Контрагент':'Counterparty',
-    'Конуси:':'Cones:',
-    'Конусів':'Cones',
-    'Копіювати':'Copy',
-    'Коригування':'Adjustment',
-    'Коригування залишків':'Stock adjustment',
-    'Коригування картки SKU':'Edit SKU card',
-    'Коричневі':'Browns',
-    'Коробки:':'Boxes:',
-    'Коробок':'Boxes',
-    'Кілограми по місяцях':'Kilograms by month',
-    'Кількість конусів може бути 0, якщо віддаєте частину конуса.':'Cones can be 0 if you are giving out part of a cone.',
-    'Логін':'Username',
-    'Логін: 3–32 символи, латиниця, цифри, крапка, дефіс або підкреслення.':'Username: 3–32 Latin characters, digits, dot, hyphen or underscore.',
-    'Льон':'Linen',
-    'Людина':'Person',
-    'Люрекс':'Lurex',
-    'Ліміти тарифу зберігаються в таблиці app_settings — після переходу на Pro змініть там цифри на 102400 і 8192.':'The plan limits live in the app_settings table — after upgrading to Pro, set them to 102400 and 8192.',
-    'Маржа':'Margin',
-    'Маржа цього місяця':'Margin this month',
-    'Маржа, €':'Margin, €',
-    'Має лишитися хоча б один Адмін або Головний бухгалтер':'At least one admin or chief accountant must remain',
-    'Менеджер':'Manager',
-    'Меринос':'Merino',
-    'Мериносова вовна':'Merino wool',
-    'Металізоване волокно':'Metallic fibre',
-    'Минулий місяць':'Last month',
-    'Модал':'Modal',
-    'Може:':'Can:',
-    'Можна вносити частинами: залишок перерахується, а заявка лишиться в дебіторці, доки не оплачена повністю.':'Payments can be partial: the balance is recalculated and the order stays in receivables until it is settled.',
-    'Мохер':'Mohair',
-    'Мохер кід':'Kid mohair',
-    'Мохер суперкід':'Superkid mohair',
-    'Місце майже скінчилося.':'Storage is nearly full.',
-    'Місце у сховищі':'Storage space',
-    'Місяць':'Month',
-    'На друк':'Print',
-    'На складі':'In stock',
-    'На складі, кг':'In stock, kg',
-    'На складі, конусів':'In stock, cones',
-    'Наведіть камеру на штрихкод.':'Point the camera at the barcode.',
-    'Назва складника':'Fibre name',
-    'Назва, напр. WY Yak':'Name, e.g. WY Yak',
-    'Націнка:':'Margin:',
-    'Наші витрати на доставку, €':'Our delivery costs, €',
-    'Не вдалося зберегти етикетку':'Could not save the label',
-    'Не вдалося зберегти файл':'Could not save the file',
-    'Не вдалося зберегти:':'Could not save:',
-    'Не вдалося прочитати фото':'Could not read the photo',
-    'Не вдалося скопіювати':'Could not copy',
-    'Не вдалося сформувати документ':'Could not generate the document',
-    'Не вказано':'Not specified',
-    'Не можна видалити останнього адміна':'You cannot delete the last admin',
-    'Не оплачено накладних':'Unpaid documents',
-    'Не оплачені':'Unpaid',
-    'Нейлон':'Nylon',
-    'Немає записів за вибраний період':'No records in the selected period',
-    'Немає неоплачених заявок':'No unpaid orders',
-    'Немає неоплачених заявок.':'No unpaid orders.',
-    'Нетто, кг':'Net, kg',
-    'Новий SKU':'New SKU',
-    'Новий пароль':'New password',
-    'Нічого не знайдено.':'Nothing found.',
-    'Оберіть волокно в кожному рядку складу.':'Choose a fibre in every composition row.',
-    'Оберіть складник…':'Choose a fibre…',
-    'Операція':'Operation',
-    'Оплата очікуватиметься після відвантаження, термін рахується від дати відвантаження.':'Payment is expected after shipping; the term runs from the shipping date.',
-    'Оплатити до':'Pay by',
-    'Оплату отримано':'Payment received',
-    'Оплачено':'Paid',
-    'Оплачено, €':'Paid, €',
-    'Оплачено:':'Paid:',
-    'Оплачені':'Paid',
-    'Очікуємо оплату':'Awaiting payment',
-    'Пароль':'Password',
-    'Пароль змінено':'Password changed',
-    'Пароль — щонайменше 8 символів.':'The password must be at least 8 characters.',
-    'Перевізник':'Carrier',
-    'Перевізник, €':'Carrier, €',
-    'Передайте це людині. Пароль більше ніде не показується — якщо загубиться, задайте новий.':'Give these to the person. The password is not shown again — if it is lost, set a new one.',
-    'Передоплата':'Prepayment',
-    'Передоплату отримано':'Prepayment received',
-    'Передоплату отримано, відвантаження дозволено':'Prepayment received, shipment approved',
-    'Передоплату отримано: заявка стане відвантаженою й оплаченою.':'Prepayment received: the order becomes shipped and paid.',
-    'Переплата клієнта':'Customer overpayment',
-    'Період':'Period',
-    'Повернення':'Return',
-    'Повернено':'Returned',
-    'Повернено, кг':'Returned, kg',
-    'Повернути кг':'Return kg',
-    'Повернути конусів':'Return cones',
-    'Позицій':'Lines',
-    'Поки склад не підтвердив збірку, оплату й дозвіл на відвантаження не проводимо: кількість ще може змінитися.':'Until the warehouse confirms picking, we post no payment or approval: the quantities can still change.',
-    'Поліамід':'Polyamide',
-    'Поліестер':'Polyester',
-    'Поліетилен':'Polyethylene',
-    'Поліпропілен':'Polypropylene',
-    'Помаранчеві й жовті':'Oranges and yellows',
-    'Помилка збереження':'Save error',
-    'Помісячно':'By month',
-    'Порожнє поле означає, що продаж рахується за фактичними відвантаженнями. Уже проведені розходи ця зміна не чіпає.':'An empty field means sales are calculated from actual shipments. Movements already posted are not affected.',
-    'Постачальник':'Supplier',
-    'Пошта не потрібна. Логін і пароль передайте людині особисто.':'No email needed. Hand the username and password over in person.',
-    'Прибрати позицію':'Remove line',
-    'Примітка':'Note',
-    'Присвоюється автоматично, по наростаючій. Змінити не можна.':'Assigned automatically, in sequence. It cannot be changed.',
-    'Прихід':'Goods in',
-    'Прихід, кг':'Goods in, kg',
-    'Прихід, конусів':'Goods in, cones',
-    'Причина':'Reason',
-    'Причина анулювання':'Cancellation reason',
-    'Пробник, без оплати':'Sample, no payment',
-    'Пробники':'Samples',
-    'Пробники видано':'Samples issued',
-    'Пробники за собівартістю, €':'Samples at cost, €',
-    'Пробники надані безкоштовно.':'Samples are provided free of charge.',
-    'Пробники, без оплати':'Samples, no payment',
-    'Пробники, заявка №':'Samples, order no.',
-    'Пробники, кг':'Samples, kg',
-    'Пробники, €':'Samples, €',
-    'Пробники: заявка стане відвантаженою, оплата не потрібна.':'Samples: the order becomes shipped, no payment needed.',
-    'Провести':'Post',
-    'Провести повернення':'Post the return',
-    'Провести продаж':'Post the sale',
-    'Продаж':'Sale',
-    'Продажі, кг':'Sales, kg',
-    'Продажі, конусів':'Sales, cones',
-    'Прострочено':'Overdue',
-    'Прострочено, дн.':'Overdue, days',
-    'Підтвердити збірку':'Confirm picking',
-    'РАЗОМ':'TOTAL',
-    'Разом':'Total',
-    'Разом до оплати':'Total due',
-    'Разом до оплати:':'Total due:',
-    'Разом не оплачено':'Total unpaid',
-    'Разом по заявці':'Order total',
-    'Разом по заявці, €':'Order total, €',
-    'Рамі':'Ramie',
-    'Рахунки перевізників, €':'Carrier invoices, €',
-    'Рахую…':'Calculating…',
-    'Режим налагодження':'Debug mode',
-    'Режим налагодження ввімкнено':'Debug mode on',
-    'Режим налагодження вимкнено':'Debug mode off',
-    'Режим налагодження: картка, увесь її рух і рядки заявок зникнуть назавжди. Відновити не вийде.':'Debug mode: the card, all its movements and order lines disappear for good. There is no undo.',
-    'Резерв':'Reserved',
-    'Резерв відвантажено':'Reserved stock shipped',
-    'Резерв до':'Reserved until',
-    'Резерв знято':'Reservation released',
-    'Резерв знімається, товар знову стане вільним.':'The reservation is released and the goods become free again.',
-    'Резерв, кг':'Reserved, kg',
-    'Резерв, конусів':'Reserved, cones',
-    'Розпізнаю…':'Reading…',
-    'Розрахунок перевізника, €':'Carrier charge, €',
-    'Роль':'Role',
-    'Рух':'Movements',
-    'Рух товару':'Stock movements',
-    'Різниці немає.':'No difference.',
-    'Свій':'Custom',
-    'Свій відтінок':'Custom shade',
-    'Сервер не відповів. Спробуйте ще раз.':'The server did not respond. Please try again.',
-    'Сині й голубі':'Blues',
-    'Сканер':'Scanner',
-    'Склад':'Stock',
-    'Склад пряжі, % — необов’язково':'Yarn composition, % — optional',
-    'Складники':'Composition',
-    'Скопійовано':'Copied',
-    'Собівартість':'Cost of goods',
-    'Собівартість, €':'Cost of goods, €',
-    'Статус':'Status',
-    'Створена':'Created',
-    'Створено':'Created',
-    'Створено картку':'Card created',
-    'Створені':'Created',
-    'Створити доступ':'Create access',
-    'Створити заявку':'Create order',
-    'Створюю…':'Creating…',
-    'Сума':'Amount',
-    'Сума складу має бути 100%.':'The composition must add up to 100%.',
-    'Сума, €':'Amount, €',
-    'Суму доставки внесе бухгалтер при погодженні відвантаження.':'The accountant enters the delivery amount when approving the shipment.',
-    'Сфотографувати код':'Photograph the code',
-    'Сховище заповнене на':'Storage is',
-    'Сірі й чорні':'Greys and blacks',
-    'Так, анулювати':'Yes, cancel it',
-    'Такий штрихкод уже є в каталозі.':'That barcode already exists in the catalogue.',
-    'Тенсел':'Tencel',
-    'Термін резерву вже минув.':'The reservation period has expired.',
-    'Тип волокна':'Fibre type',
-    'Товар':'Goods',
-    'Товар, €':'Goods, €',
-    'Товар:':'Goods:',
-    'Точно видалити?':'Delete for good?',
-    'Точно?':'Sure?',
-    'Увімкнути режим налагодження':'Turn on debug mode',
-    'Уже оплачено':'Already paid',
-    'Українська':'Українська',
-    'Умови оплати':'Payment terms',
-    'Умови оплати:':'Payment terms:',
-    'Усе':'All',
-    'Усі':'All',
-    'Усі зміни збережено':'All changes saved',
-    'Усі позиції — пробники: без оплати, дозвіл бухгалтера не потрібен.':'All lines are samples: no payment and no accountant approval needed.',
-    'Файл збережено':'File saved',
-    'Фактичний залишок збігається з обліком, коригувати нічого.':'The actual stock matches the records; there is nothing to adjust.',
-    'Фактично кг':'Actual kg',
-    'Фактично конусів':'Actual cones',
-    'Фото':'Photo',
-    'Фото пряжі':'Yarn photo',
-    'Фото: замінено':'Photo: replaced',
-    'Фіолетові':'Purples',
-    'Хто в базі зараз':'Who is online now',
-    'Хто вніс':'Entered by',
-    'Цей місяць':'This month',
-    'Цей резерв уже закритий.':'This reservation is already closed.',
-    'Цей рік':'This year',
-    'Цін ще немає.':'No prices yet.',
-    'Ціна закупівлі, €/кг':'Cost price, €/kg',
-    'Ціна продажу ·':'Sale price ·',
-    'Ціна продажу за прайсом, €/кг':'List sale price, €/kg',
-    'Ціна продажу, €/кг':'Sale price, €/kg',
-    'Ціна, €/кг':'Price, €/kg',
-    'Ціни закупівлі ·':'Cost prices ·',
-    'Ціни закупівлі та продажу вносить бухгалтер або адмін.':'Cost and sale prices are entered by the accountant or the admin.',
-    'Ціну видалено':'Price deleted',
-    'Ціну внесе бухгалтер':'The accountant enters the price',
-    'Ціну додано':'Price added',
-    'Ціну можна лишити порожньою й додати пізніше в картці SKU.':'The price can stay empty and be added later in the SKU card.',
-    'Ціну продажу збережено':'Sale price saved',
-    'Частина конуса (кг без зміни кількості конусів)':'Part of a cone (kg without changing the cone count)',
-    'Чекає оплати':'Awaiting payment',
-    'Червоні й розові':'Reds and pinks',
-    'Шовк':'Silk',
-    'Штрихкод':'Barcode',
-    'Що дозволяє кожна роль':'What each role can do',
-    'Якщо не вказати, продаж і націнка рахуються за фактичними відвантаженнями.':'If left empty, sale and margin are calculated from actual shipments.',
-    'аркуш':'sheet',
-    'аркуші':'sheets',
-    'аркушів':'sheets',
-    'без відтінку':'no shade',
-    'бер':'Mar',
-    'більше не має доступу, логін вільний':'no longer has access; the username is free',
-    'вер':'Sep',
-    'видалено з каталогу':'removed from the catalogue',
-    'видалено назавжди':'permanently deleted',
-    'гру':'Dec',
-    'доставка за наш рахунок':'delivery at our cost',
-    'доставка за рахунок клієнта':'delivery at the customer’s cost',
-    'жов':'Oct',
-    'за наш рахунок':'at our cost',
-    'за наш рахунок (витрати)':'at our cost (expense)',
-    'за рахунок клієнта':'at the customer’s cost',
-    'заявка':'order',
-    'кві':'Apr',
-    'коригування':'adjustment',
-    'лип':'Jul',
-    'лис':'Nov',
-    'лют':'Feb',
-    'можна все':'full access',
-    'можна все: дозвіл на відвантаження, відмітка оплат, анулювання':'full access: approving shipments, recording payments, cancellations',
-    'не вдалося зберегти':'could not save',
-    'не вказано':'not specified',
-    'неоплачені заявки, залишки й прострочення':'unpaid orders, balances and overdue items',
-    'онлайн зараз':'online now',
-    'перегляд, створення заявок, пробники':'viewing, creating orders, samples',
-    'повернення':'return',
-    'позицій':'lines',
-    'позиція':'line',
-    'позиції':'lines',
-    'помилка мережі':'network error',
-    'помісячні підсумки':'monthly totals',
-    'прайс':'list price',
-    'прихід':'goods in',
-    'прихід, нові SKU, коригування залишків, збірка й відвантаження заявок':'goods in, new SKUs, adjustments, picking and shipping orders',
-    'прихід, продажі, пробники, коригування':'goods in, sales, samples, adjustments',
-    'пробник':'sample',
-    'пробники':'samples',
-    'продаж':'sale',
-    'продажі':'sales',
-    'прострочено':'overdue',
-    'сер':'Aug',
-    'сер. фактична':'actual average',
-    'стало платною позицією':'became a paid line',
-    'стало пробником':'became a sample',
-    'статуси, оплати, відвантаження':'statuses, payments, shipments',
-    'січ':'Jan',
-    'тип: пробники → продаж':'type: samples → sale',
-    'тип: продаж → пробники':'type: sale → samples',
-    'тра':'May',
-    'у терміні':'within terms',
-    'усі SKU: кг, конуси, резерв, вільно, ціни, націнка':'all SKUs: kg, cones, reserved, free, prices, margin',
-    'хто і що змінював у картках SKU, цінах і резервах':'who changed what in SKU cards, prices and reservations',
-    'це ви':'that’s you',
-    'чер':'Jun',
-    'щойно':'just now',
-    '← До заявки':'← Back to the order',
-    '✎ Ввести вручну…':'✎ Enter manually…',
-  },
-};
-
-/* Одиниці й дрібні хвости, що склеюються з числами вже під час малювання */
-const UNIT_RULES = {
-  it: [
-    [/(\d)\s*кг(?![\p{L}])/gu, '$1 kg'],
-    [/(?<![\p{L}])кг(?![\p{L}])/gu, 'kg'],
-    [/(?<![\p{L}])конус(ів|и|а|)(?![\p{L}])/gu, 'coni'],
-    [/(\d)\s*шт(?![\p{L}])/gu, '$1 pz'],
-    [/(?<![\p{L}])дн\./gu, 'gg'],
-    [/(?<![\p{L}])днів(?![\p{L}])/gu, 'giorni'],
-    [/(\d)\s*к(?![\p{L}])/gu, '$1 coni'],
-  ],
-  en: [
-    [/(\d)\s*кг(?![\p{L}])/gu, '$1 kg'],
-    [/(?<![\p{L}])кг(?![\p{L}])/gu, 'kg'],
-    [/(?<![\p{L}])конус(ів|и|а|)(?![\p{L}])/gu, 'cones'],
-    [/(\d)\s*шт(?![\p{L}])/gu, '$1 pcs'],
-    [/(?<![\p{L}])дн\./gu, 'days'],
-    [/(?<![\p{L}])днів(?![\p{L}])/gu, 'days'],
-    [/(\d)\s*к(?![\p{L}])/gu, '$1 cones'],
-  ],
-};
-
-
-function trUnits(str){
-  let out = str;
-  (UNIT_RULES[LANG] || []).forEach(([re, to]) => { out = out.replace(re, to); });
-  return out;
-}
-
-/* Окремі слова всередині складеного напису: «1 позиція, товар у резерві».
-   Беремо лише суто кириличні ключі з малої літери — власні назви
-   виробників і кольорів латиницею чи з великої під це не підпадають. */
-const WORD_KEYS = {};
-function wordKeys(){
-  if(WORD_KEYS[LANG]) return WORD_KEYS[LANG];
-  const d = PHRASES[LANG] || {};
-  const ks = Object.keys(d)
-    .filter(k => /^[а-яїієґ][а-яїієґ' ]*$/u.test(k) && k.length >= 4)
-    .sort((a, b) => b.length - a.length);
-  return (WORD_KEYS[LANG] = ks);
-}
-function trWords(str){
-  const d = PHRASES[LANG] || {};
-  let out = str;
-  wordKeys().forEach(k => {
-    const re = new RegExp('(?<![\\p{L}])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\p{L}])', 'gu');
-    out = out.replace(re, d[k]);
-  });
-  return out;
-}
-
-function tr(text){
-  if(LANG === 'uk') return text;
-  const dict = PHRASES[LANG]; if(!dict) return text;
-  const key = text.trim();
-  if(!key) return text;
-
-  let out = dict[key];
-
-  /* Часто напис — це підпис плюс число: «Вага брутто: 40,58 кг».
-     Шукаємо найдовший відомий початок, а хвіст лишаємо як є,
-     бо в ньому дані: клієнт, артикул, сума. */
-  if(out === undefined){
-    for(let len = key.length - 1; len >= 4; len--){
-      const head = dict[key.slice(0, len)];
-      if(head === undefined) continue;
-      const rest = key.slice(len);
-      const m = rest.match(/^([\s:·,.()\/«»–—-]+)([\s\S]*)$/);
-      if(m){ out = head + m[1] + (m[2] ? tr(m[2]) : ''); break; }
-    }
-  }
-
-  if(out === undefined){
-    out = trWords(trUnits(key));
-    if(out === key) return text;
-  }
-
-  // зберігаємо пробіли навколо, інакше склеюються слова
-  const pre = text.match(/^\s*/)[0], post = text.match(/\s*$/)[0];
-  return pre + out + post;
-}
-
-const TR_SKIP = new Set(['SCRIPT','STYLE','SVG','PATH','CIRCLE','RECT','CODE']);
-function translateDom(root){
-  if(LANG === 'uk' || !root) return;
-  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode: n => TR_SKIP.has((n.parentNode && n.parentNode.nodeName) || '')
-      ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-  });
-  const jobs = [];
-  for(let n = walk.nextNode(); n; n = walk.nextNode()){
-    const v = tr(n.nodeValue);
-    if(v !== n.nodeValue) jobs.push([n, v]);
-  }
-  jobs.forEach(([n, v]) => { n.nodeValue = v; });
-
-  const els = root.querySelectorAll ? root.querySelectorAll('[placeholder],[aria-label],[title]') : [];
-  els.forEach(el => {
-    ['placeholder','aria-label','title'].forEach(a => {
-      const v = el.getAttribute(a);
-      if(v){ const nv = tr(v); if(nv !== v) el.setAttribute(a, nv); }
-    });
-  });
-}
-
-/* Ловимо будь-яку перемальовку, а не окремі функції — так нічого не забудеться */
-let trBusy = false;
-function watchDom(){
-  const obs = new MutationObserver(muts => {
-    if(trBusy || LANG === 'uk') return;
-    trBusy = true;
-    try {
-      muts.forEach(m => {
-        if(m.type === 'childList') m.addedNodes.forEach(n => {
-          if(n.nodeType === 1) translateDom(n);
-          else if(n.nodeType === 3){ const v = tr(n.nodeValue); if(v !== n.nodeValue) n.nodeValue = v; }
-        });
-      });
-    } finally { trBusy = false; }
-  });
-  obs.observe(document.body, { childList: true, subtree: true });
-}
-
-let LANG = 'uk';
-function langPref(){
-  let v = null;
-  try { v = localStorage.getItem(LANG_KEY); } catch(e){}
-  if(I18N[v]) return v;
-  const sys = (navigator.language || 'uk').slice(0,2).toLowerCase();
-  return I18N[sys] ? sys : 'uk';
-}
-/* t() повертає ключ, якщо переклад ще не додано — так видно, що лишилося,
-   і жоден екран не ламається через пропущений рядок. */
-function t(k){ return (I18N[LANG] && I18N[LANG][k]) || I18N.uk[k] || k; }
-function setLang(v){
-  if(!I18N[v]) return;
-  LANG = v;
-  try { localStorage.setItem(LANG_KEY, v); } catch(e){}
-  document.documentElement.setAttribute('lang', v);
-  applyStatic();
-  translateDom(document.body);
-}
-/* Написи, що лежать прямо в розмітці, а не малюються заново */
-function applyStatic(){
-  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.innerHTML = t(el.dataset.i18n); });
-  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder = t(el.dataset.i18nPh); });
-}
-
-const THEME_KEY = 'sklad-theme';
-function themePref(){
-  let v = null;
-  try { v = localStorage.getItem(THEME_KEY); } catch(e){}
-  if(v === 'light' || v === 'dark') return v;
-  // перший запуск: беремо те, що зараз у системі, далі людина вирішує сама
-  try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch(e){ return 'light'; }
-}
-function applyTheme(v){
-  document.documentElement.setAttribute('data-theme', v === 'dark' ? 'dark' : 'light');
-  try { localStorage.setItem(THEME_KEY, v); } catch(e){}
-}
-applyTheme(themePref());
-LANG = langPref();
-document.documentElement.setAttribute('lang', LANG);
 const USERS = [
   {id:'u1', name:'Олександр', role:'admin'},
   {id:'u2', name:'Марина', role:'manager'},
@@ -2033,7 +647,6 @@ const CAN = {
 };
 
 const $ = s => document.querySelector(s);
-const isPhone = () => { try { return matchMedia('(max-width:560px)').matches; } catch(e){ return false; } };
 const uid = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
 const fmtKg = n => (Math.round(n*10)/10).toLocaleString('uk-UA',{minimumFractionDigits:1,maximumFractionDigits:1});
@@ -2136,8 +749,7 @@ const skuRowDb = s => ({
   id: s.id, maker: s.maker, art: s.art, color: s.color || null, hex: s.hex || null,
   meter: s.meter || null, code: s.code, comp: s.comp || [], sale: +s.sale || 0,
   note: s.note || null, photos: (s.photos || []).filter(p => !p.startsWith('data:')),
-  deleted: !!s.deleted, deleted_at: s.deletedAt || null, deleted_by: s.deletedBy || null,
-  created_by: s.createdBy || S.current || null
+  deleted: !!s.deleted, deleted_at: s.deletedAt || null, deleted_by: s.deletedBy || null
 });
 
 const fromOp = r => ({
@@ -2189,9 +801,7 @@ const orderRowOf = o => ({
   paid: !!o.paid, paid_at: tsOf(o.paidAt), due: dOnly(o.due),
   shipped_at: tsOf(o.shippedAt), shipped_by: o.shippedBy || null,
   cancelled_at: tsOf(o.cancelledAt), cancelled_by: o.cancelledBy || null,
-  cancel_reason: o.cancelReason || null,
-  // автор заявки: при оновленні чужої заявки не перебиваємо його собою
-  created_by: o.who || S.current || null
+  cancel_reason: o.cancelReason || null
 });
 const lineRowOf = (o, l, i) => ({
   id: l.id || crypto.randomUUID(), order_id: o.id, pos: i + 1, sku_id: l.sku,
@@ -2299,7 +909,7 @@ async function pushChanges() {
       }
       // ціни закупівлі
       for (const c of (s.costs || [])) {
-        const row2 = { id: c.id, sku_id: s.id, price: +c.price, date: dOnly(c.date), created_by: S.current || null };
+        const row2 = { id: c.id, sku_id: s.id, price: +c.price, date: dOnly(c.date) };
         if (changed('cost', c.id, row2)) {
           const { error } = await db.from('sku_costs').upsert(row2);
           if (!error) remember('cost', c.id, row2);
@@ -2344,8 +954,7 @@ async function pushChanges() {
       for (const r of rows) {
         if (changed('line', r.id, r)) {
           const { error } = await db.from('order_lines').upsert(r);
-          if (error) throw error;          // мовчазна втрата позицій — саме так кг ставали нульовими
-          remember('line', r.id, r);
+          if (!error) remember('line', r.id, r);
         }
       }
       const keep = new Set(rows.map(r => r.id));
@@ -2357,16 +966,15 @@ async function pushChanges() {
       for (const p of (o.payments || [])) {
         p.id = p.id || crypto.randomUUID();
         if (!SNAP[snapKey('pay', p.id)]) {
-          const row2 = { id: p.id, order_id: o.id, amount: +p.amount, paid_on: dOnly(p.at), comment: p.note || null, created_by: p.by || S.current || null };
+          const row2 = { id: p.id, order_id: o.id, amount: +p.amount, paid_on: dOnly(p.at), comment: p.note || null };
           const { error } = await db.from('payments').insert(row2);
-          if (error) throw error;
-          remember('pay', p.id, row2);
+          if (!error) remember('pay', p.id, row2);
         }
       }
       for (const r of (o.returns || [])) {
         r.id = r.id || crypto.randomUUID();
         if (!SNAP[snapKey('ret', r.id)]) {
-          const row2 = { id: r.id, order_id: o.id, returned_on: dOnly(r.at), reason: r.reason || null, amount: +r.sum || 0, created_by: r.by || S.current || null };
+          const row2 = { id: r.id, order_id: o.id, returned_on: dOnly(r.at), reason: r.reason || null, amount: +r.sum || 0 };
           const { error } = await db.from('returns').insert(row2);
           if (!error) {
             remember('ret', r.id, row2);
@@ -2378,7 +986,7 @@ async function pushChanges() {
       for (const e of (o.events || [])) {
         e.id = e.id || crypto.randomUUID();
         if (!SNAP[snapKey('ev', e.id)]) {
-          const row2 = { id: e.id, order_id: o.id, text: e.text, created_at: tsOf(e.at), created_by: e.who || S.current || null };
+          const row2 = { id: e.id, order_id: o.id, text: e.text, created_at: tsOf(e.at) };
           const { error } = await db.from('order_events').insert(row2);
           if (!error) remember('ev', e.id, row2);
         }
@@ -2389,7 +997,7 @@ async function pushChanges() {
     for (const a of (S.audit || [])) {
       a.id = a.id || crypto.randomUUID();
       if (!SNAP[snapKey('audit', a.id)]) {
-        const row = { id: a.id, sku_id: a.sku, act: a.act, text: a.text, created_at: tsOf(a.at), created_by: a.who || S.current || null };
+        const row = { id: a.id, sku_id: a.sku, act: a.act, text: a.text, created_at: tsOf(a.at) };
         const { error } = await db.from('audit').insert(row);
         if (!error) remember('audit', a.id, row);
       }
@@ -2451,9 +1059,6 @@ function wireAuth(){
   }
 }
 async function boot() {
-  applyStatic();
-  watchDom();
-  translateDom(document.body);
   wireAuth();
   const { data: { session } } = await db.auth.getSession();
   if (!session) { showAuth(); return; }
@@ -2470,8 +1075,8 @@ async function touchPresence(){
 async function afterLogin() {
   const { data: { user } } = await db.auth.getUser();
   const { data: prof, error } = await db.from('profiles').select('*').eq('id', user.id).single();
-  if (error || !prof) { toast(t('auth.noprofile')); await db.auth.signOut(); showAuth(); return; }
-  if (prof.removed) { toast(t('auth.off')); await db.auth.signOut(); showAuth(); return; }
+  if (error || !prof) { toast('Профіль не знайдено, зверніться до адміністратора'); await db.auth.signOut(); showAuth(); return; }
+  if (prof.removed) { toast('Доступ вимкнено'); await db.auth.signOut(); showAuth(); return; }
   ME = prof;
   $('#auth').style.display = 'none';
   document.body.classList.remove('locked');
@@ -2499,11 +1104,11 @@ const loginOf = v => String(v||'').replace('@' + LOGIN_DOMAIN, '');
 async function doLogin() {
   const email = mailOf($('#authEmail').value.trim().toLowerCase()), pass = $('#authPass').value;
   const err = m => { $('#authErr').textContent = m; };
-  if (!$('#authEmail').value.trim() || !pass) return err(t('auth.need'));
+  if (!$('#authEmail').value.trim() || !pass) return err('Вкажіть логін і пароль.');
   err(''); $('#authBtn').disabled = true;
   const { error } = await db.auth.signInWithPassword({ email, password: pass });
   $('#authBtn').disabled = false;
-  if (error) return err(error.message === 'Invalid login credentials' ? t('auth.bad') : error.message);
+  if (error) return err(error.message === 'Invalid login credentials' ? 'Невірний логін або пароль.' : error.message);
   await afterLogin();
 }
 
@@ -2623,7 +1228,7 @@ function viewCatalog(){
   let totKg=0, totFree=0;
   liveSkus().forEach(s=>{const l=levels(s.id); totKg+=l.kg; totFree+=l.fk;});
   $('#view').innerHTML = `
-    <p class="sub num" style="margin:0 0 10px;color:var(--muted);font-size:14px">${t('cat.sum').replace('{n}',liveSkus().length).replace('{kg}',fmtKg(totKg)).replace('{free}',fmtKg(totFree))}</p>
+    <p class="sub num" style="margin:0 0 10px;color:var(--muted);font-size:14px">${liveSkus().length} SKU · на складі ${fmtKg(totKg)} кг · вільно ${fmtKg(totFree)} кг</p>
     ${list.length ? list.map(s=>{
       const l=levels(s.id);
       const pr=pricing(s,l);
@@ -2637,14 +1242,14 @@ function viewCatalog(){
             ${compCol(s)}
           </div>
         </div>
-        <div class="scol">${thumbHtml(s,'thumb sthumb')}${can('delsku')?`<span class="delsku ${Math.abs(l.kg)<0.001&&l.cn===0&&l.rk<0.001?'':'off'}" role="button" tabindex="0" data-delsku="${s.id}" aria-label="${t('cat.del')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>`:''}</div>
+        <div class="scol">${thumbHtml(s,'thumb sthumb')}${can('delsku')?`<span class="delsku ${Math.abs(l.kg)<0.001&&l.cn===0&&l.rk<0.001?'':'off'}" role="button" tabindex="0" data-delsku="${s.id}" aria-label="Видалити SKU"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>`:''}</div>
           <div class="levels num slevels">
-            ${seeSale()?`<span class="chip sale">${t('cat.sale')} ${pr.sale?fmtEur(pr.sale)+'/'+t('unit.kg'):'—'}</span>`:''}
-            <span class="chip free">${t('cat.free')} ${fmtKg(l.fk)} ${t('unit.kg')} / ${fmtN(l.fc)} ${t('unit.cn')}</span>
-            ${l.rk>0?`<span class="chip resv">${t('cat.resv')} ${fmtKg(l.rk)} ${t('unit.kg')}</span>`:''}
+            ${seeSale()?`<span class="chip sale">Ціна прод. ${pr.sale?fmtEur(pr.sale)+'/кг':'—'}</span>`:''}
+            <span class="chip free">вільно ${fmtKg(l.fk)} кг / ${fmtN(l.fc)} к</span>
+            ${l.rk>0?`<span class="chip resv">резерв ${fmtKg(l.rk)} кг</span>`:''}
           </div>
       </button>`;
-    }).join('') : `<div class="empty">${q?t('cat.none'):t('cat.empty')}</div>`}
+    }).join('') : `<div class="empty">${q?'Нічого не знайдено. Перевірте артикул або відскануйте код.':'Каталог порожній. Додайте перший SKU кнопкою «+ SKU».'}</div>`}
   `;
 }
 
@@ -2715,13 +1320,7 @@ function viewReserves(){
   const oq=($('#oq')?.value||'').trim().toLowerCase();
   const inQ = o => !oq || [orderNo(o),o.client,o.comment,...o.lines.map(li=>{const x=skuById(li.sku)||{}; return [x.art,x.maker,x.color].join(' ');})].some(v=>String(v||'').toLowerCase().includes(oq));
   const base = S.reserves.filter(o=>inP(o)&&inQ(o));
-  const ALL_GROUPS = [['all','Усі'],['res','Створені'],['pick','Збірка'],['wait','Чекає оплати'],['ready','До відправки'],['unpaid','Не оплачені'],['done','Оплачені'],['sample','Пробники'],['cancel','Анульовані']];
-  // На телефоні дев'ять фільтрів займають пів екрана. Лишаємо два робочі;
-  // активний показуємо завжди, навіть якщо його обрали з комп'ютера.
-  const PHONE_KEYS = ['res', 'pick', 'ready'];   // рівно один ряд по три
-  const groups = isPhone()
-    ? ALL_GROUPS.filter(([k]) => PHONE_KEYS.includes(k) || (k === oFilter && k !== 'all'))
-    : ALL_GROUPS;
+  const groups = [['all','Усі'],['res','Створені'],['pick','Збірка'],['wait','Чекає оплати'],['ready','До відправки'],['unpaid','Не оплачені'],['done','Оплачені'],['sample','Пробники'],['cancel','Анульовані']];
   const cnt = k => k==='all'?base.length:base.filter(o=>oStage(o)===k).length;
   const list = base.filter(o=>oFilter==='all'||oStage(o)===oFilter).sort((a,b)=>b.at.localeCompare(a.at));
   const unpaid = S.reserves.filter(o=>oStage(o)==='unpaid');
@@ -3503,7 +2102,7 @@ function openSettings(){
   const admin = can('users');
   const users = activeUsers();
   const inv = (S.invites||[]);
-  openSheet(`${head(t('set.title'))}<div class="compact">
+  openSheet(`${head('Доступ і дані')}<div class="compact">
     ${admin?`<div class="box"><h3>Додати людину</h3>
       <div id="ierr"></div><div id="iout"></div>
       <label class="f">Логін<input id="iEmail" type="text" autocapitalize="none" spellcheck="false" autocomplete="off" placeholder="oleh"></label>
@@ -3533,19 +2132,6 @@ function openSettings(){
       <button class="btn small ghost" data-genpass="pPass" style="width:100%;margin:-2px 0 10px">Згенерувати пароль</button>
       <button class="btn" data-setpass style="width:100%">Зберегти пароль</button>
     </div>`:''}
-    <div class="box"><h3>${t('set.lang')}</h3>
-      <div style="display:flex;gap:6px">
-        ${LANGS.map(([v,n])=>`<button class="btn small ${LANG===v?'':'ghost'}" data-lang="${v}" style="flex:1">${n}</button>`).join('')}
-      </div>
-      <p class="hint" style="margin:8px 0 0">${t('set.langnote')}</p>
-    </div>
-    <div class="box"><h3>${t('set.look')}</h3>
-      <div style="display:flex;gap:6px">
-        ${[['light','set.light'],['dark','set.dark']].map(([v,k])=>
-          `<button class="btn small ${themePref()===v?'':'ghost'}" data-theme="${v}" style="flex:1">${t(k)}</button>`).join('')}
-      </div>
-      <p class="hint" style="margin:8px 0 0">${t('set.device')}</p>
-    </div>
     ${can('fin')?`<div class="box"><h3>Місце у сховищі</h3><div id="usageBox"><p class="hint" style="margin:0">Рахую…</p></div></div>`:''}
     ${me().role==='admin'?`<div class="box"><h3>Режим налагодження</h3>
       <p class="hint" style="margin:0 0 8px">${S.debug
@@ -4043,7 +2629,7 @@ function openSku(id){
   const s = skuById(id); if(!s) return;
   const l = levels(id);
   const ops = S.ops.filter(o=>o.sku===id).sort((a,b)=>new Date(b.at)-new Date(a.at));
-  openSheet(`<div class="panel-head"><button class="btn plat" style="flex:1;margin:0" data-edit="${id}" ${can('sku')?'':'disabled'}><span class="dot" style="background:var(--muted)"></span>${t('sku.edit')}</button><button class="x" data-close aria-label="${t('close')}">×</button></div>
+  openSheet(`<div class="panel-head"><button class="btn plat" style="flex:1;margin:0" data-edit="${id}" ${can('sku')?'':'disabled'}><span class="dot" style="background:var(--muted)"></span>Коригування картки SKU</button><button class="x" data-close aria-label="Закрити">×</button></div>
     <div class="skuhead">
       <div class="info">
         ${s.maker?`<div>Brand: ${esc(s.maker)}</div>`:''}
@@ -4059,14 +2645,14 @@ function openSku(id){
     </div>
     ${s.photos.length>1?`<div class="gallery">${s.photos.slice(1).map(p=>`<img src="${photoSrc(p)}" alt="Фото пряжі">`).join('')}</div>`:''}
     <div class="levels-big num">
-      <div class="lv stock"><b>${t('sku.stock')}</b><div class="kg">${fmtKg(l.kg)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.cn)} ${t('sku.cones')}</div></div>
-      <div class="lv resv"><b>${t('sku.resv')}</b><div class="kg">${fmtKg(l.rk)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.rc)} ${t('sku.cones')}</div></div>
-      <div class="lv free"><b>${t('sku.free')}</b><div class="kg">${fmtKg(l.fk)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.fc)} ${t('sku.cones')}</div></div>
+      <div class="lv stock"><b>На складі</b><div class="kg">${fmtKg(l.kg)} кг</div><div class="cn">${fmtN(l.cn)} конусів</div></div>
+      <div class="lv resv"><b>У резерві</b><div class="kg">${fmtKg(l.rk)} кг</div><div class="cn">${fmtN(l.rc)} конусів</div></div>
+      <div class="lv free"><b>Вільно</b><div class="kg">${fmtKg(l.fk)} кг</div><div class="cn">${fmtN(l.fc)} конусів</div></div>
     </div>
     ${!seeSale()?'':(()=>{const pr=pricing(s,l);return `<div class="pricebox num">
-      ${!seeCost()?'':`<button class="pt" data-editcost="${id}" ${can('fin')?'':'disabled'} aria-label="${t('sku.editcost')}"><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><b>${t('sku.buy')}</b><div class="v">${pr.cost?fmtEur(pr.cost)+'<small>/'+t('unit.kg')+'</small>':'—'}</div><b>${(c=>c?t('sku.from')+' '+fmtDate(c.date):'')(costInfo(s).act)}</b></button>`}
-      <button class="pt" data-editsale="${id}" ${can('fin')?'':'disabled'} aria-label="${t('sku.editsale')}"><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><b>${t('sku.sell')}</b><div class="v">${pr.sale?fmtEur(pr.sale)+'<small>/'+t('unit.kg')+'</small>':'—'}</div>${pr.sale?`<b>${pr.src}</b>`:''}</button>
-      ${!seeCost()?'':`<div class="pt"><b>${t('sku.markup')}</b><div class="v ${pr.markup!==null&&pr.markup<0?'neg':'pos'}">${fmtPct(pr.markup)}</div></div>`}
+      ${!seeCost()?'':`<button class="pt" data-editcost="${id}" ${can('fin')?'':'disabled'} aria-label="Змінити ціни закупівлі"><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><b>Закупівля</b><div class="v">${pr.cost?fmtEur(pr.cost)+'<small>/кг</small>':'—'}</div><b>${(c=>c?'від '+fmtDate(c.date):'')(costInfo(s).act)}</b></button>`}
+      <button class="pt" data-editsale="${id}" ${can('fin')?'':'disabled'} aria-label="Змінити ціну продажу"><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><b>Продаж</b><div class="v">${pr.sale?fmtEur(pr.sale)+'<small>/кг</small>':'—'}</div>${pr.sale?`<b>${pr.src}</b>`:''}</button>
+      ${!seeCost()?'':`<div class="pt"><b>Націнка</b><div class="v ${pr.markup!==null&&pr.markup<0?'neg':'pos'}">${fmtPct(pr.markup)}</div></div>`}
     </div>`})()}
     <div class="actions">
       <button class="btn" data-op="in" data-sku="${id}" ${can('in')?'':'disabled'}><span class="dot" style="background:var(--green)"></span>Прихід</button>
@@ -4083,7 +2669,7 @@ function openSku(id){
         ${(s.comp||[]).length?`<div class="lcomp">${compSorted(s.comp).map(c=>`<span><b>${fmtPctC(c.p)}%</b> ${esc(c.f)}</span>`).join('')}</div>`:''}
         <svg id="bc"></svg>
       </div>
-      <button class="btn ghost small" data-print="${id}" style="width:100%">${t('sku.label')}</button>
+      <button class="btn ghost small" data-print="${id}" style="width:100%">Етикетка для друку (PDF)</button>
     </div>
     <div class="box"><h3>Історія</h3>
       <div class="hfilt">${[['all','Усе'],['mv','Рух'],['ch','Зміни картки'],['rs','Заявки']].map(([k,n])=>`<button class="hf ${k==='all'?'on':''}" data-hf="${k}">${n}</button>`).join('')}</div>
@@ -4601,7 +3187,7 @@ document.addEventListener('click', e=>{
   if(d.pick){ pickSku(d.pick); return; }
   if(d.lrm!==undefined){ syncOD(); OD.lines.splice(+d.lrm,1); drawOrderEditor(); return; }
   if('odsave' in d){ saveOrderDraft(); return; }
-  if(d.of){ oFilter = (oFilter===d.of ? 'all' : d.of); viewReserves(); return; }
+  if(d.of){ oFilter=d.of; viewReserves(); return; }
   if(d.oper){ const dd=new Date(), y=dd.getFullYear(), m=dd.getMonth(); const f=(Y,M,D)=>new Date(Date.UTC(Y,M,D)).toISOString().slice(0,10);
     [oFrom,oTo] = d.oper==='month'?[f(y,m,1),todayStr()]:d.oper==='prev'?[f(y,m-1,1),f(y,m,0)]:['','']; viewReserves(); return; }
   if(d.opick){ orderPick(d.opick); return; }
@@ -4629,8 +3215,6 @@ document.addEventListener('click', e=>{
   if(d.costadd){ costAdd(d.costadd); return; }
   if('invite' in d){ sendInvite(); return; }
   if(d.genpass){ fillPass(d.genpass); return; }
-  if(d.lang){ setLang(d.lang); render(); openSettings(); return; }
-  if(d.theme){ applyTheme(d.theme); openSettings(); return; }
   if(d.debug){ setDebug(d.debug==='on'); return; }
   if(d.opurge){ purgeOrder(t, d.opurge); return; }
   if(d.purgeuser){ purgeUser(t, d.purgeuser); return; }
