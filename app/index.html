@@ -95,6 +95,15 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:12p
 .av .st{position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;border:2px solid var(--surface);background:#B8AC9C}
 .av .st.on{background:#3D9A5C}
 .av.big .st{width:12px;height:12px}
+/* компактний список присутності: шрифти вдвічі менші за звичайний рядок
+   людини, бо тут важливий сам перелік, а не кожне ім'я окремо */
+.ulist-sm .urow{gap:8px;padding:6px 0}
+.ulist-sm .urow b{font-size:13px;font-weight:600}
+.ulist-sm .urow .sub{font-size:11px;color:var(--muted);line-height:1.3}
+.ulist-sm .urow .me{font-size:9px;padding:0 4px;margin-left:4px}
+.ulist-sm .av{width:22px;height:22px;font-size:9px;border-width:1.5px}
+.ulist-sm .av .st{width:8px;height:8px}
+.ulist-sm .onnow{color:var(--green);font-weight:600}
 .urow{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
 .urow:first-of-type{border-top:0}
 .urow .me{font-size:11px;background:var(--indigo-soft);color:var(--indigo);border-radius:6px;padding:1px 6px;margin-left:6px;font-weight:600}
@@ -3653,8 +3662,7 @@ function openOnline(){
   const n=list.filter(isOnline).length;
   openSheet(`${head('Хто в базі зараз')}
     <p class="hint" style="margin:0 0 8px">Зараз онлайн: ${n} з ${list.length}</p>
-    <div class="box">${list.map(u=>`<div class="urow">${avatar(u,'big')}<div class="grow" style="flex:1;min-width:0"><b>${esc(u.name)}</b>${u.id===S.current?'<span class="me">це ви</span>':''}<div class="sub" style="color:var(--muted);font-size:13px">${ROLE[u.role]} · ${isOnline(u)?'<span style="color:var(--green);font-weight:600">онлайн зараз</span>':agoText(seenAt(u))}</div></div></div>`).join('')}</div>
-    <p class="demo-note">У прототипі присутність умовна. У робочій версії список оновлюватиметься наживо для всіх 10 людей.</p>`);
+    <div class="box ulist-sm">${list.map(u=>`<div class="urow">${avatar(u)}<div class="grow" style="flex:1;min-width:0"><b>${esc(u.name)}</b>${u.id===S.current?'<span class="me">це ви</span>':''}<div class="sub">${ROLE[u.role]} · ${isOnline(u)?'<span class="onnow">онлайн зараз</span>':agoText(seenAt(u))}</div></div></div>`).join('')}</div>`);
 }
 
 const roleOptions = sel => Object.keys(ROLE).map(r=>`<option value="${r}" ${r===sel?'selected':''}>${ROLE[r]}</option>`).join('');
