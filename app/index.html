@@ -179,6 +179,9 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .gallery img,.gallery .thumb{width:112px;height:112px;border-radius:14px;flex:none;object-fit:cover}
 
 .levels-big{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+/* клієнтові показуємо лише «Вільно»: скільки товару на складі й скільки
+   вже за кимось — не його справа, йому важливо тільки що можна замовити */
+.levels-big.one{grid-template-columns:1fr}
 .lv{border-radius:14px;padding:10px}
 .lv b{display:block;font-size:13px;font-weight:500}
 .lv .kg{font-size:21px;font-weight:700;line-height:1.15}
@@ -2322,9 +2325,14 @@ async function hydrate() {
   if (isClient()) {
     S.reserves = S.reserves.filter(ownOrder);
     try{
-      const { data } = await db.from('sku_reserved').select('*');
-      S.resAll = Object.fromEntries((data||[]).map(r => [r.sku_id, { kg:+r.kg||0, cones:+r.cones||0 }]));
-    }catch(e){ console.warn('sku_reserved', e); }
+      const [rv, st2] = await Promise.all([
+        db.from('sku_reserved').select('*'),
+        db.from('sku_stock').select('*')
+      ]);
+      S.resAll = Object.fromEntries(((rv && rv.data) || []).map(r => [r.sku_id, { kg:+r.kg||0, cones:+r.cones||0 }]));
+      S.stockAll = Object.fromEntries(((st2 && st2.data) || []).map(r => [r.sku_id,
+        { kg:+r.kg||0, cones:+r.cones||0, inKg:+r.in_kg||0, inCones:+r.in_cones||0 }]));
+    }catch(e){ console.warn('підсумки складу', e); }
   }
 
   // знімок для diff
@@ -2669,11 +2677,19 @@ function pricing(sku, l){
 const fmtPct = p => p===null ? '—' : (p>0?'+':'')+p.toLocaleString('uk-UA',{maximumFractionDigits:1})+'%';
 function levels(skuId){
   let kg=0, cn=0, inKg=0, inCn=0, pk=0, pv=0;
-  S.ops.filter(o=>o.sku===skuId).forEach(o=>{
-    const sgn = (o.type==='out'||o.type==='smp') ? -1 : 1;
-    kg += sgn*o.kg; cn += sgn*o.cones;
-    if(o.type==='in'){ inKg+=o.kg; inCn+=o.cones; if(o.price>0){ pk+=o.kg; pv+=o.kg*o.price; } }
-  });
+  if(isClient() && S.stockAll){
+    /* Клієнтові рух товару закритий і в застосунку, і в базі: там назви
+       інших клієнтів, постачальники й закупівельні ціни. Залишок він
+       отримує підсумком — дві цифри на SKU, без жодного рядка історії. */
+    const a = S.stockAll[skuId];
+    if(a){ kg=a.kg; cn=a.cones; inKg=a.inKg; inCn=a.inCones; }
+  } else {
+    S.ops.filter(o=>o.sku===skuId).forEach(o=>{
+      const sgn = (o.type==='out'||o.type==='smp') ? -1 : 1;
+      kg += sgn*o.kg; cn += sgn*o.cones;
+      if(o.type==='in'){ inKg+=o.kg; inCn+=o.cones; if(o.price>0){ pk+=o.kg; pv+=o.kg*o.price; } }
+    });
+  }
   let rk=0, rc=0;
   if(isClient() && S.resAll){
     /* Клієнт чужих заявок не бачить — якби вільний залишок рахувався лише
@@ -2696,15 +2712,25 @@ let tab='catalog';
 function render(){
   document.querySelectorAll('nav.tabs [data-tab]').forEach(b=>b.setAttribute('aria-current', b.dataset.tab===tab));
   const FIN_TABS=['journal','stats','export'];
-  const hidden = el => { const t=el.dataset.tab||el.id; if(FIN_TABS.includes(t)||t==='exportBtn') return !can('fin'); if(t==='debt') return !seeSale(); return false; };
+  const hidden = el => { const t=el.dataset.tab||el.id;
+    if(FIN_TABS.includes(t)||t==='exportBtn') return !can('fin');
+    if(t==='debt') return !seeSale();
+    if(t==='scanBtn') return isClient();     // сканер — інструмент складу, не клієнта
+    return false; };
   document.querySelectorAll('nav.tabs button').forEach(el=>{ el.style.display = hidden(el) ? 'none' : ''; });
   if((FIN_TABS.includes(tab)&&!can('fin')) || (tab==='debt'&&!seeSale())) tab='catalog';
   $('#searchBar').style.display = tab==='catalog' ? 'flex' : 'none';
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
   $('#addBtn').disabled = !can('sku');
-  const on = activeUsers().filter(isOnline);
-  $('#onlineBtn').innerHTML = `<span class="avs">${on.slice(0,2).map(u=>avatar(u,'',false)).join('')}</span><span class="num">${on.length} онлайн</span>`;
+  // хто зараз у базі — внутрішня кухня; клієнтові склад людей не показуємо
+  const onBtn = $('#onlineBtn');
+  if(isClient()){ onBtn.style.display='none'; }
+  else {
+    onBtn.style.display='';
+    const on = activeUsers().filter(isOnline);
+    onBtn.innerHTML = `<span class="avs">${on.slice(0,2).map(u=>avatar(u,'',false)).join('')}</span><span class="num">${on.length} онлайн</span>`;
+  }
   ({catalog:viewCatalog, reserves:viewReserves, debt:viewDebt, journal:viewJournal, stats:viewStats})[tab]();
 }
 
@@ -2738,7 +2764,7 @@ function viewCatalog(){
           <div class="levels num slevels">
             ${seeSale()?`<span class="chip sale">${t('cat.sale')} ${pr.sale?fmtEur(pr.sale)+'/'+t('unit.kg'):'—'}</span>`:''}
             <span class="chip free">${t('cat.free')} ${fmtKg(l.fk)} ${t('unit.kg')} / ${fmtN(l.fc)} ${t('unit.cn')}</span>
-            ${l.rk>0?`<span class="chip resv">${t('cat.resv')} ${fmtKg(l.rk)} ${t('unit.kg')}</span>`:''}
+            ${l.rk>0&&!isClient()?`<span class="chip resv">${t('cat.resv')} ${fmtKg(l.rk)} ${t('unit.kg')}</span>`:''}
           </div>
       </button>`;
     }).join('') : `<div class="empty">${q?t('cat.none'):t('cat.empty')}</div>`}
@@ -2930,7 +2956,12 @@ function syncOD(){
   if($('#odDays')) OD.days=$('#odDays').value;
   const sm=document.querySelector('input[name=odShipMode]:checked'); if(sm) OD.shipMode=sm.value;
   OD.lines.forEach((li,i)=>{ const k=$(`[data-lk="${i}"]`), c=$(`[data-lc="${i}"]`), p=$(`[data-lp="${i}"]`), m=$(`[data-lsm="${i}"]`); if(m) li.sample=m.checked;
-    if(k) li.kg=k.value; if(c) li.cones=c.value; if(p) li.price=p.value; });
+    if(k) li.kg=k.value; if(c) li.cones=c.value;
+    /* Ціну продажу в заявці міняє лише адмін або головний бухгалтер.
+       Менеджер і клієнт беруть її з картки товару — інакше знижку можна
+       було б поставити собі самому, і те саме правило стоїть у базі. */
+    if(can('fin')){ if(p) li.price=p.value; }
+    else { const sx=skuById(li.sku)||{}; li.price = sx.sale || li.price || 0; } });
 }
 function drawOrderEditor(err){
   const o=OD.id?oById(OD.id):null;
@@ -2948,7 +2979,7 @@ function drawOrderEditor(err){
           <div class="odl-f ${li.sample?'two':''}">
             <label>Конусів<input data-lc="${i}" type="number" inputmode="numeric" min="0" max="${li.maxCn}" step="1" value="${esc(li.cones)}"></label>
             <label>Кг<input data-lk="${i}" type="number" inputmode="decimal" min="0" max="${li.maxKg}" step="0.1" value="${esc(li.kg)}"></label>
-            ${li.sample?'':`<label>€/кг<input data-lp="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(li.price)}"></label>
+            ${li.sample?'':`<label>€/кг<input data-lp="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(li.price)}" ${can('fin')?'':'readonly title="Ціна береться з картки товару"'}></label>
             <label>Сума<output data-ls="${i}" class="lsum num">${(parseFloat(li.kg)||0)*(parseFloat(li.price)||0)?fmtEur((parseFloat(li.kg)||0)*(parseFloat(li.price)||0)):'—'}</output></label>`}
           </div>
           <label class="check lsmp"><input type="checkbox" data-lsm="${i}" ${li.sample?'checked':''} ${can('smp')||can('order')?'':'disabled'}> Пробник, без оплати</label>
@@ -3639,7 +3670,7 @@ function openSettings(){
       <button class="btn" data-invite style="width:100%">Створити доступ</button>
       <p class="hint" style="margin:8px 0 0">Пошта не потрібна. Логін і пароль передайте людині особисто.</p>
     </div>`:''}
-    <div class="box">
+    ${isClient()?'':`<div class="box">
       <h3 class="h3row">Люди (${users.length})<button class="iinfo" id="roleInfoBtn" aria-expanded="false" aria-controls="roleInfo" title="Що дозволяє кожна роль">i</button></h3>
       <div class="rolesbox" id="roleInfo" hidden>
         <dl class="meta">${Object.keys(ROLE).map(r=>`<dt>${ROLE[r]}</dt><dd>${ROLE_DESC[r]}</dd>`).join('')}</dl>
@@ -3657,7 +3688,7 @@ function openSettings(){
           ${u.client?'':'<p class="hint" style="margin:4px 0 0;color:var(--red)">Поки назву не вказано, людина не побачить жодної заявки.</p>'}`:''}`
         :`<div class="sub" style="font-size:13px">${ROLE[u.role]}${u.role==='client'&&u.client?' · '+esc(u.client):''}</div>`}
       </div></div>`).join('')}
-    </div>
+    </div>`}
     ${admin?`<div class="box"><h3>Змінити пароль</h3>
       <div id="perr"></div><div id="pout"></div>
       <label class="f">Людина<select id="pUser">${users.map(u=>`<option value="${u.id}">${esc(u.name)} · ${esc(loginOf(u.email||''))}</option>`).join('')}</select></label>
@@ -4204,9 +4235,10 @@ function openSku(id){
       ${s.photos[0]?`<img class="sw-big" src="${photoSrc(s.photos[0])}" alt="Фото пряжі">`:`<div class="sw-big" style="background:${esc(s.hex||'var(--indigo-soft)')}" role="img" aria-label="Відтінок ${esc(s.color||'')}"></div>`}
     </div>
     ${s.photos.length>1?`<div class="gallery">${s.photos.slice(1).map(p=>`<img src="${photoSrc(p)}" alt="Фото пряжі">`).join('')}</div>`:''}
-    <div class="levels-big num">
+    <div class="levels-big num${isClient()?' one':''}">
+      ${isClient()?'':`
       <div class="lv stock"><b>${t('sku.stock')}</b><div class="kg">${fmtKg(l.kg)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.cn)} ${t('sku.cones')}</div></div>
-      <div class="lv resv"><b>${t('sku.resv')}</b><div class="kg">${fmtKg(l.rk)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.rc)} ${t('sku.cones')}</div></div>
+      <div class="lv resv"><b>${t('sku.resv')}</b><div class="kg">${fmtKg(l.rk)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.rc)} ${t('sku.cones')}</div></div>`}
       <div class="lv free"><b>${t('sku.free')}</b><div class="kg">${fmtKg(l.fk)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.fc)} ${t('sku.cones')}</div></div>
     </div>
     ${!seeSale()?'':(()=>{const pr=pricing(s,l);return `<div class="pricebox num">
@@ -4231,14 +4263,15 @@ function openSku(id){
       </div>
       <button class="btn ghost small" data-print="${id}" style="width:100%">${t('sku.label')}</button>
     </div>
-    <div class="box"><h3>Історія</h3>
+    ${isClient()?'':`<div class="box"><h3>Історія</h3>
       <div class="hfilt">${[['all','Усе'],['mv','Рух'],['ch','Зміни картки'],['rs','Заявки']].map(([k,n])=>`<button class="hf ${k==='all'?'on':''}" data-hf="${k}">${n}</button>`).join('')}</div>
-      <div id="hlist">${historyHtml(id,'all')}</div></div>
+      <div id="hlist">${historyHtml(id,'all')}</div></div>`}
   `);
   drawBarcode('#bc', s.code);
 }
 function historyItems(id, noOrders){
   const it=[];
+  if(isClient()) return it;   // рух товару містить назви інших клієнтів і постачальників
   S.ops.filter(o=>o.sku===id).forEach(o=>it.push({k:'mv',at:o.at,html:opRow(o,false)}));
   (S.audit||[]).filter(a=>a.sku===id).forEach(a=>it.push({k:'ch',at:a.at,html:`<div class="row"><span class="tag chg">${({create:'створено',edit:'зміна',price:'ціна',delete:'видалено'})[a.act]||'зміна'}</span><div class="grow">${esc(a.text)}<div class="sub">${fmtDT(a.at)} · ${esc(uname(a.who))}</div></div></div>`}));
   if(!noOrders) S.reserves.filter(r=>(r.lines||[]).some(li=>li.sku===id)).forEach(o=>(o.events||[]).forEach(e=>it.push({k:'rs',at:e.at,html:`<div class="row"><span class="tag res">заявка</span><div class="grow">№ ${esc(orderNo(o))} · <b>${esc(o.client)}</b>: ${esc(e.text)}<div class="sub">${fmtDT(e.at)} · ${e.who?esc(uname(e.who)):'система'}</div></div></div>`})));
