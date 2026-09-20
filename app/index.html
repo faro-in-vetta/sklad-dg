@@ -4548,6 +4548,7 @@ function refreshAfter(skuId){ render(); if($('#sheet').classList.contains('open'
 let reader=null;
 function openScan(){
   markNav('scanBtn');
+  lastMiss = '';
   openSheet(`${head('Сканер')}
     <video class="video" id="vid" playsinline autoplay muted></video>
     <p class="hint" id="scanMsg" style="margin-top:10px">Вмикаю камеру…</p>
@@ -4681,15 +4682,49 @@ function stopScan(){
   camStream=null;
   const v=$('#vid'); if(v){ try{ v.srcObject=null; }catch(e){} }
 }
+/* Зчитаний код рідко приходить ідеально чистим: сканер може віддати його
+   в нижньому регістрі чи з пробілом, а людина вручну набирає просто «13»
+   замість DG0000013. На етикетках коробок буває надрукований артикул, не
+   штрихкод. Тому шукаємо в три заходи, перш ніж сказати «немає». */
+function findSkuByCode(code){
+  const norm = v => String(v||'').trim().toUpperCase().replace(/\s+/g,'');
+  const c = norm(code);
+  if(!c) return null;
+  const live = (S.skus||[]).filter(x=>!x.deleted);
+  let s = live.find(x=>norm(x.code)===c);
+  if(s) return s;
+  const digits = c.replace(/^DG/,'');
+  if(/^\d{1,9}$/.test(digits)){
+    const full = 'DG' + digits.padStart(7,'0');
+    s = live.find(x=>norm(x.code)===full);
+    if(s) return s;
+  }
+  return live.find(x=>norm(x.art)===c) || null;
+}
+
+let lastMiss = '';
 function found(code){
-  code = String(code).trim(); if(!code) return;
-  stopScan();
-  if(navigator.vibrate) try{navigator.vibrate(60)}catch(e){}
-  const s = S.skus.find(x=>x.code===code && !x.deleted);
-  closeSheet();
-  if(s){ openSku(s.id); return; }
-  // Штрихкоди присвоюються автоматично, тому чужий код у нову картку не підставляємо.
-  toast(`Код ${code} немає в каталозі`);
+  code = String(code||'').trim(); if(!code) return;
+  const s = findSkuByCode(code);
+  if(s){
+    stopScan();
+    if(navigator.vibrate) try{navigator.vibrate(60)}catch(e){}
+    closeSheet();
+    openSku(s.id);
+    return;
+  }
+  /* Раніше на чужому коді сканер закривався — і щоб спробувати ще раз,
+     доводилося відкривати його заново. Тепер камера лишається ввімкненою. */
+  const el = $('#scanMsg');
+  if(el && $('#sheet').classList.contains('open')){
+    if(lastMiss !== code){
+      lastMiss = code;
+      el.innerHTML = 'Код <b>' + esc(code) + '</b> немає в каталозі. Наведіть ще раз або введіть код вручну.';
+      if(navigator.vibrate) try{navigator.vibrate([40,60,40])}catch(e){}
+    }
+  } else {
+    toast(`Код ${code} немає в каталозі`);
+  }
 }
 async function scanFromFile(file){
   $('#scanMsg').textContent='Розпізнаю…';
@@ -4796,7 +4831,7 @@ document.addEventListener('click', e=>{
       if(from&&to&&from>to){ $('#xerr').innerHTML='<div class="err">Дата «з» пізніша за дату «по».</div>'; break; }
       $('#xerr').innerHTML=''; exportXlsx({sheets,from,to}); break; }
     case 'manualGo': found($('#manualCode').value); break;
-    case 'camRetry': stopScan(); startCamera(); break;
+    case 'camRetry': lastMiss=''; stopScan(); startCamera(); break;
     case 'logoutBtn': doLogout(); break;
   }
 });
