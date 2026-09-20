@@ -228,7 +228,23 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .row .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .soon{color:var(--red);font-weight:600}
 
-.video{width:100%;border-radius:16px;background:#000;aspect-ratio:3/4;object-fit:cover}
+.scanbox{position:relative;border-radius:16px;overflow:hidden;background:#000}
+.video{display:block;width:100%;background:#000;aspect-ratio:3/4;object-fit:cover}
+/* Затемнення поза вікном зчитування: око саме веде штрихкод у світлу
+   рамку, а декодер саме цю ділянку й розбирає збільшеною. */
+.scanmask{position:absolute;inset:0;pointer-events:none}
+.scanwin{position:absolute;left:7%;right:7%;top:50%;height:28%;transform:translateY(-50%);
+  border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.48)}
+.scanwin span{position:absolute;width:24px;height:24px;border:3px solid #C9A227}
+.scanwin span:nth-child(1){left:-2px;top:-2px;border-right:0;border-bottom:0;border-radius:12px 0 0 0}
+.scanwin span:nth-child(2){right:-2px;top:-2px;border-left:0;border-bottom:0;border-radius:0 12px 0 0}
+.scanwin span:nth-child(3){left:-2px;bottom:-2px;border-right:0;border-top:0;border-radius:0 0 0 12px}
+.scanwin span:nth-child(4){right:-2px;bottom:-2px;border-left:0;border-top:0;border-radius:0 0 12px 0}
+.scanwin i{position:absolute;left:10px;right:10px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,rgba(201,162,39,0),#C9A227,rgba(201,162,39,0));
+  animation:scanline 1.9s ease-in-out infinite}
+@keyframes scanline{0%{top:10%}50%{top:90%}100%{top:10%}}
+@media (prefers-reduced-motion: reduce){.scanwin i{animation:none;top:50%}}
 .scan-alt{display:grid;gap:8px;margin-top:12px}
 .filebtn{position:relative;overflow:hidden;text-align:center}
 .filebtn input{position:absolute;inset:0;opacity:0}
@@ -4550,7 +4566,12 @@ function openScan(){
   markNav('scanBtn');
   lastMiss = '';
   openSheet(`${head('Сканер')}
-    <video class="video" id="vid" playsinline autoplay muted></video>
+    <div class="scanbox">
+      <video class="video" id="vid" playsinline autoplay muted></video>
+      <div class="scanmask" id="scanMask" hidden>
+        <div class="scanwin"><span></span><span></span><span></span><span></span><i></i></div>
+      </div>
+    </div>
     <p class="hint" id="scanMsg" style="margin-top:10px">Вмикаю камеру…</p>
     <p class="hint" id="scanErr" style="margin-top:-6px;display:none;opacity:.75;font-size:12px"></p>
     <div class="scan-alt">
@@ -4638,33 +4659,80 @@ async function startCamera(){
     return;
   }
 
-  /* Потік беремо самі, а не через бібліотеку: так браузер показує звичний
-     запит дозволу, а помилка приходить з точною назвою — інакше ZXing
-     ховає її за власним винятком і людина бачить лише «не працює». */
   let stream=null;
   try{
     stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }, audio:false });
+      video:{ facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080} }, audio:false });
   }catch(e1){
     try{ stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false }); }
     catch(e2){ msg(why(e2)); det(e2); retry(true); return; }
   }
   camStream = stream;
 
-  /* Потік віддаємо бібліотеці НЕторканим. Якщо підключити його до <video>
-     самому й запустити відтворення, ZXing потім чекає на подію «playing»,
-     яка вже відбулася — і декодер мовчки зависає назавжди: картинка йде,
-     а штрихкоди не читаються. Саме це й було. */
   try{
-    reader = new ZXing.BrowserMultiFormatReader(scanHints(), 150);
-    reader.timeBetweenScansMillis = 150;
-    const onRes = res => { if(res) found(res.getText()); };
-    await reader.decodeFromStream(stream, 'vid', onRes);
-    msg('Наведіть камеру на штрихкод.');
-  }catch(e){
-    console.warn('scanner', e);
-    msg(why(e)); det(e); retry(true);
+    vid.setAttribute('playsinline','');
+    vid.muted = true;
+    vid.srcObject = stream;
+    await vid.play();
+  }catch(e){ det(e); }
+
+  const mask = $('#scanMask'); if(mask) mask.hidden = false;
+  msg('Наведіть штрихкод у рамку.');
+  scanLoop(vid);
+}
+
+/* Кадр з камери розбираємо самі, а не віддаємо бібліотеці цілком.
+   Причина проста: на кадрі 1920×1080 штрихкод займає вузьку смужку,
+   і декодер на дрібних лініях здається. Ми вирізаємо тільки те, що
+   в рамці, і віддаємо йому вже велику картинку. Кожна третя спроба —
+   по всьому кадру, щоб код ловився навіть повз рамку. */
+let scanTimer=null, scanTick=0, scanCanvas=null, scanReader=null;
+
+/* Переводимо рамку з екрана в координати кадру камери. Кадр 16:9, а
+   вікно на екрані вертикальне, тож браузер показує лише середину кадру
+   (object-fit:cover) — без цього перерахунку декодер розбирав би зовсім
+   не ту ділянку, яку людина бачить у рамці. */
+function winRect(vid, wide){
+  const vw = vid.videoWidth, vh = vid.videoHeight;
+  const ew = vid.clientWidth, eh = vid.clientHeight;
+  if(wide || !ew || !eh) return {x:0, y:0, w:vw, h:vh};
+  const k = Math.max(ew / vw, eh / vh);          // масштаб «заповнити»
+  const visW = ew / k, visH = eh / k;            // яка частина кадру видима
+  const ox = (vw - visW) / 2, oy = (vh - visH) / 2;
+  const L = 0.07, W = 0.86, H = 0.28;            // ті самі частки, що в CSS .scanwin
+  const x = ox + visW * L;
+  const y = oy + visH * (0.5 - H/2);
+  const w = visW * W, h = visH * H;
+  return {
+    x: Math.max(0, Math.round(x)), y: Math.max(0, Math.round(y)),
+    w: Math.max(8, Math.round(Math.min(w, vw))), h: Math.max(8, Math.round(Math.min(h, vh)))
+  };
+}
+function scanLoop(vid){
+  if(!camStream) return;
+  scanTick++;
+  if(!scanCanvas) scanCanvas = document.createElement('canvas');
+  if(!scanReader){ scanReader = new ZXing.MultiFormatReader(); try{ scanReader.setHints(scanHints()); }catch(e){} }
+
+  const vw = vid.videoWidth, vh = vid.videoHeight;
+  if(vw && vh){
+    const wide = (scanTick % 3 === 0);
+    const r = winRect(vid, wide);
+    const sx = r.x, sy = r.y, sw = r.w, sh = r.h;
+    scanCanvas.width = sw; scanCanvas.height = sh;
+    const cx = scanCanvas.getContext('2d', {willReadFrequently:true});
+    cx.drawImage(vid, sx, sy, sw, sh, 0, 0, sw, sh);
+    try{
+      let src = new ZXing.HTMLCanvasElementLuminanceSource(scanCanvas);
+      // на парних спробах дивимося інверсію — світлі коди на темному тлі
+      if(scanTick % 2 === 0 && typeof src.invert === 'function') src = src.invert();
+      const bmp = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(src));
+      const res = scanReader.decode(bmp);
+      if(res && res.getText()){ found(res.getText()); return; }
+    }catch(e){ /* у цьому кадрі коду немає — звичайна річ */ }
+    finally{ try{ scanReader.reset(); }catch(e){} }
   }
+  scanTimer = setTimeout(()=>scanLoop(vid), 110);
 }
 
 /* Обмежуємо перелік форматів: декодер не гадає між двома десятками
@@ -4681,6 +4749,8 @@ function scanHints(){
 }
 let camStream=null;
 function stopScan(){
+  if(scanTimer){ clearTimeout(scanTimer); scanTimer=null; }
+  scanTick=0; scanReader=null; scanCanvas=null;
   try{ reader && reader.reset(); }catch(e){}
   reader=null;
   try{ camStream && camStream.getTracks().forEach(t=>t.stop()); }catch(e){}
