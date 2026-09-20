@@ -1047,6 +1047,7 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Відвантажену заявку не анулюють — оформіть повернення':'Un ordine già spedito non si annulla: registra un reso',
     'Клієнт у заявках':'Cliente negli ordini',
     'Точна назва клієнта':'Nome esatto del cliente',
     'Точна назва клієнта, як у заявках':'Nome esatto del cliente, come negli ordini',
@@ -1614,6 +1615,7 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Відвантажену заявку не анулюють — оформіть повернення':'A shipped order is not cancelled — register a return instead',
     'Клієнт у заявках':'Customer on orders',
     'Точна назва клієнта':'Exact customer name',
     'Точна назва клієнта, як у заявках':'Exact customer name, as on the orders',
@@ -2903,7 +2905,12 @@ function orderActions(o){
   if(st==='ready' && can('ship')) b.push(`<button class="btn small out" data-oship="${o.id}">Відвантажити</button>`);
   if(st==='unpaid' && can('fin')) b.push(`<button class="btn small in" data-opaid="${o.id}">Оплату отримано</button>`);
   if(o.status==='shipped' && can('fin')) b.push(`<button class="btn small ghost" data-oret="${o.id}">Повернення</button>`);
-  if(!['cancel','done','sample'].includes(st) && (can('fin') || (o.status==='active' && mine && (can('order')||can('smp'))))) b.push(`<button class="btn small ghost" data-ocancel="${o.id}">Анулювати</button>`);
+  /* Після відвантаження анулювати нічого: товар уже поїхав до клієнта,
+     і єдиний чесний шлях назад — повернення, яке заводить кілограми на
+     склад окремим рухом і лишає слід у грошах. */
+  if(o.status!=='shipped' && !['cancel','done','sample'].includes(st)
+     && (can('fin') || (o.status==='active' && mine && (can('order')||can('smp')))))
+    b.push(`<button class="btn small ghost" data-ocancel="${o.id}">Анулювати</button>`);
   if(seeSale()) b.push(`<button class="btn small ghost" data-oinv="${o.id}">На друк</button>`);
   return b;
 }
@@ -3602,11 +3609,11 @@ function saveReturn(id){
 }
 function openCancel(id){
   const o=oById(id); if(!o) return;
-  const shipped=o.status==='shipped';
+  if(o.status==='shipped'){ toast('Відвантажену заявку не анулюють — оформіть повернення'); return; }
   openSheet(`${head('Анулювати № '+orderNo(o)+'?')}
     <div class="box">
       <p style="margin:0 0 6px"><b>${esc(o.client)}</b> · ${o.lines.length} ${pos(o.lines.length)} · ${fmtKg(oKg(o))} кг / ${fmtN(oCn(o))} к</p>
-      <p class="hint" style="margin:0">${shipped?`Заявку вже відвантажено. Товар повернеться на склад: +${fmtKg(oKg(o))} кг / +${fmtN(oCn(o))} к, продаж буде сторновано.`:'Резерв знімається, товар знову стане вільним.'}</p>
+      <p class="hint" style="margin:0">Резерв знімається, товар знову стане вільним.</p>
     </div>
     <label class="f">Причина<input id="cReason" placeholder="Необов'язково"></label>
     <div class="pair">
@@ -3616,14 +3623,10 @@ function openCancel(id){
 }
 function saveCancel(id){
   const o=oById(id); if(!o||['cancel','done','sample'].includes(oStage(o))) return;
+  if(o.status==='shipped'){ toast('Відвантажену заявку не анулюють — оформіть повернення'); return; }
   if(!(can('fin') || (o.status==='active' && o.who===S.current && (can('order')||can('smp'))))) return;
   const reason=$('#cReason').value.trim();
-  if(o.status==='shipped'){
-    o.lines.forEach(li=>S.ops.push({id:uid(),sku:li.sku,type:'ret',sample:!!li.sample,kg:li.shipKg,cones:li.shipCones,price:li.price,who:S.current,at:now(),party:o.client,comment:'Анулювання заявки № '+orderNo(o),order:o.id}));
-    oev(o,`Анульовано після відвантаження, повернуто на склад ${fmtKg(oKg(o))} кг / ${fmtN(oCn(o))} к${reason?'. Причина: '+reason:''}`);
-  } else {
-    oev(o,`Анульовано, резерв знято${reason?'. Причина: '+reason:''}`);
-  }
+  oev(o,`Анульовано, резерв знято${reason?'. Причина: '+reason:''}`);
   o.status='cancelled'; o.cancelledAt=now(); o.cancelledBy=S.current; o.cancelReason=reason;
   if(save()){ toast('№ '+orderNo(o)+' анульовано'); refreshOrders(); }
 }
