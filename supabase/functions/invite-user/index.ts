@@ -6,7 +6,7 @@
 // вигляду <логін>@sklad.faroinvetta.com. Листи на неї ніколи не йдуть.
 //
 // Режими:
-//   { mode:'create',   login, name, role, password }
+//   { mode:'create',   login, name, role, password, client }
 //   { mode:'password', user_id, password }
 //   { mode:'login',    user_id, login }
 //   { mode:'remove',   user_id }
@@ -29,7 +29,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
-const ROLES = ['admin', 'accountant', 'storekeeper', 'manager']
+const ROLES = ['admin', 'accountant', 'storekeeper', 'manager', 'client']
 const DOMAIN = 'sklad.faroinvetta.com'
 
 const reply = (body: unknown, status = 200) =>
@@ -248,10 +248,14 @@ Deno.serve(async (req) => {
     const name = String(body.name || '').trim() || login
     const role = String(body.role || 'manager')
     const password = String(body.password || '')
+    // назва клієнта, до якої прив'язана роль «Клієнт»: за нею людина
+    // бачить свої заявки й більше нічиї
+    const client = String(body.client || '').trim().slice(0, 160)
 
     const bad = badLogin(login)
     if (bad) return reply({ error: bad }, 400)
     if (!ROLES.includes(role)) return reply({ error: 'Невідома роль' }, 400)
+    if (role === 'client' && !client) return reply({ error: 'Для ролі «Клієнт» потрібна назва клієнта' }, 400)
     if (password.length < 8) return reply({ error: 'Пароль — щонайменше 8 символів' }, 400)
 
     const email = mailOf(login)
@@ -268,10 +272,10 @@ Deno.serve(async (req) => {
 
     let inviteId = open?.id
     if (inviteId) {
-      await admin.from('invites').update({ name, role, created_by: user.id }).eq('id', inviteId)
+      await admin.from('invites').update({ name, role, client: client || null, created_by: user.id }).eq('id', inviteId)
     } else {
       const { data, error } = await admin
-        .from('invites').insert({ email, name, role, created_by: user.id }).select('id').single()
+        .from('invites').insert({ email, name, role, client: client || null, created_by: user.id }).select('id').single()
       if (error) return reply({ error: 'Не вдалося підготувати доступ: ' + error.message }, 500)
       inviteId = data.id
     }
@@ -287,7 +291,16 @@ Deno.serve(async (req) => {
       return reply({ error: cErr.message }, 400)
     }
 
-    return reply({ ok: true, user_id: created.user?.id, login, name, role })
+    // тригер handle_new_user бере ім'я, роль і прив'язку з рядка invites;
+    // дублюємо запис явно, щоб профіль був заповнений навіть якщо тригер
+    // колись змінять
+    if (created.user?.id) {
+      await admin.from('profiles')
+        .update({ role, name, client: client || null })
+        .eq('id', created.user.id)
+    }
+
+    return reply({ ok: true, user_id: created.user?.id, login, name, role, client })
   } catch (e) {
     return reply({ error: String((e as Error)?.message || e) }, 500)
   }
