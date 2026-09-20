@@ -3706,14 +3706,12 @@ function openSettings(){
       <div style="display:flex;gap:6px">
         ${LANGS.map(([v,n])=>`<button class="btn small ${LANG===v?'':'ghost'}" data-lang="${v}" style="flex:1">${n}</button>`).join('')}
       </div>
-      <p class="hint" style="margin:8px 0 0">${t('set.langnote')}</p>
     </div>
     <div class="box"><h3>${t('set.look')}</h3>
       <div style="display:flex;gap:6px">
         ${[['light','set.light'],['dark','set.dark']].map(([v,k])=>
           `<button class="btn small ${themePref()===v?'':'ghost'}" data-theme="${v}" style="flex:1">${t(k)}</button>`).join('')}
       </div>
-      <p class="hint" style="margin:8px 0 0">${t('set.device')}</p>
     </div>
     ${can('fin')?`<div class="box"><h3>Місце у сховищі</h3><div id="usageBox"><p class="hint" style="margin:0">Рахую…</p></div></div>`:''}
     ${me().role==='admin'?`<div class="box"><h3>Режим налагодження</h3>
