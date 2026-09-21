@@ -230,9 +230,6 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .meta dt{color:var(--muted)}.meta dd{margin:0}
 /* смужка заповнення сховища. Клас .bar уже зайнятий графіком аналітики. */
 .bkp{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-.rsbox{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
-.rslist{margin:0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.5}
-.rslist b{color:var(--ink)}
 .bkp a{color:var(--gold);text-decoration:underline}
 .usebar{height:8px;border-radius:999px;background:var(--line);overflow:hidden;margin:6px 0 4px}
 .usebar > i{display:block;height:100%;border-radius:999px;background:var(--gold);transition:width .3s}
@@ -1052,17 +1049,6 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
-    'Відновити з копії':'Ripristina da una copia',
-    'Відновити відсутнє':'Ripristina ciò che manca',
-    'Натисніть ще раз, щоб відновити':'Premi di nuovo per ripristinare',
-    'Шукаю копії…':'Cerco le copie…',
-    'Звіряю копію з базою…':'Confronto la copia con il database…',
-    'Звіряю фото…':'Controllo le foto…',
-    'Відновлення завершено.':'Ripristino completato.',
-    'Відновлення зупинено.':'Ripristino interrotto.',
-    'Дані відновлено':'Dati ripristinati',
-    'Зверніть увагу:':'Attenzione:',
-    'Повернеться лише відсутнє. Те, що вже є в базі, і все, що внесли після копії, залишиться як є.':'Verrà ripristinato solo ciò che manca. Quello che è già nel database e tutto ciò che è stato inserito dopo la copia resterà com\'è.',
     'Зробити резервну копію':'Crea una copia di backup',
     'Оновити сьогоднішню копію':'Aggiorna la copia di oggi',
     'Змінити папку для копій':'Cambia la cartella delle copie',
@@ -1638,17 +1624,6 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
-    'Відновити з копії':'Restore from a backup',
-    'Відновити відсутнє':'Restore what is missing',
-    'Натисніть ще раз, щоб відновити':'Press again to restore',
-    'Шукаю копії…':'Looking for backups…',
-    'Звіряю копію з базою…':'Comparing the backup with the database…',
-    'Звіряю фото…':'Checking photos…',
-    'Відновлення завершено.':'Restore complete.',
-    'Відновлення зупинено.':'Restore stopped.',
-    'Дані відновлено':'Data restored',
-    'Зверніть увагу:':'Please note:',
-    'Повернеться лише відсутнє. Те, що вже є в базі, і все, що внесли після копії, залишиться як є.':'Only what is missing will be restored. Everything already in the database, and everything entered after the backup, stays as it is.',
     'Зробити резервну копію':'Make a backup',
     'Оновити сьогоднішню копію':'Update today\'s backup',
     'Змінити папку для копій':'Change the backup folder',
@@ -3941,13 +3916,10 @@ function backupInfoHtml(){
 function backupHtml(){
   if(!bkSupported()) return `<div class="bkp">
       <button class="btn ghost" disabled style="width:100%">Зробити резервну копію</button>
-      <button class="btn ghost" disabled style="width:100%;margin-top:8px">Відновити з копії</button>
       <p class="hint" style="margin:6px 0 0">Резервну копію можна зробити з комп'ютера в Chrome або Edge.</p>
       <p class="hint" style="margin:4px 0 0" id="backupInfo">${backupInfoHtml()}</p></div>`;
   return `<div class="bkp">
       <button class="btn" id="backupBtn" style="width:100%">Зробити резервну копію</button>
-      <button class="btn ghost" id="restoreBtn" style="width:100%;margin-top:8px">Відновити з копії</button>
-      <div id="restoreBox"></div>
       <p class="hint" style="margin:6px 0 0" id="backupInfo">${backupInfoHtml()}</p>
       <p class="hint" style="margin:2px 0 0"><a href="#" id="backupDirBtn">Змінити папку для копій</a></p></div>`;
 }
@@ -4081,198 +4053,6 @@ async function changeBackupDir(){
     const h = await bkRoot(true);
     toast('Копії зберігатимуться в папку «' + h.name + '»');
   }catch(e){ if(!(e && e.name === 'AbortError')) toast('Папку не вибрано'); }
-}
-
-
-/* ================= ВІДНОВЛЕННЯ З КОПІЇ =================
-   Повертається лише те, чого в базі немає: ключ рядка вже є — рядок не
-   чіпаємо. Тому відновлення можна повторювати скільки завгодно: задвоєнь
-   не буде. Зникла частина — повернеться частина, зникло все — усе.
-
-   Спершу застосунок звіряє копію з базою й показує, чого бракує, і лише
-   після підтвердження вставляє. Вставку робить серверна функція
-   restore_rows (14_restore.sql): таблиця за таблицею, у порядку зв'язків,
-   порціями по 250 рядків. Фото докачуються лише ті, яких немає в сховищі. */
-
-const RS_ORDER = ['profiles','app_settings','invites','skus','sku_costs','orders','ops',
-                  'order_lines','payments','returns','return_lines','order_events','audit'];
-const RS_NAMES = {profiles:'люди', app_settings:'налаштування', invites:'запрошення',
-  skus:'картки SKU', sku_costs:'ціни закупівлі', orders:'заявки', ops:'рухи товару (залишки)',
-  order_lines:'позиції заявок', payments:'оплати', returns:'повернення', return_lines:'позиції повернень',
-  order_events:'історія заявок', audit:'історія змін карток'};
-let rsCopies = [], rsPlan = null, rsArm = false, rsBusy = false;
-
-async function rsListCopies(root){
-  const out = [];
-  for await (const [name, h] of root.entries()){
-    if(h.kind !== 'directory' || !/^\d{4}-\d{2}-\d{2}/.test(name)) continue;
-    try{ await h.getFileHandle('база.json'); out.push({ name, h }); }catch(e){}
-  }
-  return out.sort((a,b) => b.name.localeCompare(a.name));
-}
-
-async function rsIds(table){
-  const pk = table === 'app_settings' ? 'key' : 'id';
-  const ids = new Set(), step = 1000;
-  for(let from = 0; ; from += step){
-    const { data, error } = await db.from(table).select(pk).order(pk, {ascending:true}).range(from, from + step - 1);
-    if(error){
-      if(error.code === '42P01' || error.code === 'PGRST205') return null;
-      throw new Error(table + ': ' + error.message);
-    }
-    (data || []).forEach(r => ids.add(String(r[pk])));
-    if(!data || data.length < step) break;
-  }
-  return ids;
-}
-
-async function rsFile(dir, path){
-  const parts = path.split('/').filter(Boolean); const name = parts.pop();
-  let d = dir;
-  for(const p of parts) d = await d.getDirectoryHandle(p);
-  return (await d.getFileHandle(name)).getFile();
-}
-
-async function openRestore(){
-  const box = $('#restoreBox'); if(!box) return;
-  if(!bkSupported()){ toast('Відновлення доступне з комп\'ютера в Chrome або Edge'); return; }
-  let root;
-  try{ root = await bkRoot(false); }
-  catch(e){ if(!(e && e.name === 'AbortError')) toast('Папку не вибрано'); return; }
-  box.innerHTML = '<p class="hint" style="margin:8px 0 0">Шукаю копії…</p>';
-  try{ rsCopies = await rsListCopies(root); }
-  catch(e){ box.innerHTML = `<p class="hint" style="margin:8px 0 0;color:var(--red)">Не вдалося прочитати папку «${esc(root.name)}».</p>`; return; }
-  if(!rsCopies.length){
-    box.innerHTML = `<p class="hint" style="margin:8px 0 0">У папці «${esc(root.name)}» немає резервних копій.</p>`;
-    return;
-  }
-  box.innerHTML = `<div class="rsbox">
-      <label class="f" style="margin:0 0 6px">Копія
-        <select id="restoreDate">${rsCopies.map((c,i) => `<option value="${esc(c.name)}">${esc(c.name)}${i===0?' (остання)':''}</option>`).join('')}</select></label>
-      <div id="restorePlan"></div>
-    </div>`;
-  checkRestore();
-}
-
-async function checkRestore(){
-  const plan = $('#restorePlan'); if(!plan) return;
-  const name = ($('#restoreDate') || {}).value;
-  const copy = rsCopies.find(c => c.name === name); if(!copy) return;
-  rsPlan = null; rsArm = false;
-  plan.innerHTML = '<p class="hint" style="margin:4px 0 0">Звіряю копію з базою…</p>';
-  try{
-    const dump = JSON.parse(await (await (await copy.h.getFileHandle('база.json')).getFile()).text());
-    if(!dump || dump.app !== 'sklad-dg' || !dump.tables) throw new Error('це не резервна копія складу');
-
-    const missing = {}, lines = [];
-    let total = 0;
-    for(const t of RS_ORDER){
-      const rows = dump.tables[t]; if(!rows || !rows.length) continue;
-      plan.innerHTML = `<p class="hint" style="margin:4px 0 0">Звіряю: ${RS_NAMES[t]}…</p>`;
-      const have = await rsIds(t); if(!have) continue;
-      const pk = t === 'app_settings' ? 'key' : 'id';
-      const miss = rows.filter(r => !have.has(String(r[pk])));
-      if(miss.length){ missing[t] = miss; total += miss.length; lines.push(`${RS_NAMES[t]}: <b>${miss.length}</b> з ${rows.length}`); }
-    }
-
-    // фото: яких немає в сховищі, але є в папці копії
-    plan.innerHTML = '<p class="hint" style="margin:4px 0 0">Звіряю фото…</p>';
-    const paths = [...new Set((dump.tables.skus || []).flatMap(r => r.photos || [])
-      .filter(p => p && typeof p === 'string' && !p.startsWith('data:')))];
-    const byFolder = {};
-    paths.forEach(p => { const i = p.lastIndexOf('/'); const f = i < 0 ? '' : p.slice(0,i); (byFolder[f] = byFolder[f] || []).push(p); });
-    const photoMiss = [], folders = Object.keys(byFolder);
-    for(let i = 0; i < folders.length; i += 8){
-      await Promise.all(folders.slice(i, i+8).map(async f => {
-        const { data } = await db.storage.from('sku-photos').list(f, { limit: 1000 });
-        const names = new Set((data || []).map(x => x.name));
-        byFolder[f].forEach(p => { if(!names.has(p.slice(p.lastIndexOf('/')+1))) photoMiss.push(p); });
-      }));
-    }
-    const failedInCopy = new Set(((dump.photos || {}).failed) || []);
-    const photoCan = photoMiss.filter(p => !failedInCopy.has(p));
-    if(photoCan.length){ lines.push(`фото: <b>${photoCan.length}</b> з ${paths.length}`); }
-
-    rsPlan = { copy, dump, missing, photos: photoCan, total: total + photoCan.length };
-    const made = dump.made_at ? fmtDT(dump.made_at) : copy.name;
-    if(!rsPlan.total){
-      plan.innerHTML = `<p class="hint" style="margin:4px 0 0">Копія від ${esc(made)}. Усі дані з неї вже є в базі — відновлювати нічого.</p>`;
-      return;
-    }
-    plan.innerHTML = `<p class="hint" style="margin:4px 0 6px">Копія від ${esc(made)}. У базі зараз бракує:</p>
-      <ul class="rslist">${lines.map(l => `<li>${l}</li>`).join('')}</ul>
-      <p class="hint" style="margin:6px 0 8px">Повернеться лише відсутнє. Те, що вже є в базі, і все, що внесли після копії, залишиться як є.</p>
-      <button class="btn out" id="restoreGo" style="width:100%">Відновити відсутнє</button>`;
-  }catch(e){
-    console.error('restore check', e);
-    plan.innerHTML = `<p class="hint" style="margin:4px 0 0;color:var(--red)">Не вдалося перевірити копію: ${esc(e && e.message ? e.message : '')}</p>`;
-  }
-}
-
-async function runRestore(){
-  if(rsBusy || !rsPlan) return;
-  const btn = $('#restoreGo'), plan = $('#restorePlan');
-  if(!rsArm){
-    rsArm = true;
-    if(btn) btn.textContent = 'Натисніть ще раз, щоб відновити';
-    setTimeout(() => { if(rsArm && !rsBusy){ rsArm = false; const b = $('#restoreGo'); if(b) b.textContent = 'Відновити відсутнє'; } }, 8000);
-    return;
-  }
-  rsArm = false; rsBusy = true;
-  if(btn) btn.disabled = true;
-  const say = t => { if(btn) btn.textContent = t; };
-  const added = {}, notes = [], errs = [];
-  let stopped = null;
-  try{
-    for(const t of RS_ORDER){
-      const rows = rsPlan.missing[t]; if(!rows || !rows.length) continue;
-      for(let i = 0; i < rows.length; i += 250){
-        say(`Відновлюю: ${RS_NAMES[t]} ${Math.min(i+250, rows.length)} з ${rows.length}…`);
-        const { data, error } = await db.rpc('restore_rows', { p_table: t, p_rows: rows.slice(i, i+250) });
-        if(error){ stopped = `${RS_NAMES[t]}: ${error.message}`; break; }
-        added[t] = (added[t] || 0) + (data.inserted || 0);
-        (data.notes || []).forEach(n => notes.push(n));
-        (data.errors || []).forEach(x => errs.push(`${RS_NAMES[t]}: ${x.error}`));
-      }
-      if(stopped) break;
-    }
-
-    let ph = 0, phFail = 0;
-    if(!stopped){
-      const photoDir = await rsPlan.copy.h.getDirectoryHandle('фото').catch(() => null);
-      for(let i = 0; i < rsPlan.photos.length; i++){
-        const p = rsPlan.photos[i];
-        say(`Відновлюю фото ${i+1} з ${rsPlan.photos.length}…`);
-        try{
-          if(!photoDir) throw new Error('немає папки фото');
-          const file = await rsFile(photoDir, p);
-          const { error } = await db.storage.from('sku-photos').upload(p, file, { contentType: 'image/jpeg', upsert: false });
-          if(error && !/exist|duplicate/i.test(error.message || '')) throw error;
-          if(!error) ph++;
-        }catch(e){ phFail++; }
-      }
-      if(ph) added.photos = ph;
-      if(phFail) errs.push(`фото: не вдалося повернути ${phFail}`);
-    }
-
-    // свіжі дані на екран
-    try{ await hydrate(); render(); }catch(e){ console.error(e); }
-
-    const sum = Object.entries(added).filter(([,n]) => n).map(([t,n]) => `${t === 'photos' ? 'фото' : RS_NAMES[t]}: ${n}`);
-    const html = (stopped
-        ? `<p class="hint" style="margin:4px 0 6px;color:var(--red)"><b>Відновлення зупинено.</b> ${esc(stopped)}. Те, що встигло відновитися, лишилося — можна запустити ще раз.</p>`
-        : `<p class="hint" style="margin:4px 0 6px"><b>Відновлення завершено.</b></p>`)
-      + (sum.length ? `<ul class="rslist">${sum.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="hint" style="margin:0">Нічого не додано.</p>')
-      + (notes.length ? `<p class="hint" style="margin:8px 0 4px"><b>Зверніть увагу:</b></p><ul class="rslist">${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '')
-      + (errs.length ? `<p class="hint" style="margin:8px 0 4px;color:var(--red)"><b>Не відновилося (${errs.length}):</b></p><ul class="rslist" style="color:var(--red)">${errs.slice(0,20).map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '');
-    const pl = $('#restorePlan'); if(pl) pl.innerHTML = html;
-    toast(stopped ? 'Відновлення зупинено' : 'Дані відновлено');
-  }catch(e){
-    console.error('restore', e);
-    if(plan) plan.innerHTML = `<p class="hint" style="margin:4px 0 0;color:var(--red)">Відновлення не завершено: ${esc(e && e.message ? e.message : '')}</p>`;
-  }finally{
-    rsBusy = false; rsPlan = null;
-  }
 }
 
 /* --- скільки зайнято місця --- */
@@ -5503,8 +5283,6 @@ document.addEventListener('click', e=>{
     case 'manualGo': found($('#manualCode').value); break;
     case 'camRetry': lastMiss=''; stopScan(); startCamera(); break;
     case 'backupBtn': makeBackup(); break;
-    case 'restoreBtn': openRestore(); break;
-    case 'restoreGo': runRestore(); break;
     case 'backupDirBtn': e.preventDefault(); changeBackupDir(); break;
     case 'roleInfoBtn': {
       const box=$('#roleInfo'); if(!box) break;
@@ -5541,7 +5319,6 @@ document.addEventListener('change', async e=>{
     const w=$('#iClientWrap'); if(w) w.style.display = t.value==='client' ? 'block' : 'none';
   }
   if(t.dataset && t.dataset.urole){ setRole(t.dataset.urole, t.value); }
-  if(t.id==='restoreDate'){ checkRestore(); }
   if(t.dataset && t.dataset.uclient!==undefined){ setClientName(t.dataset.uclient, t.value); }
 });
 document.addEventListener('keydown', e=>{
