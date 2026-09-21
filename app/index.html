@@ -65,8 +65,8 @@ html,body{margin:0}
   .odates label span{font-size:12px}
   /* палець має куди влучити */
   .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
-  .search .btn{min-height:38px}
-  .search input{padding-top:7px !important;padding-bottom:7px !important}
+  .search .btn{min-height:34px}
+  .search input{padding-top:4px !important;padding-bottom:4px !important}
   .btn.small{min-height:36px}
   .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
   .pair > .btn{width:100%}
@@ -78,7 +78,7 @@ button{cursor:pointer}
 .num{font-variant-numeric:tabular-nums}
 .wrap{max-width:720px;margin:0 auto;padding:0 16px}
 
-header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:12px 0 10px;border-bottom:2.5px solid var(--gold);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px 0 6px;border-bottom:2.5px solid var(--gold);box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .top-row{display:flex;align-items:center;gap:10px}
 .brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
 .dglogo{width:44px;height:44px;flex:none;border-radius:4px;display:block}
@@ -110,12 +110,15 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:12p
 .urow:first-of-type{border-top:0}
 .urow .me{font-size:11px;background:var(--indigo-soft);color:var(--indigo);border-radius:6px;padding:1px 6px;margin-left:6px;font-weight:600}
 .who{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 8px;font-size:13px;width:112px;flex:none}
-.search{margin-top:12px;display:flex;gap:8px}
+.search{margin-top:8px;display:flex;gap:8px}
 .qwrap{flex:1;min-width:0;position:relative}
 .qwrap .lens{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:19px;height:19px;color:var(--muted);pointer-events:none}
-.search input{width:100%;padding-left:40px !important;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-sm);padding:7px 12px}
-.search .btn{padding:7px 14px}
-.catsum{margin:8px 0 0;font-size:13.5px;color:var(--muted);line-height:1.3}
+.search input{width:100%;padding-left:40px !important;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-sm);padding:4px 12px}
+.search .btn{padding:4px 16px}
+.search .qcol{flex:1;min-width:0}
+#searchBar{align-items:stretch}
+@media (max-width:420px){#catSum{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.search .btn{padding:4px 12px}}
+.catsum{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.25}
 
 .btn{border:1px solid var(--primary);border-radius:var(--radius-sm);padding:11px 14px;font-weight:600;background:var(--primary);color:var(--on-primary);letter-spacing:.2px;transition:background .15s,border-color .15s,color .15s}
 .btn:not(:disabled):hover{border-color:var(--gold)}
@@ -679,10 +682,9 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
       <button class="gear" id="settingsBtn" aria-label="Доступ і експорт"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
     <div class="search" id="searchBar">
-      <div class="qwrap"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="q" type="search" placeholder="Артикул, бренд, колір, код" aria-label="Пошук"></div>
+      <div class="qcol"><div class="qwrap"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="q" type="search" placeholder="Артикул, бренд, колір, код" aria-label="Пошук"></div><p class="catsum num" id="catSum"></p></div>
       <button class="btn" id="addBtn" data-i18n="cat.add">Нове SKU</button>
     </div>
-    <p class="catsum num" id="catSum"></p>
     <div class="search" id="orderBar" style="display:none">
       <button class="btn gold" data-onew id="newOrderBtn" style="flex:1" data-i18n="cat.neworder">Нова заявка</button>
     </div>
@@ -2816,7 +2818,6 @@ function render(){
   document.querySelectorAll('nav.tabs button').forEach(el=>{ el.style.display = hidden(el) ? 'none' : ''; });
   if((FIN_TABS.includes(tab)&&!can('fin')) || (tab==='debt'&&!seeSale())) tab='catalog';
   $('#searchBar').style.display = tab==='catalog' ? 'flex' : 'none';
-  $('#catSum').style.display = tab==='catalog' ? 'block' : 'none';
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
   $('#addBtn').disabled = !can('sku');
