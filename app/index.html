@@ -143,6 +143,7 @@ main{padding-top:14px}
 .sku:has(.slevels){align-content:flex-start;align-items:flex-start;row-gap:5px;padding:8px 10px 7px;margin-bottom:6px;gap:10px}
 .sku:has(.slevels){flex-wrap:wrap}
 .sku .scol{display:flex;flex-direction:column;gap:6px;align-items:center;flex:none}
+.sku .scol-top{display:flex;flex-direction:row;align-items:center;gap:10px}
 .sku .sbc{font-size:10px;color:var(--muted);font-family:monospace;letter-spacing:.03em;white-space:nowrap;line-height:1}
 .delsku{width:34px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;color:var(--red);background:var(--surface)}
 .delsku svg{width:17px;height:17px}
@@ -2845,7 +2846,7 @@ function viewCatalog(){
             ${compCol(s)}
           </div>
         </div>
-        <div class="scol">${s.code?`<div class="sbc">${esc(s.code)}</div>`:''}${thumbHtml(s,'thumb sthumb')}${can('delsku')?`<span class="delsku ${Math.abs(l.kg)<0.001&&l.cn===0&&l.rk<0.001?'':'off'}" role="button" tabindex="0" data-delsku="${s.id}" aria-label="${t('cat.del')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>`:''}</div>
+        <div class="scol"><div class="scol-top">${s.code?`<div class="sbc">${esc(s.code)}</div>`:''}${thumbHtml(s,'thumb sthumb')}</div>${can('delsku')?`<span class="delsku ${Math.abs(l.kg)<0.001&&l.cn===0&&l.rk<0.001?'':'off'}" role="button" tabindex="0" data-delsku="${s.id}" aria-label="${t('cat.del')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>`:''}</div>
           <div class="levels num slevels">
             ${seeSale()?`<span class="chip sale">${t('cat.sale')} ${pr.sale?fmtEur(pr.sale)+'/'+t('unit.kg'):'—'}</span>`:''}
             <span class="chip free">${t('cat.free')} ${fmtKg(l.fk)} ${t('unit.kg')} / ${fmtN(l.fc)} ${t('unit.cn')}</span>
