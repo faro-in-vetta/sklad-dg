@@ -229,8 +229,6 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 .meta dt{color:var(--muted)}.meta dd{margin:0}
 /* смужка заповнення сховища. Клас .bar уже зайнятий графіком аналітики. */
-.bkp{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-.bkp a{color:var(--gold);text-decoration:underline}
 .usebar{height:8px;border-radius:999px;background:var(--line);overflow:hidden;margin:6px 0 4px}
 .usebar > i{display:block;height:100%;border-radius:999px;background:var(--gold);transition:width .3s}
 .usebar.warn > i{background:#C9871F}
@@ -1049,13 +1047,6 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
-    'Зробити резервну копію':'Crea una copia di backup',
-    'Оновити сьогоднішню копію':'Aggiorna la copia di oggi',
-    'Змінити папку для копій':'Cambia la cartella delle copie',
-    'Резервну копію ще не робили.':'Non è ancora stata fatta nessuna copia di backup.',
-    'Резервну копію можна зробити з комп\'ютера в Chrome або Edge.':'La copia di backup si fa dal computer con Chrome o Edge.',
-    'Записую базу…':'Salvo il database…',
-    'Записую Excel…':'Salvo l\'Excel…',
     'Відвантажену заявку не анулюють — оформіть повернення':'Un ordine già spedito non si annulla: registra un reso',
     'Клієнт у заявках':'Cliente negli ordini',
     'Точна назва клієнта':'Nome esatto del cliente',
@@ -1624,13 +1615,6 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
-    'Зробити резервну копію':'Make a backup',
-    'Оновити сьогоднішню копію':'Update today\'s backup',
-    'Змінити папку для копій':'Change the backup folder',
-    'Резервну копію ще не робили.':'No backup has been made yet.',
-    'Резервну копію можна зробити з комп\'ютера в Chrome або Edge.':'Backups can be made from a computer in Chrome or Edge.',
-    'Записую базу…':'Saving the database…',
-    'Записую Excel…':'Saving the Excel file…',
     'Відвантажену заявку не анулюють — оформіть повернення':'A shipped order is not cancelled — register a return instead',
     'Клієнт у заявках':'Customer on orders',
     'Точна назва клієнта':'Exact customer name',
@@ -2355,7 +2339,6 @@ async function hydrate() {
     reserves: (or_.data || []).map(r => fromOrder(r, ol.data || [], pa.data || [], rt.data || [], ev.data || [])),
     audit: (au.data || []).map(a => ({ id: a.id, sku: a.sku_id, act: a.act, text: a.text, who: a.created_by, at: a.created_at })),
     debug: ((st && st.data) || []).some(r => r.key === 'debug_mode' && r.value === true),
-    lastBackup: ((((st && st.data) || []).find(r => r.key === 'last_backup')) || {}).value || null,
     limits: Object.fromEntries(((st && st.data) || [])
       .filter(r => r.key === 'storage_limit_mb' || r.key === 'db_limit_mb')
       .map(r => [r.key, Number(r.value) || 0])),
@@ -3752,7 +3735,7 @@ function openSettings(){
           `<button class="btn small ${themePref()===v?'':'ghost'}" data-theme="${v}" style="flex:1">${t(k)}</button>`).join('')}
       </div>
     </div>
-    ${can('fin')?`<div class="box"><h3>Місце у сховищі</h3><div id="usageBox"><p class="hint" style="margin:0">Рахую…</p></div>${me().role==='admin'?backupHtml():''}</div>`:''}
+    ${can('fin')?`<div class="box"><h3>Місце у сховищі</h3><div id="usageBox"><p class="hint" style="margin:0">Рахую…</p></div></div>`:''}
     ${me().role==='admin'?`<div class="box"><h3>Режим налагодження</h3>
       <p class="hint" style="margin:0 0 8px">${S.debug
         ? 'Увімкнений. Адмін може видаляти назавжди заявки, SKU й акаунти — зручно, поки система не в роботі. Перед реальним стартом вимкніть.'
@@ -3846,213 +3829,6 @@ async function sendInvite(){
   toast('Доступ для «' + (name||login) + '» створено');
   openSettings();
   credsCard('iout', login, password);
-}
-
-/* ================= РЕЗЕРВНА КОПІЯ =================
-   Копія має дозволити повернути ВСЕ: картки SKU (назви, кольори, склад,
-   ціни, штрихкоди), фото, залишки, рух товару, заявки з позиціями,
-   оплатами й поверненнями, історію заявок і змін, людей і налаштування.
-
-   Залишки окремо не зберігаються — вони рахуються з руху товару (ops),
-   тому точна копія ops і є точною копією залишків.
-
-   Куди: адмін один раз вибирає папку «Склад залишки», браузер її
-   запам'ятовує. Кожна копія лягає в підпапку з датою: 2026-09-21,
-   2026-09-22… Усередині:
-     база.json  — усі таблиці повністю, з цього відновлюється база
-     фото/      — усі фото SKU з тими самими шляхами, що в сховищі
-     звіт.xlsx  — той самий Excel, що в «Експорті», щоб подивитися очима
-
-   Запис у вибрану папку вміють Chrome і Edge на комп'ютері. */
-
-const BK_TABLES = [
-  ['profiles','id'], ['invites','id'], ['app_settings','key'],
-  ['skus','id'], ['sku_costs','id'],
-  ['ops','id'],
-  ['orders','id'], ['order_lines','id'], ['payments','id'],
-  ['returns','id'], ['return_lines','id'], ['order_events','id'],
-  ['audit','id']
-];
-const bkSupported = () => typeof window.showDirectoryPicker === 'function';
-let bkBusy = false, bkArm = null;
-
-/* браузер пам'ятає вибрану папку в IndexedDB — між сеансами й оновленнями */
-function bkIdb(){
-  return new Promise((ok,bad)=>{
-    const r = indexedDB.open('sklad-backup', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('h');
-    r.onsuccess = () => ok(r.result); r.onerror = () => bad(r.error);
-  });
-}
-async function bkGet(k){ const d=await bkIdb(); return new Promise((ok,bad)=>{ const q=d.transaction('h').objectStore('h').get(k); q.onsuccess=()=>ok(q.result); q.onerror=()=>bad(q.error); }); }
-async function bkSet(k,v){ const d=await bkIdb(); return new Promise((ok,bad)=>{ const q=d.transaction('h','readwrite').objectStore('h').put(v,k); q.onsuccess=()=>ok(); q.onerror=()=>bad(q.error); }); }
-
-async function bkRoot(pickNew){
-  let h = null;
-  if(!pickNew){ try{ h = await bkGet('root'); }catch(e){ h = null; } }
-  if(h){
-    try{
-      let perm = await h.queryPermission({mode:'readwrite'});
-      if(perm !== 'granted') perm = await h.requestPermission({mode:'readwrite'});
-      if(perm === 'granted') return h;
-    }catch(e){ /* папку перенесли чи видалили — вибираємо заново */ }
-  }
-  h = await window.showDirectoryPicker({ id:'sklad-backup', mode:'readwrite', startIn:'documents' });
-  try{ await bkSet('root', h); }catch(e){}
-  return h;
-}
-
-function bkAgo(iso){
-  if(!iso) return null;
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-}
-function backupInfoHtml(){
-  const iso = S.lastBackup;
-  if(!iso) return '<span style="color:var(--red)">Резервну копію ще не робили.</span>';
-  const d = bkAgo(iso);
-  const when = fmtDT(iso) + (d===0 ? ' (сьогодні)' : d===1 ? ' (учора)' : ` (${d} ${dayWord(d)} тому)`);
-  return d > 7 ? `<span style="color:var(--red)">Остання копія: ${when}. Час зробити нову.</span>` : `Остання копія: ${when}.`;
-}
-function backupHtml(){
-  if(!bkSupported()) return `<div class="bkp">
-      <button class="btn ghost" disabled style="width:100%">Зробити резервну копію</button>
-      <p class="hint" style="margin:6px 0 0">Резервну копію можна зробити з комп'ютера в Chrome або Edge.</p>
-      <p class="hint" style="margin:4px 0 0" id="backupInfo">${backupInfoHtml()}</p></div>`;
-  return `<div class="bkp">
-      <button class="btn" id="backupBtn" style="width:100%">Зробити резервну копію</button>
-      <p class="hint" style="margin:6px 0 0" id="backupInfo">${backupInfoHtml()}</p>
-      <p class="hint" style="margin:2px 0 0"><a href="#" id="backupDirBtn">Змінити папку для копій</a></p></div>`;
-}
-
-/* таблиця цілком: PostgREST віддає не більше 1000 рядків за раз */
-async function bkFetchAll(table, orderCol){
-  const out = [], step = 1000;
-  for(let from = 0; ; from += step){
-    const { data, error } = await db.from(table).select('*').order(orderCol, {ascending:true}).range(from, from + step - 1);
-    if(error){
-      // таблиці може не бути в старішій схемі — це не привід зривати копію
-      if(error.code === '42P01' || error.code === 'PGRST205') return { missing:true, rows:[] };
-      throw new Error(table + ': ' + error.message);
-    }
-    out.push(...(data || []));
-    if(!data || data.length < step) break;
-  }
-  return { rows: out };
-}
-
-async function bkDir(parent, path){
-  let d = parent;
-  for(const part of path.split('/').filter(Boolean)) d = await d.getDirectoryHandle(part, {create:true});
-  return d;
-}
-async function bkWrite(dir, name, data){
-  const fh = await dir.getFileHandle(name, {create:true});
-  const w = await fh.createWritable();
-  await w.write(data); await w.close();
-}
-
-async function makeBackup(){
-  if(bkBusy) return;
-  if(!bkSupported()){ toast('Резервну копію можна зробити з комп\'ютера в Chrome або Edge'); return; }
-  const btn = $('#backupBtn'), info = $('#backupInfo');
-  const say = t => { if(btn) btn.textContent = t; };
-  const stamp = todayStr();
-
-  let root;
-  try{ root = await bkRoot(false); }
-  catch(e){ if(e && e.name === 'AbortError') return; toast('Папку не вибрано'); return; }
-
-  // копія за сьогодні вже є — оновлюємо лише на друге натискання
-  let exists = false;
-  try{ await root.getDirectoryHandle(stamp); exists = true; }catch(e){ exists = false; }
-  if(exists && bkArm !== stamp){
-    bkArm = stamp;
-    say('Оновити сьогоднішню копію');
-    if(info) info.innerHTML = `Копія за ${stamp} уже є в папці «${esc(root.name)}». Натисніть ще раз, щоб замінити її актуальними даними.`;
-    setTimeout(()=>{ if(bkArm === stamp && !bkBusy){ bkArm = null; say('Зробити резервну копію'); if(info) info.innerHTML = backupInfoHtml(); } }, 8000);
-    return;
-  }
-  bkArm = null;
-
-  bkBusy = true;
-  if(btn) btn.disabled = true;
-  try{
-    // 1. база — усі таблиці повністю
-    const tables = {}, counts = {}, missing = [];
-    for(const [t, col] of BK_TABLES){
-      say(`Копіюю дані: ${t}…`);
-      const r = await bkFetchAll(t, col);
-      if(r.missing){ missing.push(t); continue; }
-      tables[t] = r.rows; counts[t] = r.rows.length;
-    }
-
-    // 2. фото — кожен шлях, на який посилається будь-яка картка, зокрема видалені
-    const paths = [...new Set((tables.skus || []).flatMap(r => r.photos || [])
-      .filter(p => p && typeof p === 'string' && !p.startsWith('data:')))];
-
-    const dir = await root.getDirectoryHandle(stamp, {create:true});
-    const photoDir = await bkDir(dir, 'фото');
-    const lost = [];
-    for(let i = 0; i < paths.length; i++){
-      say(`Копіюю фото ${i+1} з ${paths.length}…`);
-      const p = paths[i];
-      try{
-        const { data, error } = await db.storage.from('sku-photos').download(p);
-        if(error || !data) throw error || new Error('порожньо');
-        const parts = p.split('/'); const name = parts.pop();
-        await bkWrite(await bkDir(photoDir, parts.join('/')), name, data);
-      }catch(e){ lost.push(p); }
-    }
-
-    // 3. база.json — пишемо після фото, щоб у ній був і список того, що не скопіювалось
-    say('Записую базу…');
-    const dump = {
-      app: 'sklad-dg', format: 1,
-      made_at: new Date().toISOString(),
-      made_by: (me() || {}).name || '',
-      supabase: SB_URL,
-      counts, missing_tables: missing,
-      photos: { total: paths.length, saved: paths.length - lost.length, failed: lost },
-      tables
-    };
-    await bkWrite(dir, 'база.json', new Blob([JSON.stringify(dump, null, 1)], {type:'application/json'}));
-
-    // 4. звіт.xlsx — той самий, що в «Експорті», усі аркуші за весь час
-    say('Записую Excel…');
-    try{
-      const buf = await exportXlsx({ sheets: XSHEETS.map(x => x[0]), from:'', to:'', returnBuf:true });
-      if(buf) await bkWrite(dir, 'звіт.xlsx', new Blob([buf]));
-    }catch(e){ console.warn('backup xlsx', e); }
-
-    // 5. позначка «коли робили копію» — спільна для всіх адмінів
-    const iso = new Date().toISOString();
-    try{
-      const { error } = await db.from('app_settings').upsert({ key:'last_backup', value: iso, updated_by: S.current });
-      if(error) throw error;
-    }catch(e){ console.warn('last_backup', e); }
-    S.lastBackup = iso;
-
-    const skuN = counts.skus || 0, ordN = counts.orders || 0, opN = counts.ops || 0;
-    toast(`Копію збережено: ${root.name}/${stamp}`);
-    if(info) info.innerHTML = backupInfoHtml()
-      + `<br>У копії: ${skuN} SKU, ${opN} рухів товару, ${ordN} заявок, фото ${paths.length - lost.length} з ${paths.length}.`
-      + (lost.length ? `<br><span style="color:var(--red)">Не вдалося скопіювати фото: ${lost.length}. Спробуйте ще раз.</span>` : '');
-  }catch(e){
-    console.error('backup', e);
-    toast('Копію не завершено: ' + (e && e.message ? e.message : 'помилка'));
-    if(info) info.innerHTML = `<span style="color:var(--red)">Копію не завершено. ${esc(e && e.message ? e.message : '')}</span>`;
-  }finally{
-    bkBusy = false;
-    if(btn){ btn.disabled = false; btn.textContent = 'Зробити резервну копію'; }
-  }
-}
-
-async function changeBackupDir(){
-  if(!bkSupported()) return;
-  try{
-    const h = await bkRoot(true);
-    toast('Копії зберігатимуться в папку «' + h.name + '»');
-  }catch(e){ if(!(e && e.name === 'AbortError')) toast('Папку не вибрано'); }
 }
 
 /* --- скільки зайнято місця --- */
@@ -4418,7 +4194,6 @@ async function exportXlsx(opt){
   const data={debt:[debtRows,'Дебіторка',true],log:[log,'Історія змін','dt'],stock:[stock,'Залишки'],ops:[ops,'Рух товару',true],res:[res,'Заявки',true],mon:[mon,'Аналітика']};
   opt.sheets.forEach(k=>{ const [rows,name,dc]=data[k]; addSheet(rows.length?rows:[{'Дані':'Немає записів за вибраний період'}],name,dc); });
   const buf = XLSX.write(wb,{bookType:'xlsx',type:'array',cellDates:true});
-  if(opt.returnBuf) return buf;          // для резервної копії: файл потрібен у пам'яті, а не завантаженням
   const per = opt.from||opt.to ? ` ${opt.from||'…'}–${opt.to||todayStr()}` : '';
   const part = opt.sheets.length===XSHEETS.length ? 'Склад' : opt.sheets.map(k=>data[k][1]).join(', ');
   await deliverFile(buf, `DG Filati ${part}${per} (${todayStr()}).xlsx`);
@@ -5282,8 +5057,6 @@ document.addEventListener('click', e=>{
       $('#xerr').innerHTML=''; exportXlsx({sheets,from,to}); break; }
     case 'manualGo': found($('#manualCode').value); break;
     case 'camRetry': lastMiss=''; stopScan(); startCamera(); break;
-    case 'backupBtn': makeBackup(); break;
-    case 'backupDirBtn': e.preventDefault(); changeBackupDir(); break;
     case 'roleInfoBtn': {
       const box=$('#roleInfo'); if(!box) break;
       box.hidden = !box.hidden;
