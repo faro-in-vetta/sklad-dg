@@ -16,7 +16,7 @@
 :root{
   --bg:#FAF7F2; --surface:#FFFFFF; --ink:#1A1A1A; --muted:#8A7A68; --line:#E6DCCD;
   --gold:#B68C5A; --gold-deep:#8A6030; --gold-light:#E8C87A;
-  --primary:#5C3A27; --on-primary:#F5F0EA;   /* шоколадний, трохи темніший за молочний — замість чорного */
+  --primary:#4A2E1F; --on-primary:#F5F0EA;   /* шоколадний, трохи темніший за молочний — замість чорного */
   --indigo:#8A6030; --indigo-soft:#F3EADC;
   --saffron:#B68C5A; --saffron-soft:#F6ECDD;
   --green:#3D7350; --green-soft:#E6F0E6;
@@ -65,6 +65,8 @@ html,body{margin:0}
   .odates label span{font-size:12px}
   /* палець має куди влучити */
   .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  .search .btn{min-height:38px}
+  .search input{padding-top:7px !important;padding-bottom:7px !important}
   .btn.small{min-height:36px}
   .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
   .pair > .btn{width:100%}
@@ -111,7 +113,9 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:12p
 .search{margin-top:12px;display:flex;gap:8px}
 .qwrap{flex:1;min-width:0;position:relative}
 .qwrap .lens{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:19px;height:19px;color:var(--muted);pointer-events:none}
-.search input{width:100%;padding-left:40px !important;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-sm);padding:11px 12px}
+.search input{width:100%;padding-left:40px !important;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-sm);padding:7px 12px}
+.search .btn{padding:7px 14px}
+.catsum{margin:8px 0 0;font-size:13.5px;color:var(--muted);line-height:1.3}
 
 .btn{border:1px solid var(--primary);border-radius:var(--radius-sm);padding:11px 14px;font-weight:600;background:var(--primary);color:var(--on-primary);letter-spacing:.2px;transition:background .15s,border-color .15s,color .15s}
 .btn:not(:disabled):hover{border-color:var(--gold)}
@@ -660,6 +664,7 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
       <div class="qwrap"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="q" type="search" placeholder="Артикул, бренд, колір, код" aria-label="Пошук"></div>
       <button class="btn" id="addBtn" data-i18n="cat.add">Нове SKU</button>
     </div>
+    <p class="catsum num" id="catSum"></p>
     <div class="search" id="orderBar" style="display:none">
       <button class="btn gold" data-onew id="newOrderBtn" style="flex:1" data-i18n="cat.neworder">Нова заявка</button>
     </div>
@@ -2791,6 +2796,7 @@ function render(){
   document.querySelectorAll('nav.tabs button').forEach(el=>{ el.style.display = hidden(el) ? 'none' : ''; });
   if((FIN_TABS.includes(tab)&&!can('fin')) || (tab==='debt'&&!seeSale())) tab='catalog';
   $('#searchBar').style.display = tab==='catalog' ? 'flex' : 'none';
+  $('#catSum').style.display = tab==='catalog' ? 'block' : 'none';
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
   $('#addBtn').disabled = !can('sku');
@@ -2816,8 +2822,13 @@ function viewCatalog(){
   const list = liveSkus().filter(s=>!q || [s.art,s.maker,s.color,s.code,compText(s.comp),compTypes(s.comp).map(t=>t+' '+(TYPE_UA[t]||'')).join(' ')].some(v=>String(v).toLowerCase().includes(q)));
   let totKg=0, totFree=0;
   liveSkus().forEach(s=>{const l=levels(s.id); totKg+=l.kg; totFree+=l.fk;});
+  /* підсумок закріплений у шапці під пошуком — видно, хоч куди прокрутив каталог.
+     Клієнтові лише вільне: із «на складі» мінус «вільно» він вирахував би резерв. */
+  const sumEl = $('#catSum');
+  if(sumEl) sumEl.textContent = isClient()
+    ? `${liveSkus().length} SKU · вільно ${fmtKg(totFree)} кг`
+    : t('cat.sum').replace('{n}',liveSkus().length).replace('{kg}',fmtKg(totKg)).replace('{free}',fmtKg(totFree));
   $('#view').innerHTML = `
-    <p class="sub num" style="margin:0 0 10px;color:var(--muted);font-size:14px">${t('cat.sum').replace('{n}',liveSkus().length).replace('{kg}',fmtKg(totKg)).replace('{free}',fmtKg(totFree))}</p>
     ${list.length ? list.map(s=>{
       const l=levels(s.id);
       const pr=pricing(s,l);
