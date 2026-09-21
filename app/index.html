@@ -144,11 +144,15 @@ main{padding-top:14px}
 .sku:has(.slevels){flex-wrap:wrap}
 .sku .scol{display:flex;flex-direction:column;gap:6px;align-items:center;flex:none}
 /* штрихкод стоїть у рядку Nm праворуч і пишеться тим самим шрифтом, що й Nm */
-.sku .snm{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.sku .snm{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:6px}
+.sku .snm > span{white-space:nowrap}
 .sku .sbc{font:inherit;color:inherit;white-space:nowrap;flex:none}
 .delsku{width:34px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;color:var(--red);background:var(--surface)}
 .delsku svg{width:17px;height:17px}
 .delsku.off{color:var(--muted);opacity:.45}
+/* кошик — унизу правої колонки картки, подалі від фото */
+.sku .scol{align-self:stretch}
+.sku .scol .delsku{margin-top:auto}
 .chip.sale{background:var(--indigo-soft);color:var(--indigo);font-weight:700}
 .sku .art{font-weight:700;font-size:17px}
 .sku .color{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
