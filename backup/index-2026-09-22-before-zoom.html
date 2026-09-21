@@ -143,9 +143,7 @@ main{padding-top:14px}
 .sku:has(.slevels){align-content:flex-start;align-items:flex-start;row-gap:5px;padding:8px 10px 7px;margin-bottom:6px;gap:10px}
 .sku:has(.slevels){flex-wrap:wrap}
 .sku .scol{display:flex;flex-direction:column;gap:6px;align-items:center;flex:none}
-/* штрихкод стоїть у рядку Nm праворуч і пишеться тим самим шрифтом, що й Nm */
-.sku .snm{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
-.sku .sbc{font:inherit;color:inherit;white-space:nowrap;flex:none}
+.sku .sbc{font-size:10px;color:var(--muted);font-family:monospace;letter-spacing:.03em;white-space:nowrap;line-height:1;flex:none}
 .delsku{width:34px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;color:var(--red);background:var(--surface)}
 .delsku svg{width:17px;height:17px}
 .delsku.off{color:var(--muted);opacity:.45}
@@ -646,17 +644,6 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
 .auth{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
 .auth-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:14px;padding:22px 20px;box-shadow:0 8px 30px rgba(26,18,8,.12);text-align:center}
 .auth-card .f{text-align:left}
-/* перегляд фото на весь екран */
-.zoomable{cursor:zoom-in}
-.zoom{position:fixed;inset:0;z-index:90;background:rgba(10,8,5,.92);display:flex;align-items:center;justify-content:center;
-  padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));touch-action:pan-y}
-.zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);user-select:none;-webkit-user-drag:none}
-.zoom .zx,.zoom .zp,.zoom .zn{position:absolute;border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:50%;
-  width:44px;height:44px;font-size:24px;line-height:44px;text-align:center;cursor:pointer;padding:0}
-.zoom .zx{top:calc(12px + env(safe-area-inset-top));right:12px}
-.zoom .zp{left:12px;top:50%;transform:translateY(-50%)}
-.zoom .zn{right:12px;top:50%;transform:translateY(-50%)}
-.zoom .zc{position:absolute;bottom:calc(14px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:rgba(255,255,255,.75);font-size:13px}
 .syncdot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none;margin-right:2px}
 .syncdot.saving{background:var(--gold)}
 .syncdot.err{background:var(--red)}
@@ -2852,9 +2839,9 @@ function viewCatalog(){
         <div class="body">
           <div class="sinfo">
             <div>${s.maker?`Brand: ${esc(s.maker)}`:''}</div>
-            <div>${s.color?`Color: ${esc(s.color)}`:''}</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px"><span>${s.color?`Color: ${esc(s.color)}`:''}</span>${s.code?`<span class="sbc">${esc(s.code)}</span>`:''}</div>
             <div>Art.: ${esc(s.art)}</div>
-            <div class="snm"><span>${s.meter?esc(nmText(s.meter)):''}</span>${s.code?`<span class="sbc">${esc(s.code)}</span>`:''}</div>
+            <div>${s.meter?esc(nmText(s.meter)):''}</div>
             ${compCol(s)}
           </div>
         </div>
@@ -3901,58 +3888,6 @@ async function sendInvite(){
   credsCard('iout', login, password);
 }
 
-
-/* ---------- перегляд фото ----------
-   Натискання на фото в картці SKU відкриває його на весь екран. Кілька фото
-   гортаються стрілками, клавішами ← → або свайпом. Закривається хрестиком,
-   натисканням на темне тло або клавішею Esc. */
-let zoomState = null;
-function openZoom(skuId, idx){
-  const s = skuById(skuId); if(!s || !(s.photos||[]).length) return;
-  closeZoom();
-  zoomState = { photos: s.photos.slice(), i: Math.max(0, Math.min(idx|0, s.photos.length-1)) };
-  const z = document.createElement('div');
-  z.className = 'zoom'; z.id = 'zoom'; z.setAttribute('role','dialog'); z.setAttribute('aria-modal','true');
-  z.innerHTML = `<img alt="Фото пряжі"><button class="zx" aria-label="Закрити">×</button>`
-    + (zoomState.photos.length > 1 ? `<button class="zp" aria-label="Попереднє фото">‹</button><button class="zn" aria-label="Наступне фото">›</button><div class="zc"></div>` : '');
-  document.body.appendChild(z);
-  z.addEventListener('click', e => {
-    if(e.target.closest('.zp')){ zoomStep(-1); return; }
-    if(e.target.closest('.zn')){ zoomStep(1); return; }
-    if(e.target.tagName !== 'IMG') closeZoom();
-  });
-  let x0 = null;
-  z.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, {passive:true});
-  z.addEventListener('touchend', e => {
-    if(x0 === null) return;
-    const dx = e.changedTouches[0].clientX - x0; x0 = null;
-    if(Math.abs(dx) > 50) zoomStep(dx < 0 ? 1 : -1);
-  });
-  zoomShow();
-}
-function zoomShow(){
-  const z = $('#zoom'); if(!z || !zoomState) return;
-  z.querySelector('img').src = photoSrc(zoomState.photos[zoomState.i]);
-  const c = z.querySelector('.zc'); if(c) c.textContent = `${zoomState.i+1} / ${zoomState.photos.length}`;
-}
-function zoomStep(d){
-  if(!zoomState) return;
-  const n = zoomState.photos.length;
-  zoomState.i = (zoomState.i + d + n) % n;
-  zoomShow();
-}
-function closeZoom(){ const z = $('#zoom'); if(z) z.remove(); zoomState = null; }
-document.addEventListener('click', e => {
-  const im = e.target.closest && e.target.closest('img[data-zoom]');
-  if(im){ e.preventDefault(); e.stopPropagation(); openZoom(im.dataset.sku, +im.dataset.zoom); }
-}, true);
-document.addEventListener('keydown', e => {
-  if(!zoomState) return;
-  if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); closeZoom(); }
-  else if(e.key === 'ArrowLeft') zoomStep(-1);
-  else if(e.key === 'ArrowRight') zoomStep(1);
-}, true);
-
 /* ================= РЕЗЕРВНА КОПІЯ =================
    Копія має дозволити повернути ВСЕ: картки SKU (назви, кольори, склад,
    ціни, штрихкоди), фото, залишки, рух товару, заявки з позиціями,
@@ -4763,7 +4698,7 @@ async function exportDebt(){
 /* ---------- sheets ---------- */
 function openSheet(html, cls){ const p=$('#panel'); p.className = 'panel' + (cls ? ' ' + cls : ''); p.innerHTML = html; $('#sheet').classList.add('open'); }
 function markNav(id){ document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-current', x.id===id)); }
-function closeSheet(){ closeZoom(); sheetKind = null; document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-current', x.dataset.tab===tab)); stopScan(); $('#sheet').classList.remove('open'); $('#panel').innerHTML=''; }
+function closeSheet(){ sheetKind = null; document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-current', x.dataset.tab===tab)); stopScan(); $('#sheet').classList.remove('open'); $('#panel').innerHTML=''; }
 $('#sheet').addEventListener('click', e=>{ if(e.target.id==='sheet') closeSheet(); });
 function head(t){ return `<div class="panel-head">${t?`<h2>${t}</h2>`:'<span style="flex:1"></span>'}<button class="x" data-close aria-label="Закрити">×</button></div>`; }
 
@@ -4783,9 +4718,9 @@ function openSku(id){
         <b>Склад</b>
         ${(s.comp||[]).length?compSorted(s.comp).map(x=>`<div class="cl num"><span class="cp">${fmtPctC(x.p)}%</span> ${esc(x.f)}</div>`).join('')+`<div class="ctypes">${compTypes(s.comp).map(t=>`<span>${esc(TYPE_UA[t]||t)}</span>`).join('')}</div>`:'<div class="cl" style="color:var(--muted);font-weight:400">не вказано</div>'}
       </div>
-      ${s.photos[0]?`<img class="sw-big zoomable" data-zoom="0" data-sku="${s.id}" src="${photoSrc(s.photos[0])}" alt="Фото пряжі">`:`<div class="sw-big" style="background:${esc(s.hex||'var(--indigo-soft)')}" role="img" aria-label="Відтінок ${esc(s.color||'')}"></div>`}
+      ${s.photos[0]?`<img class="sw-big" src="${photoSrc(s.photos[0])}" alt="Фото пряжі">`:`<div class="sw-big" style="background:${esc(s.hex||'var(--indigo-soft)')}" role="img" aria-label="Відтінок ${esc(s.color||'')}"></div>`}
     </div>
-    ${s.photos.length>1?`<div class="gallery">${s.photos.slice(1).map((p,i)=>`<img class="zoomable" data-zoom="${i+1}" data-sku="${s.id}" src="${photoSrc(p)}" alt="Фото пряжі">`).join('')}</div>`:''}
+    ${s.photos.length>1?`<div class="gallery">${s.photos.slice(1).map(p=>`<img src="${photoSrc(p)}" alt="Фото пряжі">`).join('')}</div>`:''}
     <div class="levels-big num${isClient()?' one':''}">
       ${isClient()?'':`
       <div class="lv stock"><b>${t('sku.stock')}</b><div class="kg">${fmtKg(l.kg)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.cn)} ${t('sku.cones')}</div></div>
