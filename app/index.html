@@ -143,6 +143,7 @@ main{padding-top:14px}
 .sku:has(.slevels){align-content:flex-start;align-items:flex-start;row-gap:5px;padding:8px 10px 7px;margin-bottom:6px;gap:10px}
 .sku:has(.slevels){flex-wrap:wrap}
 .sku .scol{display:flex;flex-direction:column;gap:6px;align-items:center;flex:none}
+.sku .sbc{font-size:10px;color:var(--muted);font-family:monospace;letter-spacing:.03em;white-space:nowrap;line-height:1}
 .delsku{width:34px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;color:var(--red);background:var(--surface)}
 .delsku svg{width:17px;height:17px}
 .delsku.off{color:var(--muted);opacity:.45}
@@ -843,6 +844,7 @@ const PHRASES = {
     'Є активна заявка з резервом. Спочатку відвантажте або анулюйте її.':'C\'è un ordine attivo con merce impegnata. Prima spediscilo o annullalo.',
     'Ім\'я':'Nome',
     'Інвентаризація':'Inventario',
+    'Прихід товару':'Carico merce',
     'Історія':'Storico',
     'Історія заявки':'Storico dell\'ordine',
     'Історія змін':'Storico modifiche',
@@ -1429,6 +1431,7 @@ const PHRASES = {
     'Є активна заявка з резервом. Спочатку відвантажте або анулюйте її.':'There is an active order holding stock. Ship or cancel it first.',
     'Ім\'я':'Name',
     'Інвентаризація':'Stocktake',
+    'Прихід товару':'Goods receipt',
     'Історія':'History',
     'Історія заявки':'Order history',
     'Історія змін':'Change history',
@@ -2842,7 +2845,7 @@ function viewCatalog(){
             ${compCol(s)}
           </div>
         </div>
-        <div class="scol">${thumbHtml(s,'thumb sthumb')}${can('delsku')?`<span class="delsku ${Math.abs(l.kg)<0.001&&l.cn===0&&l.rk<0.001?'':'off'}" role="button" tabindex="0" data-delsku="${s.id}" aria-label="${t('cat.del')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>`:''}</div>
+        <div class="scol">${s.code?`<div class="sbc">${esc(s.code)}</div>`:''}${thumbHtml(s,'thumb sthumb')}${can('delsku')?`<span class="delsku ${Math.abs(l.kg)<0.001&&l.cn===0&&l.rk<0.001?'':'off'}" role="button" tabindex="0" data-delsku="${s.id}" aria-label="${t('cat.del')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>`:''}</div>
           <div class="levels num slevels">
             ${seeSale()?`<span class="chip sale">${t('cat.sale')} ${pr.sale?fmtEur(pr.sale)+'/'+t('unit.kg'):'—'}</span>`:''}
             <span class="chip free">${t('cat.free')} ${fmtKg(l.fk)} ${t('unit.kg')} / ${fmtN(l.fc)} ${t('unit.cn')}</span>
@@ -5074,6 +5077,7 @@ function openOp(type, skuId, resId){
       <label class="f">${type==='adj'?'Фактично кг':'Кг'}<input id="oKg" type="number" inputmode="decimal" step="0.1" min="0" value="${type==='adj'?Math.round(l.kg*10)/10:(r?r.kg:'')}"></label>
     </div>
     <p class="hint num" id="oHint">${type==='adj'?'Різниці немає.':l.avg?`Середня вага конуса ${fmtKg(l.avg)} кг. Остаточну вагу беріть з ваг.`:''}</p>
+    ${type==='adj'?`<div style="display:flex;gap:20px;margin:10px 0 4px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="adjType" value="inv" checked> Інвентаризація</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="adjType" value="in"> Прихід товару</label></div>`:''}
     ${type==='out'&&!r?`<label class="check"><input type="checkbox" id="oPart"> Частина конуса (кг без зміни кількості конусів)</label>`:''}
     ${type==='smp'?`<label class="f">Дата видачі<input id="oDate" type="date" value="${todayStr()}" max="${todayStr()}"></label><p class="hint num" id="oSum"></p>`:type!=='adj'?`<div class="pair">
       ${can('fin')?`<label class="f">${priceLabel}<input id="oPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="${pricePh}" value="${r&&r.price?r.price:(type!=='in'&&s.sale?s.sale:'')}"></label>`:`<div class="f"><span class="hint">Ціну внесе бухгалтер</span></div>`}
@@ -5130,7 +5134,13 @@ function saveOp(type, skuId, resId){
     const dk=Math.round((fk-l.kg)*1000)/1000, dc=fc-l.cn;
     if(Math.abs(dk)<0.001 && dc===0) return fe('Фактичний залишок збігається з обліком, коригувати нічого.');
     if(fk < l.rk-0.001 || fc < l.rc) return fe(`У резерві ${fmtKg(l.rk)} кг / ${fmtN(l.rc)} к. Фактичний залишок не може бути меншим, спочатку зніміть або зменште резерв.`);
-    S.ops.push({id:uid(),sku:skuId,type:'adj',kg:dk,cones:dc,who:S.current,at,comment:com||'Інвентаризація',counted:{kg:fk,cones:fc}});
+    const adjType = document.querySelector('input[name="adjType"]:checked')?.value || 'inv';
+    if(adjType==='in'){
+      if(dk < -0.001 || dc < 0) return fe('Прихід не може бути від\'ємним. Для нестачі оберіть «Інвентаризація».');
+      S.ops.push({id:uid(),sku:skuId,type:'in',kg:Math.round(dk*1000)/1000,cones:dc,who:S.current,at,comment:com||'Прихід товару'});
+    } else {
+      S.ops.push({id:uid(),sku:skuId,type:'adj',kg:dk,cones:dc,who:S.current,at,comment:com||'Інвентаризація',counted:{kg:fk,cones:fc}});
+    }
   } else {
     if(kg<=0) return fe('Вкажіть вагу в кг.');
     if(type==='smp' && cn<0) return fe('Кількість конусів не може бути від\'ємною.');
