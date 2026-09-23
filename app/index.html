@@ -762,10 +762,11 @@ const I18N = {
     'sku.stock':'На складі', 'sku.resv':'У резерві', 'sku.free':'Вільно',
     'sku.buy':'Закупівля', 'sku.sell':'Продаж', 'sku.markup':'Націнка',
     'sku.in':'Прихід', 'sku.adj':'Коригування залишків',
-    'sku.edit':'Коригування картки SKU', 'sku.label':'Етикетка для друку (PDF)',
+    'sku.edit':'Коригування', 'sku.label':'Етикетка для друку (PDF)',
     'sku.hist':'Історія по цьому SKU', 'unit.kg':'кг', 'unit.cn':'к',
     'sku.cones':'конусів', 'sku.from':'від', 'sku.editcost':'Змінити ціни закупівлі',
     'sku.editsale':'Змінити ціну продажу', 'close':'Закрити',
+    'sku.copy':'Копія',
   },
   it: {
     'app.sub':'Premium Italian Stock Yarn',
@@ -789,10 +790,11 @@ const I18N = {
     'sku.stock':'In magazzino', 'sku.resv':'Impegnato', 'sku.free':'Disponibile',
     'sku.buy':'Acquisto', 'sku.sell':'Vendita', 'sku.markup':'Ricarico',
     'sku.in':'Carico', 'sku.adj':'Rettifica giacenza',
-    'sku.edit':'Modifica scheda SKU', 'sku.label':'Etichetta da stampare (PDF)',
+    'sku.edit':'Modifica', 'sku.label':'Etichetta da stampare (PDF)',
     'sku.hist':'Storico di questo SKU', 'unit.kg':'kg', 'unit.cn':'coni',
     'sku.cones':'coni', 'sku.from':'dal', 'sku.editcost':"Modifica prezzi d'acquisto",
     'sku.editsale':'Modifica prezzo di vendita', 'close':'Chiudi',
+    'sku.copy':'Copia',
   },
   en: {
     'app.sub':'Premium Italian Stock Yarn',
@@ -816,10 +818,11 @@ const I18N = {
     'sku.stock':'In stock', 'sku.resv':'Reserved', 'sku.free':'Free',
     'sku.buy':'Cost', 'sku.sell':'Sale', 'sku.markup':'Margin',
     'sku.in':'Goods in', 'sku.adj':'Stock adjustment',
-    'sku.edit':'Edit SKU card', 'sku.label':'Label for printing (PDF)',
+    'sku.edit':'Edit', 'sku.label':'Label for printing (PDF)',
     'sku.hist':'History for this SKU', 'unit.kg':'kg', 'unit.cn':'cones',
     'sku.cones':'cones', 'sku.from':'from', 'sku.editcost':'Change cost prices',
     'sku.editsale':'Change sale price', 'close':'Close',
+    'sku.copy':'Copy',
   },
 };
 
@@ -4806,7 +4809,7 @@ function openSku(id){
   const s = skuById(id); if(!s) return;
   const l = levels(id);
   const ops = S.ops.filter(o=>o.sku===id).sort((a,b)=>new Date(b.at)-new Date(a.at));
-  openSheet(`<div class="panel-head"><button class="btn plat" style="flex:1;margin:0" data-edit="${id}" ${can('sku')?'':'disabled'}><span class="dot" style="background:var(--muted)"></span>${t('sku.edit')}</button><button class="x" data-close aria-label="${t('close')}">×</button></div>
+  openSheet(`<div class="panel-head"><button class="btn plat" style="flex:1;min-width:0;margin:0" data-edit="${id}" ${can('sku')?'':'disabled'}>${t('sku.edit')}</button>${can('sku')?`<button class="btn plat" style="flex:1;min-width:0;margin:0" data-copysku="${id}">${t('sku.copy')}</button>`:''}<button class="x" data-close aria-label="${t('close')}">×</button></div>
     <div class="skuhead">
       <div class="info">
         ${s.maker?`<div>Brand: ${esc(s.maker)}</div>`:''}
@@ -5049,19 +5052,24 @@ function nextSkuCode(){
   return 'DG' + String(max+1).padStart(7,'0');
 }
 
-function openSkuForm(id){
+/* Копія картки: той самий виробник, артикул, Nm, склад і ціна продажу —
+   різниця лише в кольорі. Фото, колір, залишки й ціна закупівлі порожні,
+   штрихкод новий: це окрема картка, а не редагування старої. */
+function openSkuForm(id, copyFrom){
   const s = id ? skuById(id) : null;
+  const src = (!s && copyFrom) ? skuById(copyFrom) : null;
+  const b = s || src;                      // звідки брати спільні поля
   draftPhotos = s ? [...s.photos] : [];
   draftHex = (s && s.hex) || '';
-  draftComp = s && s.comp ? s.comp.map(x=>({...x})) : [{f:'',p:''}];
+  draftComp = b && b.comp && b.comp.length ? b.comp.map(x=>({...x})) : [{f:'',p:''}];
   const nextCode = nextSkuCode();
-  openSheet(`${head(s?'Коригування картки SKU':'Новий SKU')}
+  openSheet(`${head(s?'Коригування картки SKU':src?'Новий SKU — копія':'Новий SKU')}
     <div id="ferr"></div>
     <div class="photos" id="photoSlots"></div>
-    <label class="f">Виробник<input id="fMaker" value="${esc(s?.maker||'')}" placeholder="Filati Biagioli" list="makers" autocomplete="off"></label>
+    <label class="f">Виробник<input id="fMaker" value="${esc(b?.maker||'')}" placeholder="Filati Biagioli" list="makers" autocomplete="off"></label>
     <datalist id="makers">${[...new Set(liveSkus().map(x=>x.maker).filter(Boolean))].map(m=>`<option value="${esc(m)}">`).join('')}</datalist>
-    <label class="f">Артикул<input id="fArt" value="${esc(s?.art||'')}" placeholder="LANA MERINO 2/28" autocomplete="off"></label>
-    <label class="f">Nm<input id="fMeter" type="text" value="${esc(s?.meter||'')}" placeholder="2/28" autocomplete="off"></label>
+    <label class="f">Артикул<input id="fArt" value="${esc(b?.art||'')}" placeholder="LANA MERINO 2/28" autocomplete="off"></label>
+    <label class="f">Nm<input id="fMeter" type="text" value="${esc(b?.meter||'')}" placeholder="2/28" autocomplete="off"></label>
     <div class="f" style="font-size:14px;color:var(--muted);margin-bottom:6px">Склад пряжі, % — необов'язково</div>
     <div id="compRows"></div>
     <button type="button" class="btn ghost small" id="compAdd" style="margin-bottom:6px">+ Додати складник</button>
@@ -5071,7 +5079,7 @@ function openSkuForm(id){
     ${Object.entries(SHADES).map(([g,list])=>`<div class="swatch-grp">${g}</div><div class="swatches">${list.map(([n,h])=>`<button type="button" class="sw" data-sw="${h}" data-swn="${esc(n)}" title="${esc(n)}" aria-label="${esc(n)}" aria-pressed="${(s?.hex||'').toLowerCase()===h.toLowerCase()}" style="background:${h}"></button>`).join('')}</div>`).join('')}
     <div class="hex-row"><span class="hex-prev" id="hexPrev" style="background:${esc(s?.hex||'var(--indigo-soft)')}"></span><span id="hexName" style="flex:1">${s?.hex?esc(s.hex):'без відтінку'}</span>Свій<input id="fHex" type="color" value="${esc(s?.hex||'#2b3a67')}" aria-label="Свій відтінок"></div>
     <button type="button" class="btn ghost small" data-nohex style="margin:-4px 0 12px">Без відтінку</button>
-    ${can('fin')?`<label class="f">Ціна продажу за прайсом, €/кг<input id="fSale" type="number" inputmode="decimal" step="0.01" min="0" value="${s?.sale||''}" placeholder="Необов'язково"></label>
+    ${can('fin')?`<label class="f">Ціна продажу за прайсом, €/кг<input id="fSale" type="number" inputmode="decimal" step="0.01" min="0" value="${b?.sale||''}" placeholder="Необов'язково"></label>
     <p class="hint" id="fMk">Якщо не вказати, продаж і націнка рахуються за фактичними відвантаженнями.</p>`:'<p class="hint">Ціни закупівлі та продажу вносить бухгалтер або адмін.</p>'}
     <label class="f">Штрихкод<input id="fCode" value="${esc(s?.code||nextCode)}" readonly tabindex="-1" style="background:var(--bg);color:var(--muted);cursor:default"></label>
     <p class="hint">Присвоюється автоматично, по наростаючій. Змінити не можна. Якщо цей код хтось займе раніше, картка отримає наступний вільний — застосунок скаже, який саме.</p>
@@ -5083,7 +5091,7 @@ function openSkuForm(id){
       ${can('fin')?`<label class="f">Ціна закупівлі, €/кг<input id="fPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Необов'язково"></label>`:''}
       <label class="f">Дата приходу<input id="fDate" type="date" value="${todayStr()}"></label>
     </div>`}
-    <label class="f">Примітка<textarea id="fNote" rows="2">${esc(s?.note||'')}</textarea></label>
+    <label class="f">Примітка<textarea id="fNote" rows="2">${esc(b?.note||'')}</textarea></label>
     <button class="btn" id="fSave" data-id="${id||''}" style="width:100%">${s?'Зберегти зміни':'Додати SKU'}</button>
   `);
   drawSlots();
@@ -5598,6 +5606,7 @@ document.addEventListener('click', e=>{
   if('export' in d){ openExport(); return; }
   if(d.xper){ xPeriod(d.xper); return; }
   if(d.edit){ openSkuForm(d.edit); return; }
+  if(d.copysku){ openSkuForm(null, d.copysku); return; }
   if('nohex' in d){
     draftHex=''; $('#hexPrev').style.background='var(--indigo-soft)'; $('#hexName').textContent='без відтінку';
     document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed','false'));
