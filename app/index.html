@@ -300,7 +300,7 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .filebtn{position:relative;overflow:hidden;text-align:center}
 .filebtn input{position:absolute;inset:0;opacity:0}
 
-.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:40;display:none;max-width:90vw}
+.toast{position:fixed;left:0;right:0;bottom:100px;width:max-content;margin:0 auto;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:40;display:none;max-width:90vw}
 .demo-note{font-size:13px;color:var(--muted);text-align:center;margin:18px 0 6px}
 
 .swatch-grp{font-size:12px;color:var(--muted);margin:8px 0 4px}
@@ -423,6 +423,7 @@ table.t tr.tot td{font-weight:700}
 .ohead b{font-family:var(--serif);font-size:17px}
 .empty,.demo-note{font-family:var(--serif);font-style:italic}
 .toast{background:var(--primary);color:var(--on-primary);border:1px solid var(--gold)}
+.toast.warn{background:#FFD84D;color:#1A1208;border:1px solid #E0B32E;font-weight:600;text-align:center;white-space:pre-line;line-height:1.35}
 nav.tabs{border-top:2.5px solid var(--gold);box-shadow:0 -2px 8px rgba(0,0,0,.05)}
 nav.tabs button[aria-current="true"]{color:var(--gold-deep)}
 nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true"] svg{background:var(--indigo-soft);color:var(--gold-deep)}
@@ -2503,7 +2504,7 @@ async function pushChanges() {
           row = skuRowDb(s);
           CODE_BUMPED = s.id;
           audit(s.id, 'edit', `Штрихкод: ${was} → ${s.code} (код зайняв інший користувач)`);
-          toast(`Штрихкод ${was} уже зайняв інший користувач. Картці «${s.art}» присвоєно ${s.code} — друкуйте етикетку з новим кодом.`, 12000);
+          toast(`Штрихкод ${was} зайнято\nзмінено на ${s.code}`, 2000, true);
         }
       }
       // ціни закупівлі
@@ -5529,7 +5530,7 @@ function found(code){
 }
 /* toast */
 let tt;
-function toast(m,ms){ const t=$('#toast'); t.textContent=m; t.style.display='block'; clearTimeout(tt); tt=setTimeout(()=>t.style.display='none',ms||2600); }
+function toast(m,ms,warn){ const t=$('#toast'); t.textContent=m; t.className='toast'+(warn?' warn':''); t.style.display='block'; clearTimeout(tt); tt=setTimeout(()=>t.style.display='none',ms||2600); }
 
 /* events */
 document.addEventListener('click', e=>{
