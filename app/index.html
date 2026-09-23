@@ -130,6 +130,8 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 .skuf .btn.on,.skuf .btn.on:hover{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
 @media (max-width:420px){#catSum{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.search .btn{padding:4px 12px}}
 .catsum{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.25}
+/* на ПК зсуваємо під текст пошуку, а не під лупу; на телефоні місця обмаль — лишаємо з краю */
+@media (min-width:900px){.catsum{margin-left:30px}}
 
 .btn{border:1px solid var(--primary);border-radius:var(--radius-sm);padding:11px 14px;font-weight:600;background:var(--primary);color:var(--on-primary);letter-spacing:.2px;transition:background .15s,border-color .15s,color .15s}
 .btn:not(:disabled):hover{border-color:var(--gold)}
