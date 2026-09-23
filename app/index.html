@@ -124,7 +124,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
    проставили ціну. На телефоні місця немає, тож показуємо лише на ПК. */
 .skuf{display:none;flex:none;gap:6px}
 @media (min-width:900px){.skuf{display:flex}}
-.skuf .btn{white-space:nowrap;line-height:1.2}
+.skuf .btn{white-space:nowrap;line-height:1.25;width:92px;padding-left:4px;padding-right:4px;font-size:13px;text-align:center}
 .skuf .btn{border-color:var(--primary)}
 .skuf .btn:not(.on):not(:disabled):hover{background:var(--indigo-soft);color:var(--ink)}
 .skuf .btn.on,.skuf .btn.on:hover{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
@@ -697,8 +697,8 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
     </div>
     <div class="search" id="searchBar">
       <div class="skuf" id="skuFilters">
-        <button class="btn ghost small" id="fNoCost" aria-pressed="false" data-i18n="cat.nocost">Без ціни закупівлі</button>
-        <button class="btn ghost small" id="fNoSale" aria-pressed="false" data-i18n="cat.nosale">Без ціни продажу</button>
+        <button class="btn ghost small" id="fNoCost" aria-pressed="false" data-i18n="cat.nocost">Без ціни<br>закупівлі</button>
+        <button class="btn ghost small" id="fNoSale" aria-pressed="false" data-i18n="cat.nosale">Без ціни<br>продажу</button>
       </div>
       <div class="qcol"><div class="qwrap"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="q" type="search" placeholder="Артикул, бренд, колір, код" aria-label="Пошук"></div><p class="catsum num" id="catSum"></p></div>
       <button class="btn" id="addBtn" data-i18n="cat.add">Нове SKU</button>
@@ -777,7 +777,7 @@ const I18N = {
     'cat.empty':'Каталог порожній. Додайте перший SKU кнопкою «+ SKU».',
     'cat.search':'Пошук: артикул, бренд, колір, код',
     'cat.add':'Нове SKU', 'cat.neworder':'Нова заявка', 'cat.del':'Видалити SKU',
-    'cat.nocost':'Без ціни закупівлі', 'cat.nosale':'Без ціни продажу',
+    'cat.nocost':'Без ціни<br>закупівлі', 'cat.nosale':'Без ціни<br>продажу',
     'sku.stock':'На складі', 'sku.resv':'У резерві', 'sku.free':'Вільно',
     'sku.buy':'Закупівля', 'sku.sell':'Продаж', 'sku.markup':'Націнка',
     'sku.in':'Прихід', 'sku.adj':'Коригування залишків',
@@ -806,7 +806,7 @@ const I18N = {
     'cat.empty':'Catalogo vuoto. Aggiungi il primo SKU con il pulsante «+ SKU».',
     'cat.search':'Cerca: articolo, marchio, colore, codice',
     'cat.add':'Nuovo SKU', 'cat.neworder':'Nuovo ordine', 'cat.del':'Elimina SKU',
-    'cat.nocost':"Senza prezzo d'acquisto", 'cat.nosale':'Senza prezzo di vendita',
+    'cat.nocost':"Senza prezzo<br>d'acquisto", 'cat.nosale':'Senza prezzo<br>di vendita',
     'sku.stock':'In magazzino', 'sku.resv':'Impegnato', 'sku.free':'Disponibile',
     'sku.buy':'Acquisto', 'sku.sell':'Vendita', 'sku.markup':'Ricarico',
     'sku.in':'Carico', 'sku.adj':'Rettifica giacenza',
@@ -835,7 +835,7 @@ const I18N = {
     'cat.empty':'The catalogue is empty. Add the first SKU with the «+ SKU» button.',
     'cat.search':'Search: article, brand, colour, code',
     'cat.add':'New SKU', 'cat.neworder':'New order', 'cat.del':'Delete SKU',
-    'cat.nocost':'No cost price', 'cat.nosale':'No sale price',
+    'cat.nocost':'No cost<br>price', 'cat.nosale':'No sale<br>price',
     'sku.stock':'In stock', 'sku.resv':'Reserved', 'sku.free':'Free',
     'sku.buy':'Cost', 'sku.sell':'Sale', 'sku.markup':'Margin',
     'sku.in':'Goods in', 'sku.adj':'Stock adjustment',
