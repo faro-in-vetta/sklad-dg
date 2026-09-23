@@ -17,6 +17,7 @@
   --bg:#FAF7F2; --surface:#FFFFFF; --ink:#1A1A1A; --muted:#8A7A68; --line:#E6DCCD;
   --gold:#B68C5A; --gold-deep:#8A6030; --gold-light:#E8C87A;
   --primary:#4A2E1F; --on-primary:#F5F0EA;   /* шоколадний, трохи темніший за молочний — замість чорного */
+  --prog-rest:#8F7060;   /* незаповнена частина смужки прогресу на кнопці */
   --indigo:#8A6030; --indigo-soft:#F3EADC;
   --saffron:#B68C5A; --saffron-soft:#F6ECDD;
   --green:#3D7350; --green-soft:#E6F0E6;
@@ -31,6 +32,7 @@
   :root:not([data-theme="light"]){
     --bg:#110C07; --surface:#1B140D; --ink:#F5F0EA; --muted:#A89880; --line:#3A2E20;
     --gold:#C9A06A; --gold-deep:#D7B27C; --primary:#C9A06A; --on-primary:#1A1208;
+    --prog-rest:#E7D4B5;
     --indigo:#D7B27C; --indigo-soft:#2E2315;
     --saffron:#D7B27C; --saffron-soft:#2E2315;
     --green:#7FBF93; --green-soft:#17281C;
@@ -43,6 +45,7 @@
 :root[data-theme="dark"]{
   --bg:#110C07; --surface:#1B140D; --ink:#F5F0EA; --muted:#A89880; --line:#3A2E20;
   --gold:#C9A06A; --gold-deep:#D7B27C; --primary:#C9A06A; --on-primary:#1A1208;
+  --prog-rest:#E7D4B5;
   --indigo:#D7B27C; --indigo-soft:#2E2315;
   --saffron:#D7B27C; --saffron-soft:#2E2315;
   --green:#7FBF93; --green-soft:#17281C;
@@ -129,6 +132,8 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 .btn.out{background:var(--red);border-color:var(--red);color:#fff}
 .btn.res{background:var(--gold);border-color:var(--gold);color:#fff}
 .btn:disabled{opacity:.4;cursor:not-allowed}
+@property --p{syntax:'<percentage>';inherits:false;initial-value:0%}   /* щоб заливка кнопки наростала плавно, а не стрибала */
+.btn.prog,.btn.prog:disabled{opacity:1;cursor:progress;border-color:var(--primary);color:var(--on-primary);background-color:var(--prog-rest);background-image:linear-gradient(90deg,var(--primary) var(--p,0%),var(--prog-rest) var(--p,0%));transition:--p .25s linear;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 main{padding-top:14px}
 .sku{display:flex;gap:12px;align-items:stretch;background:var(--surface);border-radius:var(--radius-lg);padding:10px;margin-bottom:10px;border:1px solid var(--line);width:100%;text-align:left}
@@ -4102,7 +4107,15 @@ async function makeBackup(){
   if(bkBusy) return;
   if(!bkSupported()){ toast('Резервну копію можна зробити з комп\'ютера в Chrome або Edge'); return; }
   const btn = $('#backupBtn'), info = $('#backupInfo');
-  const say = t => { if(btn) btn.textContent = t; };
+  // Відсоток малюємо самою кнопкою: ліва частина заливається основним
+  // кольором, права лишається світлішою. Ваги етапів приблизні — фото
+  // забирають найбільше часу, тож на них і припадає більша частина смужки.
+  const say = (t, pct) => {
+    if(!btn) return;
+    btn.textContent = pct == null ? t : `${t} · ${Math.round(pct)}%`;
+    if(pct == null){ btn.classList.remove('prog'); btn.style.removeProperty('--p'); }
+    else { btn.classList.add('prog'); btn.style.setProperty('--p', Math.max(0, Math.min(100, Math.round(pct))) + '%'); }
+  };
   const stamp = todayStr();
 
   let root;
@@ -4126,8 +4139,9 @@ async function makeBackup(){
   try{
     // 1. база — усі таблиці повністю
     const tables = {}, counts = {}, missing = [];
-    for(const [t, col] of BK_TABLES){
-      say(`Копіюю дані: ${t}…`);
+    for(let ti = 0; ti < BK_TABLES.length; ti++){
+      const [t, col] = BK_TABLES[ti];
+      say('Копіюю дані', 2 + 10 * (ti / BK_TABLES.length));
       const r = await bkFetchAll(t, col);
       if(r.missing){ missing.push(t); continue; }
       tables[t] = r.rows; counts[t] = r.rows.length;
@@ -4141,7 +4155,7 @@ async function makeBackup(){
     const photoDir = await bkDir(dir, 'фото');
     const lost = [];
     for(let i = 0; i < paths.length; i++){
-      say(`Копіюю фото ${i+1} з ${paths.length}…`);
+      say(`Фото ${i+1}/${paths.length}`, 12 + 76 * (i / Math.max(1, paths.length)));
       const p = paths[i];
       try{
         const { data, error } = await db.storage.from('sku-photos').download(p);
@@ -4152,7 +4166,7 @@ async function makeBackup(){
     }
 
     // 3. база.json — пишемо після фото, щоб у ній був і список того, що не скопіювалось
-    say('Записую базу…');
+    say('Записую базу', 90);
     const dump = {
       app: 'sklad-dg', format: 1,
       made_at: new Date().toISOString(),
@@ -4165,7 +4179,7 @@ async function makeBackup(){
     await bkWrite(dir, 'база.json', new Blob([JSON.stringify(dump, null, 1)], {type:'application/json'}));
 
     // 4. звіт.xlsx — той самий, що в «Експорті», усі аркуші за весь час
-    say('Записую Excel…');
+    say('Записую Excel', 95);
     try{
       const buf = await exportXlsx({ sheets: XSHEETS.map(x => x[0]), from:'', to:'', returnBuf:true });
       if(buf) await bkWrite(dir, 'звіт.xlsx', new Blob([buf]));
@@ -4190,7 +4204,7 @@ async function makeBackup(){
     if(info) info.innerHTML = `<span style="color:var(--red)">Копію не завершено. ${esc(e && e.message ? e.message : '')}</span>`;
   }finally{
     bkBusy = false;
-    if(btn){ btn.disabled = false; btn.textContent = 'Зробити резервну копію'; }
+    if(btn){ btn.disabled = false; btn.classList.remove('prog'); btn.style.removeProperty('--p'); btn.textContent = 'Зробити резервну копію'; }
   }
 }
 
@@ -4339,16 +4353,29 @@ async function runRestore(){
   }
   rsArm = false; rsBusy = true;
   if(btn) btn.disabled = true;
-  const say = t => { if(btn) btn.textContent = t; };
+  // Той самий відсоток заливкою кнопки, що й при копіюванні. Вага: одне фото
+  // вантажиться приблизно як 40 рядків, тож смужка не «застрягає» на фото.
+  const say = (txt, pct) => {
+    if(!btn) return;
+    btn.textContent = pct == null ? txt : `${txt} · ${Math.round(pct)}%`;
+    if(pct == null){ btn.classList.remove('prog'); btn.style.removeProperty('--p'); }
+    else { btn.classList.add('prog'); btn.style.setProperty('--p', Math.max(0, Math.min(100, Math.round(pct))) + '%'); }
+  };
+  const PH_W = 40;
+  const totalWork = Math.max(1, RS_ORDER.reduce((a, t) => a + ((rsPlan.missing[t] || []).length), 0)
+                                + rsPlan.photos.length * PH_W);
+  let doneWork = 0;
+  const pctNow = () => doneWork / totalWork * 100;
   const added = {}, notes = [], errs = [];
   let stopped = null;
   try{
     for(const t of RS_ORDER){
       const rows = rsPlan.missing[t]; if(!rows || !rows.length) continue;
       for(let i = 0; i < rows.length; i += 250){
-        say(`Відновлюю: ${RS_NAMES[t]} ${Math.min(i+250, rows.length)} з ${rows.length}…`);
+        say(`${RS_NAMES[t]} ${Math.min(i+250, rows.length)}/${rows.length}`, pctNow());
         const { data, error } = await db.rpc('restore_rows', { p_table: t, p_rows: rows.slice(i, i+250) });
         if(error){ stopped = `${RS_NAMES[t]}: ${error.message}`; break; }
+        doneWork += Math.min(250, rows.length - i);
         added[t] = (added[t] || 0) + (data.inserted || 0);
         (data.notes || []).forEach(n => notes.push(n));
         (data.errors || []).forEach(x => errs.push(`${RS_NAMES[t]}: ${x.error}`));
@@ -4361,7 +4388,7 @@ async function runRestore(){
       const photoDir = await rsPlan.copy.h.getDirectoryHandle('фото').catch(() => null);
       for(let i = 0; i < rsPlan.photos.length; i++){
         const p = rsPlan.photos[i];
-        say(`Відновлюю фото ${i+1} з ${rsPlan.photos.length}…`);
+        say(`Фото ${i+1}/${rsPlan.photos.length}`, pctNow());
         try{
           if(!photoDir) throw new Error('немає папки фото');
           const file = await rsFile(photoDir, p);
@@ -4369,6 +4396,7 @@ async function runRestore(){
           if(error && !/exist|duplicate/i.test(error.message || '')) throw error;
           if(!error) ph++;
         }catch(e){ phFail++; }
+        doneWork += PH_W;
       }
       if(ph) added.photos = ph;
       if(phFail) errs.push(`фото: не вдалося повернути ${phFail}`);
@@ -4391,6 +4419,8 @@ async function runRestore(){
     if(plan) plan.innerHTML = `<p class="hint" style="margin:4px 0 0;color:var(--red)">Відновлення не завершено: ${esc(e && e.message ? e.message : '')}</p>`;
   }finally{
     rsBusy = false; rsPlan = null;
+    const b = $('#restoreGo');
+    if(b){ b.disabled = false; b.classList.remove('prog'); b.style.removeProperty('--p'); }
   }
 }
 
