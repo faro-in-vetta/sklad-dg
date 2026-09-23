@@ -120,6 +120,14 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 .search .btn{padding:4px 16px}
 .search .qcol{flex:1;min-width:0}
 #searchBar{align-items:stretch}
+/* Два перемикачі зліва від пошуку — щоб швидко знайти картки, яким ще не
+   проставили ціну. На телефоні місця немає, тож показуємо лише на ПК. */
+.skuf{display:none;flex:none;gap:6px}
+@media (min-width:900px){.skuf{display:flex}}
+.skuf .btn{white-space:nowrap;line-height:1.2}
+.skuf .btn{border-color:var(--primary)}
+.skuf .btn:not(.on):not(:disabled):hover{background:var(--indigo-soft);color:var(--ink)}
+.skuf .btn.on,.skuf .btn.on:hover{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
 @media (max-width:420px){#catSum{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.search .btn{padding:4px 12px}}
 .catsum{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.25}
 
@@ -688,6 +696,10 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
       <button class="gear" id="settingsBtn" aria-label="Доступ і експорт"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
     <div class="search" id="searchBar">
+      <div class="skuf" id="skuFilters">
+        <button class="btn ghost small" id="fNoCost" aria-pressed="false" data-i18n="cat.nocost">Без ціни закупівлі</button>
+        <button class="btn ghost small" id="fNoSale" aria-pressed="false" data-i18n="cat.nosale">Без ціни продажу</button>
+      </div>
       <div class="qcol"><div class="qwrap"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="q" type="search" placeholder="Артикул, бренд, колір, код" aria-label="Пошук"></div><p class="catsum num" id="catSum"></p></div>
       <button class="btn" id="addBtn" data-i18n="cat.add">Нове SKU</button>
     </div>
@@ -765,6 +777,7 @@ const I18N = {
     'cat.empty':'Каталог порожній. Додайте перший SKU кнопкою «+ SKU».',
     'cat.search':'Пошук: артикул, бренд, колір, код',
     'cat.add':'Нове SKU', 'cat.neworder':'Нова заявка', 'cat.del':'Видалити SKU',
+    'cat.nocost':'Без ціни закупівлі', 'cat.nosale':'Без ціни продажу',
     'sku.stock':'На складі', 'sku.resv':'У резерві', 'sku.free':'Вільно',
     'sku.buy':'Закупівля', 'sku.sell':'Продаж', 'sku.markup':'Націнка',
     'sku.in':'Прихід', 'sku.adj':'Коригування залишків',
@@ -793,6 +806,7 @@ const I18N = {
     'cat.empty':'Catalogo vuoto. Aggiungi il primo SKU con il pulsante «+ SKU».',
     'cat.search':'Cerca: articolo, marchio, colore, codice',
     'cat.add':'Nuovo SKU', 'cat.neworder':'Nuovo ordine', 'cat.del':'Elimina SKU',
+    'cat.nocost':"Senza prezzo d'acquisto", 'cat.nosale':'Senza prezzo di vendita',
     'sku.stock':'In magazzino', 'sku.resv':'Impegnato', 'sku.free':'Disponibile',
     'sku.buy':'Acquisto', 'sku.sell':'Vendita', 'sku.markup':'Ricarico',
     'sku.in':'Carico', 'sku.adj':'Rettifica giacenza',
@@ -821,6 +835,7 @@ const I18N = {
     'cat.empty':'The catalogue is empty. Add the first SKU with the «+ SKU» button.',
     'cat.search':'Search: article, brand, colour, code',
     'cat.add':'New SKU', 'cat.neworder':'New order', 'cat.del':'Delete SKU',
+    'cat.nocost':'No cost price', 'cat.nosale':'No sale price',
     'sku.stock':'In stock', 'sku.resv':'Reserved', 'sku.free':'Free',
     'sku.buy':'Cost', 'sku.sell':'Sale', 'sku.markup':'Margin',
     'sku.in':'Goods in', 'sku.adj':'Stock adjustment',
@@ -2860,6 +2875,10 @@ function render(){
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
   $('#addBtn').disabled = !can('sku');
+  // ціни бачать не всі: кому ціна закрита, тому й фільтр по ній ні до чого
+  const fc = $('#fNoCost'), fs = $('#fNoSale');
+  if(fc) fc.style.display = seeCost() ? '' : 'none';
+  if(fs) fs.style.display = seeSale() ? '' : 'none';
   // хто зараз у базі — внутрішня кухня; клієнтові склад людей не показуємо
   const onBtn = $('#onlineBtn');
   if(isClient()){ onBtn.style.display='none'; }
@@ -2877,9 +2896,20 @@ function thumbHtml(s, cls='thumb'){
   return `<div class="${cls}" style="background:${esc(s.hex||'var(--indigo-soft)')}" aria-hidden="true"></div>`;
 }
 
+/* Перемикачі «без ціни»: натиснута кнопка лишає в каталозі лише такі картки,
+   дві натиснуті — картки з обох списків (без закупівельної АБО без продажної). */
+const catF = {nocost:false, nosale:false};
+function toggleCatF(k){
+  catF[k] = !catF[k];
+  const el = $(k === 'nocost' ? '#fNoCost' : '#fNoSale');
+  if(el){ el.classList.toggle('on', catF[k]); el.setAttribute('aria-pressed', catF[k] ? 'true' : 'false'); }
+  viewCatalog();
+}
 function viewCatalog(){
   const q = $('#q').value.trim().toLowerCase();
-  const list = liveSkus().filter(s=>!q || [s.art,s.maker,s.color,s.code,compText(s.comp),compTypes(s.comp).map(t=>t+' '+(TYPE_UA[t]||'')).join(' ')].some(v=>String(v).toLowerCase().includes(q)));
+  let list = liveSkus().filter(s=>!q || [s.art,s.maker,s.color,s.code,compText(s.comp),compTypes(s.comp).map(t=>t+' '+(TYPE_UA[t]||'')).join(' ')].some(v=>String(v).toLowerCase().includes(q)));
+  const noCost = catF.nocost && seeCost(), noSale = catF.nosale && seeSale();
+  if(noCost || noSale) list = list.filter(s => (noCost && !costInfo(s).price) || (noSale && !(+s.sale)));
   let totKg=0, totFree=0;
   liveSkus().forEach(s=>{const l=levels(s.id); totKg+=l.kg; totFree+=l.fk;});
   /* підсумок закріплений у шапці під пошуком — видно, хоч куди прокрутив каталог.
@@ -2909,7 +2939,7 @@ function viewCatalog(){
             ${l.rk>0&&!isClient()?`<span class="chip resv">${t('cat.resv')} ${fmtKg(l.rk)} ${t('unit.kg')}</span>`:''}
           </div>
       </button>`;
-    }).join('') : `<div class="empty">${q?t('cat.none'):t('cat.empty')}</div>`}
+    }).join('') : `<div class="empty">${q||noCost||noSale?t('cat.none'):t('cat.empty')}</div>`}
   `;
 }
 
@@ -5667,6 +5697,8 @@ document.addEventListener('click', e=>{
       $('#xerr').innerHTML=''; exportXlsx({sheets,from,to}); break; }
     case 'manualGo': found($('#manualCode').value); break;
     case 'camRetry': lastMiss=''; stopScan(); startCamera(); break;
+    case 'fNoCost': toggleCatF('nocost'); break;
+    case 'fNoSale': toggleCatF('nosale'); break;
     case 'backupBtn': makeBackup(); break;
     case 'restoreBtn': openRestore(); break;
     case 'restoreGo': runRestore(); break;
