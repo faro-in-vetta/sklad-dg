@@ -2486,22 +2486,10 @@ async function pushChanges() {
 
     // SKU
     for (const s of S.skus) {
-      let row = skuRowDb(s);
+      const row = skuRowDb(s);
       if (changed('sku', s.id, row)) {
-        // Двоє могли відкрити «Новий SKU» одночасно — обом застосунок показав
-        // один і той самий вільний код. Хто зберіг першим, той його і зайняв;
-        // другому мовчки беремо наступний вільний і кажемо, який саме.
-        for (let tries = 0; ; tries++) {
-          const { error } = await db.from('skus').upsert(row);
-          if (!error) { remember('sku', s.id, row); break; }
-          if (error.code !== '23505' || tries >= 5) throw error;
-          const was = s.code;
-          s.code = await freeSkuCode(s.code);
-          row = skuRowDb(s);
-          CODE_BUMPED = s.id;
-          audit(s.id, 'edit', `Штрихкод: ${was} → ${s.code} (код зайняв інший користувач)`);
-          toast(`Штрихкод ${was} уже зайняв інший користувач. Картці «${s.art}» присвоєно ${s.code} — друкуйте етикетку з новим кодом.`, 12000);
-        }
+        const { error } = await db.from('skus').upsert(row);
+        if (error) throw error; remember('sku', s.id, row);
       }
       // ціни закупівлі
       for (const c of (s.costs || [])) {
@@ -2611,11 +2599,6 @@ async function pushChanges() {
     }
     // Запрошення створює й видаляє Edge Function / окремі виклики — тут нічого не синхронізуємо.
 
-    if (CODE_BUMPED) {
-      const bid = CODE_BUMPED; CODE_BUMPED = false; render();
-      const ed = document.querySelector('#panel [data-edit]');
-      if (ed && ed.dataset.edit === bid) openSku(bid);   // відкрита картка має показати новий код
-    }
     setSync('ok');
   } catch (e) {
     console.error(e);
@@ -2630,19 +2613,6 @@ async function pushChanges() {
 async function nextNoFromDb(yy) {
   const { data } = await db.rpc('next_order_no', { p_yy: yy });
   return data || 1;
-}
-
-/* Вільний штрихкод із бази: на відміну від nextSkuCode() бачить і ті картки,
-   які інші створили щойно, і ті, що вже видалені. Якщо функції в базі ще
-   немає — рахуємо по пам'яті, але ніколи не нижче за вже відхилений код. */
-let CODE_BUMPED = '';
-const codeNum = c => { const m = /^DG(\d{1,9})$/i.exec(String(c || '').trim()); return m ? parseInt(m[1], 10) : 0; };
-async function freeSkuCode(after) {
-  let c = '';
-  try { const { data, error } = await db.rpc('next_sku_code'); if (!error && data) c = String(data); } catch (e) {}
-  if (!c) c = nextSkuCode();
-  if (codeNum(c) <= codeNum(after)) c = 'DG' + String(codeNum(after) + 1).padStart(7, '0');
-  return c;
 }
 
 function setSync(state) {
@@ -5074,7 +5044,7 @@ function openSkuForm(id){
     ${can('fin')?`<label class="f">Ціна продажу за прайсом, €/кг<input id="fSale" type="number" inputmode="decimal" step="0.01" min="0" value="${s?.sale||''}" placeholder="Необов'язково"></label>
     <p class="hint" id="fMk">Якщо не вказати, продаж і націнка рахуються за фактичними відвантаженнями.</p>`:'<p class="hint">Ціни закупівлі та продажу вносить бухгалтер або адмін.</p>'}
     <label class="f">Штрихкод<input id="fCode" value="${esc(s?.code||nextCode)}" readonly tabindex="-1" style="background:var(--bg);color:var(--muted);cursor:default"></label>
-    <p class="hint">Присвоюється автоматично, по наростаючій. Змінити не можна. Якщо цей код хтось займе раніше, картка отримає наступний вільний — застосунок скаже, який саме.</p>
+    <p class="hint">Присвоюється автоматично, по наростаючій. Змінити не можна.</p>
     ${s?'':`<div class="pair">
       <label class="f">Прихід, кг<input id="fKg" type="number" inputmode="decimal" step="0.1" min="0"></label>
       <label class="f">Прихід, конусів<input id="fCn" type="number" inputmode="numeric" step="1" min="0"></label>
@@ -5088,9 +5058,6 @@ function openSkuForm(id){
   `);
   drawSlots();
   drawComp();
-  // Показаний код рахувався по пам'яті — звіряємо з базою, бо хтось міг
-  // створити картку щойно, а свіжі дані приходять раз на 45 с.
-  if(!s) freeSkuCode('').then(c=>{ const el=$('#fCode'); if(el && el.value===nextCode) el.value=c; });
 }
 function drawSlots(){
   $('#photoSlots').innerHTML = [0,1,2].map(i=>draftPhotos[i]
@@ -5521,7 +5488,7 @@ function found(code){
 }
 /* toast */
 let tt;
-function toast(m,ms){ const t=$('#toast'); t.textContent=m; t.style.display='block'; clearTimeout(tt); tt=setTimeout(()=>t.style.display='none',ms||2600); }
+function toast(m){ const t=$('#toast'); t.textContent=m; t.style.display='block'; clearTimeout(tt); tt=setTimeout(()=>t.style.display='none',2600); }
 
 /* events */
 document.addEventListener('click', e=>{
