@@ -2909,7 +2909,10 @@ function toggleCatF(k){
 }
 function viewCatalog(){
   const q = $('#q').value.trim().toLowerCase();
-  let list = liveSkus().filter(s=>!q || [s.art,s.maker,s.color,s.code,compText(s.comp),compTypes(s.comp).map(t=>t+' '+(TYPE_UA[t]||'')).join(' ')].some(v=>String(v).toLowerCase().includes(q)));
+  let list = liveSkus().filter(s=>!q || [s.art,s.maker,s.color,s.code,compText(s.comp),compTypes(s.comp).map(t=>t+' '+(TYPE_UA[t]||'')).join(' ')].some(v=>String(v).toLowerCase().includes(q)))
+    // порядок каталогу — за номером штрихкода від меншого до більшого:
+    // саме так картки заводили, і так їх шукають на полиці
+    .sort((x,y) => (codeNum(x.code) - codeNum(y.code)) || String(x.code||'').localeCompare(String(y.code||'')));
   const noCost = catF.nocost && seeCost(), noSale = catF.nosale && seeSale();
   if(noCost || noSale) list = list.filter(s => (noCost && !costInfo(s).price) || (noSale && !(+s.sale)));
   let totKg=0, totFree=0;
