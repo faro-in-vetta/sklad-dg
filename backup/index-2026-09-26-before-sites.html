@@ -92,21 +92,6 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 @media (max-width:420px){.dgname{font-size:15px}.dgsub{font-size:7px;letter-spacing:1.5px}.dglogo{width:38px;height:38px}}
 .brand h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.01em}
 .brand small{display:block;color:var(--muted);font-size:12px;font-weight:400}
-/* Вибір складу — біля логотипа. Галочки, можна лишити обидва склади. */
-.chip.site{background:var(--indigo-soft);color:var(--gold-deep)}
-.usites{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin:6px 0 0;font-size:13px;color:var(--muted)}
-.usites label{display:flex;align-items:center;gap:5px;color:var(--ink)}
-.usites input{width:15px;height:15px;accent-color:var(--primary)}
-.siteWrap{position:relative;flex:none}
-.sitebtn{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 10px;font-size:13px;color:var(--ink);max-width:190px}
-.sitebtn .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sitebtn.pick{border-color:var(--primary);color:var(--primary);font-weight:600}
-.sitemenu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 20px rgba(26,18,8,.16);padding:6px;min-width:200px}
-.sitemenu[hidden]{display:none}
-.sitemenu label{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;font-size:15px;cursor:pointer}
-.sitemenu label:hover{background:var(--indigo-soft)}
-.sitemenu input{width:17px;height:17px;flex:none;accent-color:var(--primary)}
-@media (max-width:520px){.sitebtn .nm{max-width:86px}}
 .online{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 10px 4px 4px;flex:none;font-size:13px;color:var(--ink)}
 .avs{display:flex}
 .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;border:2px solid var(--surface);position:relative;flex:none}
@@ -310,7 +295,6 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .tag.out{background:var(--red-soft);color:var(--red)}
 .tag.res{background:var(--saffron-soft);color:var(--saffron)}
 .tag.adj{background:var(--indigo-soft);color:var(--indigo)}
-.tag.mov_out,.tag.mov_in{background:var(--stone-soft);color:var(--gold-deep)}
 .row .grow{flex:1;min-width:0}
 .row .sub{color:var(--muted);font-size:13px}
 .row .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
@@ -714,14 +698,6 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
       <div class="brand">
         <img class="dglogo" src="data:image/png;base64,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" width="44" height="44" alt="DG Filati">
         <div class="dgtext"><span class="dgname">Diamant Group Filati</span><span class="dgsub">Premium Italian Stock Yarn</span></div>
-      </div>
-      <div class="siteWrap" id="siteWrap" style="display:none">
-        <button class="sitebtn" id="siteBtn" aria-expanded="false" aria-haspopup="true">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21v-6h6v6"/></svg>
-          <span class="nm" id="siteLbl">Склад</span>
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <div class="sitemenu" id="siteMenu" hidden></div>
       </div>
       <button class="online" id="onlineBtn" aria-label="Хто зараз у базі"></button>
       <span id="syncDot" class="syncdot ok" title="Усі зміни збережено"></span>
@@ -2360,7 +2336,6 @@ function fromSku(r, costs) {
   return {
     id: r.id, maker: r.maker, art: r.art, color: r.color || '', hex: r.hex || '',
     meter: r.meter || '', code: r.code, comp: r.comp || [], sale: +r.sale || 0,
-    site: r.site || 'sg',
     note: r.note || '', photos: r.photos || [], deleted: r.deleted,
     createdBy: r.created_by, created: r.created_at,
     costs: cs.map(c => ({ id: c.id, price: c.price, date: c.date })),
@@ -2370,7 +2345,6 @@ function fromSku(r, costs) {
 const skuRowDb = s => ({
   id: s.id, maker: s.maker, art: s.art, color: s.color || null, hex: s.hex || null,
   meter: s.meter || null, code: s.code, comp: s.comp || [], sale: +s.sale || 0,
-  site: siteOf(s),
   note: s.note || null, photos: (s.photos || []).filter(p => !p.startsWith('data:')),
   deleted: !!s.deleted, deleted_at: s.deletedAt || null, deleted_by: s.deletedBy || null,
   created_by: s.createdBy || S.current || null
@@ -2398,7 +2372,6 @@ function fromOrder(r, lines, pays, rets, evs) {
   }));
   return {
     id: r.id, yy: r.yy, no: r.no, client: r.client, sample: r.sample,
-    site: r.site || 'sg',
     terms: r.terms, days: r.days, comment: r.comment || '',
     shipMode: r.ship_mode, delivery: +r.delivery || 0, carrierName: r.carrier_name || '',
     boxes: r.boxes || 0, boxKg: +r.box_kg || 0,
@@ -2417,7 +2390,6 @@ function fromOrder(r, lines, pays, rets, evs) {
 }
 const orderRowOf = o => ({
   id: o.id, yy: o.yy, no: o.no, client: o.client, sample: !!o.sample,
-  site: siteOf(o),
   terms: o.terms === 'sample' ? 'sample' : o.terms, days: +o.days || 0,
   comment: o.comment || null, ship_mode: o.shipMode || 'us', delivery: +o.delivery || 0,
   carrier_name: o.carrierName || null, boxes: +o.boxes || 0, box_kg: +o.boxKg || 0,
@@ -2460,7 +2432,7 @@ async function hydrate() {
 
   SNAP = {};
   S = {
-    users: (pf.data || []).map(p => ({ id: p.id, name: p.name, role: p.role, email: p.email, removed: p.removed, client: p.client || '', sites: Array.isArray(p.sites) && p.sites.length ? p.sites : allSites() })),
+    users: (pf.data || []).map(p => ({ id: p.id, name: p.name, role: p.role, email: p.email, removed: p.removed, client: p.client || '' })),
     current: ME.id,
     seen: Object.fromEntries((pf.data || []).filter(p => p.last_seen).map(p => [p.id, new Date(p.last_seen).getTime()])),
     invites: (iv.data || []).map(i => ({ id: i.id, email: i.email, name: i.name || '', role: i.role, token: i.token, at: i.created_at, by: i.created_by })),
@@ -2504,7 +2476,7 @@ async function hydrate() {
   (rt.data || []).forEach(r => remember('ret', r.id, r));
   (ev.data || []).forEach(e => remember('ev', e.id, e));
   (au.data || []).forEach(a => remember('audit', a.id, a));
-  (pf.data || []).forEach(p => remember('profile', p.id, { id: p.id, name: p.name, role: p.role, client: p.client || null, sites: Array.isArray(p.sites) && p.sites.length ? p.sites : allSites(), removed: p.removed }));
+  (pf.data || []).forEach(p => remember('profile', p.id, { id: p.id, name: p.name, role: p.role, client: p.client || null, removed: p.removed }));
   (iv.data || []).forEach(i => remember('invite', i.id, { id: i.id, email: i.email, name: i.name, role: i.role }));
 
   await refreshPhotoUrls();
@@ -2664,12 +2636,9 @@ async function pushChanges() {
 
     // люди й запрошення
     for (const u of S.users) {
-      // порядок полів має збігатися зі знімком у hydrate, інакше кожен запис
-      // виглядав би зміненим і профілі оновлювалися б без потреби
-      const uSites = (u.sites && u.sites.length) ? u.sites : allSites();
-      const row = { id: u.id, name: u.name, role: u.role, client: u.client || null, sites: uSites, removed: !!u.removed };
+      const row = { id: u.id, name: u.name, role: u.role, removed: !!u.removed };
       if (changed('profile', u.id, row)) {
-        const { error } = await db.from('profiles').update({ name: u.name, role: u.role, client: u.client || null, sites: uSites, removed: !!u.removed, removed_at: u.removed ? new Date().toISOString() : null }).eq('id', u.id);
+        const { error } = await db.from('profiles').update({ name: u.name, role: u.role, client: u.client || null, removed: !!u.removed, removed_at: u.removed ? new Date().toISOString() : null }).eq('id', u.id);
         if (!error) remember('profile', u.id, row);
       }
     }
@@ -2708,43 +2677,6 @@ async function freeSkuCode(after) {
   if (codeNum(c) <= codeNum(after)) c = 'DG' + String(codeNum(after) + 1).padStart(7, '0');
   return c;
 }
-
-/* ---------- перемикач складів у шапці ---------- */
-function drawSiteBtn(){
-  const wrap = document.getElementById('siteWrap'); if(!wrap) return;
-  const allow = mySites();
-  wrap.style.display = allow.length > 1 ? '' : 'none';
-  if(allow.length < 2) return;
-  const v = viewSites();
-  const lbl = document.getElementById('siteLbl');
-  if(lbl) lbl.textContent = v.length === allow.length && allow.length > 1 ? 'Усі склади' : v.map(siteTag).join(' · ');
-  const btn = document.getElementById('siteBtn');
-  if(btn) btn.classList.toggle('pick', v.length < allow.length);
-  const menu = document.getElementById('siteMenu');
-  if(menu) menu.innerHTML = allow.map(c =>
-    `<label><input type="checkbox" data-site="${c}" ${v.includes(c)?'checked':''}>${esc(SITE_NAME[c])}</label>`).join('');
-}
-function toggleSiteMenu(open){
-  const menu = document.getElementById('siteMenu'), btn = document.getElementById('siteBtn');
-  if(!menu) return;
-  const show = open === undefined ? menu.hidden : open;
-  menu.hidden = !show;
-  if(btn) btn.setAttribute('aria-expanded', show ? 'true' : 'false');
-}
-function pickSite(code, on){
-  const allow = mySites();
-  let v = viewSites().slice();
-  if(on){ if(!v.includes(code)) v.push(code); }
-  else { v = v.filter(x => x !== code); }
-  if(!v.length){ v = [code]; toast('Хоча б один склад має лишатися вибраним'); }   // порожній список показав би все — це плутає
-  setViewSites(allow.filter(x => v.includes(x)));
-  drawSiteBtn();
-  render();
-}
-document.addEventListener('click', e => {
-  const w = document.getElementById('siteWrap');
-  if(w && !w.contains(e.target)) toggleSiteMenu(false);
-}, true);
 
 /* Кнопка «донизу» — лише в каталозі й лише поки до кінця списку ще далеко. */
 function syncToBottom(){
@@ -2886,41 +2818,7 @@ const compText = c => compSorted(c).map(x=>`${fmtPctC(x.p)}% ${x.f}`).join(' + '
 const compTypes = c => [...new Set(compSorted(c).map(x=>FIBER_TYPE[x.f]||x.f))];
 const skuRow = x => `<div class="srow"><div class="srow-l">${skuIdHtml(x)}</div>${thumbHtml(x,'thumb osw')}</div>`;
 const compCol = x => `<div class="ccol many">${(x.comp||[]).length?compSorted(x.comp).map(c=>`<span><b>${fmtPctC(c.p)}%</b> ${esc(c.f)}</span>`).join(''):'<span class="cna">склад —</span>'}</div>`;
-/* ---------- склади (локації) ----------
-   Картка SKU і заявка належать одному складу. Товар «переїжджає» окремою
-   операцією переміщення, яка знімає кілограми з картки одного складу й
-   додає на картку-двійника іншого. Адмін і бухгалтер бачать обидва склади;
-   решті склади призначає адмін у налаштуваннях. */
-const SITES = [['sg','Сан Джованні'], ['lv','Львів']];
-const SITE_NAME = Object.fromEntries(SITES);
-const allSites = () => SITES.map(x=>x[0]);
-const siteOf = x => (x && SITE_NAME[x.site]) ? x.site : 'sg';   // старі записи — Сан Джованні
-function mySites(){
-  const u = me() || {};
-  if(u.role === 'admin' || u.role === 'accountant') return allSites();
-  const a = (u.sites || []).filter(x => SITE_NAME[x]);
-  return a.length ? a : allSites();
-}
-let SITE_VIEW = null, SITES_ALL = false;   // SITES_ALL — на час резервної копії
-function viewSites(){
-  if(SITES_ALL) return allSites();
-  const allow = mySites();
-  if(SITE_VIEW === null){
-    try{ SITE_VIEW = JSON.parse(localStorage.getItem('sklad-sites') || 'null'); }catch(e){ SITE_VIEW = null; }
-    if(!Array.isArray(SITE_VIEW)) SITE_VIEW = null;
-  }
-  const v = (SITE_VIEW || allow).filter(x => allow.includes(x));
-  return v.length ? v : allow;
-}
-function setViewSites(v){
-  SITE_VIEW = v.slice();
-  try{ localStorage.setItem('sklad-sites', JSON.stringify(SITE_VIEW)); }catch(e){}
-}
-const seesSite = code => viewSites().includes(code);
-const siteTag = code => SITE_NAME[code] || SITE_NAME.sg;
-
-const allLiveSkus = () => S.skus.filter(x=>!x.deleted);              // усі склади
-const liveSkus = () => S.skus.filter(x=>!x.deleted && seesSite(siteOf(x)));
+const liveSkus = () => S.skus.filter(x=>!x.deleted);
 const skuById = id => S.skus.find(s=>s.id===id);
 
 function costInfo(sku){
@@ -2958,7 +2856,7 @@ function levels(skuId){
     if(a){ kg=a.kg; cn=a.cones; inKg=a.inKg; inCn=a.inCones; }
   } else {
     S.ops.filter(o=>o.sku===skuId).forEach(o=>{
-      const sgn = (o.type==='out'||o.type==='smp'||o.type==='mov_out') ? -1 : 1;
+      const sgn = (o.type==='out'||o.type==='smp') ? -1 : 1;
       kg += sgn*o.kg; cn += sgn*o.cones;
       if(o.type==='in'){ inKg+=o.kg; inCn+=o.cones; if(o.price>0){ pk+=o.kg; pv+=o.kg*o.price; } }
     });
@@ -3009,7 +2907,6 @@ function render(){
     onBtn.innerHTML = `<span class="avs">${on.slice(0,2).map(u=>avatar(u,'',false)).join('')}</span><span class="num">${on.length} онлайн</span>`;
   }
   ({catalog:viewCatalog, reserves:viewReserves, debt:viewDebt, journal:viewJournal, stats:viewStats})[tab]();
-  drawSiteBtn();
   setTimeout(syncToBottom, 0);
 }
 
@@ -3062,7 +2959,6 @@ function viewCatalog(){
           <div class="levels num slevels">
             ${seeSale()?`<span class="chip sale">${t('cat.sale')} ${pr.sale?fmtEur(pr.sale)+'/'+t('unit.kg'):'—'}</span>`:''}
             <span class="chip free">${t('cat.free')} ${fmtKg(l.fk)} ${t('unit.kg')} / ${fmtN(l.fc)} ${t('unit.cn')}</span>
-            ${viewSites().length>1?`<span class="chip site">${esc(siteTag(siteOf(s)))}</span>`:''}
             ${l.rk>0&&!isClient()?`<span class="chip resv">${t('cat.resv')} ${fmtKg(l.rk)} ${t('unit.kg')}</span>`:''}
           </div>
       </button>`;
@@ -3136,7 +3032,7 @@ function viewReserves(){
   const inP = o => { const d=o.at.slice(0,10); return (!oFrom||d>=oFrom)&&(!oTo||d<=oTo); };
   const oq=($('#oq')?.value||'').trim().toLowerCase();
   const inQ = o => !oq || [orderNo(o),o.client,o.comment,...o.lines.map(li=>{const x=skuById(li.sku)||{}; return [x.art,x.maker,x.color].join(' ');})].some(v=>String(v||'').toLowerCase().includes(oq));
-  const base = S.reserves.filter(o=>seesSite(siteOf(o))&&inP(o)&&inQ(o));   // лише вибрані склади
+  const base = S.reserves.filter(o=>inP(o)&&inQ(o));
   const ALL_GROUPS = [['all','Усі'],['res','Створені'],['pick','Збірка'],['wait','Чекає оплати'],['ready','До відправки'],['unpaid','Не оплачені'],['done','Оплачені'],['sample','Пробники'],['cancel','Анульовані']];
   // На телефоні дев'ять фільтрів займають пів екрана. Лишаємо два робочі;
   // активний показуємо завжди, навіть якщо його обрали з комп'ютера.
@@ -3191,7 +3087,7 @@ function orderCard(o){
   const b=orderActions(o);
   return `<div class="ocard" data-oview="${o.id}" role="button" tabindex="0" aria-label="Відкрити заявку № ${orderNo(o)}">
     <div class="ohead"><b class="num">№ ${orderNo(o)}</b><span class="stg ${STAGE_CLS[st]}">${stageLabel(o)}</span>${o.sample&&st!=='sample'?'<span class="stg st-sample">пробники</span>':''}${hasRet(o)?'<span class="stg st-cancel" style="text-decoration:none">повернення</span>':''}</div>
-    <div class="oline"><b>${esc(o.client)}</b>${viewSites().length>1?`<span class="stg" style="background:var(--indigo-soft);color:var(--gold-deep)">${esc(siteTag(siteOf(o)))}</span>`:''}</div>
+    <div class="oline"><b>${esc(o.client)}</b></div>
     <div class="sub num" style="color:var(--muted);font-size:13px;margin-bottom:6px">${n} ${pos(n)} · ${fmtKg(oKg(o))} кг / ${fmtN(oCn(o))} к${!seeSale()?'':allSmp(o)&&!oShip(o)?' · без оплати':` · <b style="color:var(--ink)">${fmtEur(oTotal(o))}</b>${oShip(o)?` <span style="font-size:12px">(з доставкою)</span>`:''}`}</div>
     ${o.lines.slice(0,2).map((li,i)=>lineHtml(o,li,i)).join('')}
     ${n>2?`<div class="sub" style="color:var(--gold-deep);font-size:13px;margin:2px 0 4px">+ ще ${n-2} ${pos(n-2)}</div>`:''}
@@ -3212,7 +3108,6 @@ function openOrderView(id){
     <div class="box">
       <div class="oline" style="font-size:18px"><b>${esc(o.client)}</b></div>
       <div class="sub" style="color:var(--muted)">${!seeSale()?'':termsText(o)}${o.paid&&!allSmp(o)?` · оплачено ${fmtDate(o.paidAt)}`:''}${!o.paid&&oPaid(o)>0?` · оплачено ${fmtEur(oPaid(o))}, залишок ${fmtEur(oOwed(o))}`:''}${o.due&&!o.paid?` · <span class="${o.due.slice(0,10)<todayStr()?'neg':''}">оплатити до ${fmtDate(o.due)}${o.due.slice(0,10)<todayStr()?` (прострочено ${daysOver(o)} ${dayWord(daysOver(o))})`:''}</span>`:''}</div>
-      <div class="sub" style="color:var(--muted)">Склад: <b style="color:var(--ink)">${esc(siteTag(siteOf(o)))}</b></div>
       <div class="sub" style="color:var(--muted)">Заявку створив менеджер: <b style="color:var(--ink)">${esc(uname(o.who))}</b></div>
       <div class="sub" style="color:var(--muted)">Доставка: ${o.shipMode==='client'?`за рахунок клієнта${oDeliv(o)?` · ${fmtEur(oDeliv(o))}`:' · суму ще не внесено'}`:`за наш рахунок${oDeliv(o)?` · ${fmtEur(oDeliv(o))}`:' · суму ще не внесено'}`}</div>
       ${o.comment?`<div class="sub" style="color:var(--muted)">${esc(o.comment)}</div>`:''}
@@ -3249,15 +3144,14 @@ function openOrderEditor(id){
   const o=id?oById(id):null;
   if(o && !canEditOrder(o)) return;
   const nx=nextOrderNo();
-  OD = o ? {id:o.id, site:siteOf(o), title:orderNo(o), client:o.client, terms:o.terms==='deferred'?'def':'prepay', days:o.days||30, shipMode:o.shipMode||(+o.shipping>0?'client':'us'), comment:o.comment||'', lines:o.lines.map(li=>({sku:li.sku,kg:li.kg,cones:li.cones,price:li.price,sample:!!li.sample}))}
-         : {id:null, site:defSite(null), title:fmtNo(nx.yy,nx.no), client:isClient()?myClient():'', terms:'prepay', days:30, shipMode:'us', comment:'', lines:[]};
+  OD = o ? {id:o.id, title:orderNo(o), client:o.client, terms:o.terms==='deferred'?'def':'prepay', days:o.days||30, shipMode:o.shipMode||(+o.shipping>0?'client':'us'), comment:o.comment||'', lines:o.lines.map(li=>({sku:li.sku,kg:li.kg,cones:li.cones,price:li.price,sample:!!li.sample}))}
+         : {id:null, title:fmtNo(nx.yy,nx.no), client:isClient()?myClient():'', terms:'prepay', days:30, shipMode:'us', comment:'', lines:[]};
   drawOrderEditor();
 }
 function syncOD(){
   if(!OD || !$('#odClient')) return;
   OD.client = isClient() ? myClient() : $('#odClient').value;
   OD.comment=$('#odCom').value;
-  if($('#odSite') && !OD.lines.length) OD.site=$('#odSite').value;
   if($('#odTerms')) OD.terms=$('#odTerms').value;
   if($('#odDays')) OD.days=$('#odDays').value;
   const sm=document.querySelector('input[name=odShipMode]:checked'); if(sm) OD.shipMode=sm.value;
@@ -3276,10 +3170,6 @@ function drawOrderEditor(err){
   openSheet(`${head('Заявка № '+OD.title)}
     <label class="f">Клієнт<input id="odClient" list="odClients" autocomplete="off" placeholder="Назва клієнта" value="${esc(OD.client)}" ${isClient()?'readonly title="Заявки оформлюються на вашу компанію"':''}></label>
     ${isClient()?'':`<datalist id="odClients">${clients.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>`}
-    ${mySites().length>1
-      ? `<label class="f">Склад<select id="odSite" ${OD.lines.length?'disabled title="Склад заявки змінюється, поки в ній немає позицій"':''}>${mySites().map(c=>`<option value="${c}" ${c===OD.site?'selected':''}>${esc(SITE_NAME[c])}</option>`).join('')}</select></label>
-         <p class="hint" style="margin:-6px 0 10px">Заявка збирається з одного складу. ${OD.lines.length?'Щоб змінити — приберіть позиції.':''}</p>`
-      : ''}
     <div class="box"><h3>Позиції (${OD.lines.length})</h3>
       ${OD.lines.length?OD.lines.map((li,i)=>{
         const s=skuById(li.sku)||{}, l=levels(li.sku), mine=reservedIn(o,li.sku);
@@ -3327,10 +3217,7 @@ function openSkuPicker(){
   syncOD();
   const o=OD.id?oById(OD.id):null;
   const q=pickQ.trim().toLowerCase();
-  // заявка збирається з одного складу — інакше збірка й відвантаження
-  // розповзлися б на дві локації
-  const list=liveSkus().filter(s=>siteOf(s)===OD.site)
-    .filter(s=>!q||[s.art,s.maker,s.color,s.code,compText(s.comp)].some(v=>String(v||'').toLowerCase().includes(q)));
+  const list=liveSkus().filter(s=>!q||[s.art,s.maker,s.color,s.code,compText(s.comp)].some(v=>String(v||'').toLowerCase().includes(q)));
   openSheet(`<div class="panel-head"><button class="btn ghost small" data-pickback>← До заявки</button><h2 style="flex:1;margin-left:6px">Каталог</h2></div>
     <div class="qwrap" style="margin-bottom:10px"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="pickQ" type="search" placeholder="Артикул, бренд, колір, склад" value="${esc(pickQ)}" style="width:100%;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:11px 12px 11px 40px"></div>
     ${list.map(s=>{ const l=levels(s.id), mine=reservedIn(o,s.id), fk=l.fk+mine.kg, fc=l.fc+mine.cn; const added=OD.lines.some(li=>li.sku===s.id);
@@ -3366,7 +3253,6 @@ function saveOrderDraft(){
     if(kg>l.fk+mine.kg+0.001) return drawOrderEditor(`${esc(name)}: вільно лише ${fmtKg(l.fk+mine.kg)} кг.`);
     if(cn>l.fc+mine.cn) return drawOrderEditor(`${esc(name)}: вільно лише ${fmtN(l.fc+mine.cn)} конусів.`);
     if(!li.sample && !(price>0)) return drawOrderEditor(`${esc(name)}: вкажіть ціну.`);
-    if(siteOf(s)!==(OD.site||defSite(null))) return drawOrderEditor(`${esc(name)}: ця картка на складі «${esc(siteTag(siteOf(s)))}», а заявка на «${esc(siteTag(OD.site))}».`);
     lines.push({sku:li.sku,kg,cones:cn,price,sample:!!li.sample});
   }
   const smp=lines.every(li=>li.sample);
@@ -3378,7 +3264,7 @@ function saveOrderDraft(){
   const sumTxt = ls => `${ls.length} ${pos(ls.length)}, ${fmtKg(ls.reduce((t,x)=>t+x.kg,0))} кг / ${fmtN(ls.reduce((t,x)=>t+x.cones,0))} к`;
   if(!o){
     const nx=nextOrderNo(); S.orderSeqByYear[nx.yy]=nx.no;
-    const no={id:uid(),yy:nx.yy,no:nx.no,site:OD.site||defSite(null),client,sample:smp,terms,days,comment,shipMode,shipping:0,lines,who:S.current,at:now(),status:'active',events:[]};
+    const no={id:uid(),yy:nx.yy,no:nx.no,client,sample:smp,terms,days,comment,shipMode,shipping:0,lines,who:S.current,at:now(),status:'active',events:[]};
     oev(no,`${smp?'Заявку на пробники':'Заявку'} створено: ${sumTxt(lines)}, доставка ${shipMode==='client'?'за рахунок клієнта':'за наш рахунок'}, товар у резерві`);
     S.reserves.push(no);
     if(save()){ toast(`Заявку № ${orderNo(no)} створено`); OD=null; closeSheet(); tab='reserves'; oFilter='all'; render(); }
@@ -3912,10 +3798,10 @@ function saveCancel(id){
   if(save()){ toast('№ '+orderNo(o)+' анульовано'); refreshOrders(); }
 }
 
-const OPN = {in:'прихід', out:'продаж', smp:'пробники', adj:'коригування', ret:'повернення', mov_out:'переміщення', mov_in:'переміщення'};
+const OPN = {in:'прихід', out:'продаж', smp:'пробники', adj:'коригування', ret:'повернення'};
 function opRow(o, withSku){
   const s = skuById(o.sku)||{};
-  const sign = (o.type==='out'||o.type==='smp'||o.type==='mov_out') ? '−' : (o.kg<0||o.cones<0 ? '' : '+');
+  const sign = (o.type==='out'||o.type==='smp') ? '−' : (o.kg<0||o.cones<0 ? '' : '+');
   const money = (seeSale() && o.price>0) ? ` · ${fmtEur(o.price)}/кг = ${fmtEur(o.kg*o.price)}` : '';
   return `<div class="row"><span class="tag ${o.type}">${OPN[o.type]}</span><div class="grow">
     ${withSku?`<b>${esc(s.art)}</b> <span class="sub">${esc(s.maker||'')}</span><br>`:''}<span class="num">${sign}${fmtKg(o.kg)} кг / ${o.cones?sign:''}${fmtN(o.cones)} к${money}</span>${o.partial?' · частина конуса':''}
@@ -3924,7 +3810,7 @@ function opRow(o, withSku){
 let jFilter='all';
 function viewJournal(){
   const it=[];
-  S.skus.filter(x=>seesSite(siteOf(x))).forEach(x=>{
+  S.skus.forEach(x=>{
     const name=skuIdHtml(x, x.deleted?'<div class="sub" style="color:var(--red);margin:-2px 0 4px">SKU видалено</div>':'');
     historyItems(x.id,true).forEach(h=>it.push(Object.assign({},h,{html:h.html.replace('<div class="row">','<div class="row hrow">').replace('<div class="grow">',`<div class="grow">${name}`)})));
   });
@@ -3973,8 +3859,6 @@ function openSettings(){
       <label class="f">Ім'я<input id="iName" placeholder="Як підписувати в журналі"></label>
       <label class="f">Роль<select id="iRole">${roleOptions('manager')}</select></label>
       <p class="hint" id="iRoleDesc">Може: ${ROLE_DESC.manager}</p>
-      <div class="f" id="iSitesWrap">Які склади бачить
-        <div class="usites">${SITES.map(([c,n])=>`<label><input type="checkbox" data-isite value="${c}" checked>${esc(n)}</label>`).join('')}</div></div>
       <label class="f" id="iClientWrap" style="display:none">Клієнт у заявках<input id="iClient" autocomplete="off" placeholder="Точна назва клієнта, як у заявках"></label>
       <label class="f">Пароль<input id="iPass" type="text" autocomplete="off" placeholder="щонайменше 8 символів"></label>
       <button class="btn small ghost" data-genpass="iPass" style="width:100%;margin:-2px 0 10px">Згенерувати пароль</button>
@@ -3994,11 +3878,10 @@ function openSettings(){
           ${u.id===S.current?'':`<button class="btn small ghost" data-rmuser="${u.id}">Вимкнути</button>`}
           ${u.id!==S.current&&me().role==='admin'?`<button class="btn small ghost" data-purgeuser="${u.id}">Видалити назавжди</button>`:''}
         </div>
-        ${u.role==='admin'||u.role==='accountant'?'':`<div class="usites">Склади:${SITES.map(([c,n])=>`<label><input type="checkbox" data-usite="${u.id}" value="${c}" ${((u.sites&&u.sites.length?u.sites:allSites()).includes(c))?'checked':''}>${esc(n)}</label>`).join('')}</div>`}
         ${u.role==='client'?`<label class="f" style="margin:6px 0 0;font-size:13px">Клієнт у заявках
           <input data-uclient="${u.id}" value="${esc(u.client||'')}" placeholder="Точна назва клієнта" autocomplete="off"></label>
           ${u.client?'':'<p class="hint" style="margin:4px 0 0;color:var(--red)">Поки назву не вказано, людина не побачить жодної заявки.</p>'}`:''}`
-        :`<div class="sub" style="font-size:13px">${ROLE[u.role]}${u.role==='client'&&u.client?' · '+esc(u.client):''}${u.role==='admin'||u.role==='accountant'?'':' · '+esc((u.sites&&u.sites.length?u.sites:allSites()).map(siteTag).join(', '))}</div>`}
+        :`<div class="sub" style="font-size:13px">${ROLE[u.role]}${u.role==='client'&&u.client?' · '+esc(u.client):''}</div>`}
       </div></div>`).join('')}
     </div>`}
     ${admin?`<div class="box"><h3>Змінити пароль</h3>
@@ -4097,8 +3980,6 @@ async function sendInvite(){
   const login=$('#iEmail').value.trim().toLowerCase(), name=$('#iName').value.trim(),
         role=$('#iRole').value, password=$('#iPass').value,
         client=($('#iClient')?$('#iClient').value:'').trim();
-  let sites = [...document.querySelectorAll('[data-isite]')].filter(x=>x.checked).map(x=>x.value);
-  if(role==='admin' || role==='accountant' || !sites.length) sites = allSites();
   const fe=m=>{$('#ierr').innerHTML=`<div class="err">${m}</div>`;};
   if(!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(login)) return fe('Логін: 3–32 символи, латиниця, цифри, крапка, дефіс або підкреслення.');
   if(activeUsers().some(u=>loginOf(u.email||'').toLowerCase()===login)) return fe('Такий логін уже зайнятий.');
@@ -4107,7 +3988,7 @@ async function sendInvite(){
   fe('');
   busy('[data-invite]', true, 'Створюю…');
   if(role==='client' && !client) return fe('Для ролі «Клієнт» вкажіть назву клієнта — саме за нею людина бачитиме свої заявки.');
-  const r = await callAccess({ mode:'create', login, name, role, password, client, sites });
+  const r = await callAccess({ mode:'create', login, name, role, password, client });
   busy('[data-invite]', false, 'Створити доступ');
   if(!r.ok) return fe(r.msg);
 
@@ -4308,7 +4189,6 @@ async function makeBackup(){
 
   bkBusy = true;
   if(btn) btn.disabled = true;
-  SITES_ALL = true;   // копія й звіт — завжди по всіх складах, хоч би що було вибрано в шапці
   try{
     // 1. база — усі таблиці повністю
     const tables = {}, counts = {}, missing = [];
@@ -4377,7 +4257,6 @@ async function makeBackup(){
     if(info) info.innerHTML = `<span style="color:var(--red)">Копію не завершено. ${esc(e && e.message ? e.message : '')}</span>`;
   }finally{
     bkBusy = false;
-    SITES_ALL = false;
     if(btn){ btn.disabled = false; btn.classList.remove('prog'); btn.style.removeProperty('--p'); btn.textContent = 'Зробити резервну копію'; }
   }
 }
@@ -4723,24 +4602,6 @@ function setClientName(uidv, val){
   if(save()) toast(v ? (u.name+' → '+v) : (u.name+': прив\'язку знято'));
 }
 
-/* Які склади бачить людина. Адмін і бухгалтер бачать обидва завжди, тож
-   для них перемикачі не показуємо. Порожній список означав би «нічого», —
-   останню галочку зняти не даємо. */
-function setUserSite(uidv, code, on){
-  const u = S.users.find(x=>x.id===uidv); if(!u) return;
-  let v = ((u.sites && u.sites.length) ? u.sites : allSites()).filter(x=>SITE_NAME[x]);
-  if(on){ if(!v.includes(code)) v.push(code); }
-  else { v = v.filter(x=>x!==code); }
-  if(!v.length){
-    toast('Хоча б один склад має лишатися');
-    const el = document.querySelector(`[data-usite="${uidv}"][value="${code}"]`);
-    if(el) el.checked = true;
-    return;
-  }
-  u.sites = allSites().filter(x=>v.includes(x));
-  if(save()) toast(u.name + ' → ' + u.sites.map(siteTag).join(', '));
-}
-
 function setRole(uidv, role){
   const u=S.users.find(x=>x.id===uidv); if(!u) return;
   const admins=activeUsers().filter(x=>CAN[x.role] && CAN[x.role].users);
@@ -4815,12 +4676,8 @@ async function doDeleteSku(id){
 /* ---------- analytics ---------- */
 function monthly(){
   const cost = {}; S.skus.forEach(x=>cost[x.id]=levels(x.id).cost);
-  // рахуємо лише ті склади, що зараз вибрані в шапці; видалені картки теж,
-  // бо їхні рухи були
-  const mine = new Set(S.skus.filter(x=>seesSite(siteOf(x))).map(x=>x.id));
   const m = {};
   S.ops.forEach(o=>{
-    if(!mine.has(o.sku)) return;
     const k = o.at.slice(0,7);
     const r = m[k] || (m[k]={month:k,inKg:0,inCn:0,inSum:0,outKg:0,outCn:0,rev:0,cogs:0,smpKg:0,smpCost:0,ship:0,car:0,shipExp:0});
     if(o.type==='in'){ r.inKg+=o.kg; r.inCn+=o.cones; r.inSum+=o.kg*(o.price||0); }
@@ -4829,7 +4686,7 @@ function monthly(){
     if(o.type==='smp'){ r.smpKg+=o.kg; r.smpCost+=o.kg*(cost[o.sku]||0); }
     if(o.type==='out'){ r.outKg+=o.kg; r.outCn+=o.cones; r.rev+=o.kg*(o.price||0); r.cogs+=o.kg*(cost[o.sku]||0); }
   });
-  S.reserves.forEach(o=>{ if(!seesSite(siteOf(o))||o.status!=='shipped'||!oDeliv(o)||!o.shippedAt) return;
+  S.reserves.forEach(o=>{ if(o.status!=='shipped'||!oDeliv(o)||!o.shippedAt) return;
     const k=o.shippedAt.slice(0,7);
     const r=m[k]||(m[k]={month:k,inKg:0,inCn:0,inSum:0,outKg:0,outCn:0,rev:0,cogs:0,smpKg:0,smpCost:0,ship:0,car:0,shipExp:0});
     r.ship+=oShip(o); r.car+=oCar(o); r.shipExp+=oCar(o); });
@@ -4939,14 +4796,14 @@ async function exportXlsx(opt){
   opt = opt || {sheets:XSHEETS.map(x=>x[0]), from:'', to:''};
   const inPer = iso => { const d=iso.slice(0,10); return (!opt.from||d>=opt.from) && (!opt.to||d<=opt.to); };
   if(!window.XLSX){ toast('Бібліотека Excel не завантажилась'); return; }
-  const typeName = {in:'Прихід',out:'Продаж',smp:'Пробники',adj:'Коригування',ret:'Повернення',mov_out:'Переміщення (зі складу)',mov_in:'Переміщення (на склад)'};
+  const typeName = {in:'Прихід',out:'Продаж',smp:'Пробники',adj:'Коригування',ret:'Повернення'};
   const stock = liveSkus().map(x=>{const l=levels(x.id); return {
     'Виробник':x.maker||'','Артикул':x.art,'Колір':x.color,'Склад':compText(x.comp),'Тип волокна':compTypes(x.comp).join(', '),'Nm':x.meter||'','Штрихкод':x.code,
     'На складі, кг':+l.kg.toFixed(2),'На складі, конусів':l.cn,'Резерв, кг':+l.rk.toFixed(2),'Резерв, конусів':l.rc,
     'Вільно, кг':+l.fk.toFixed(2),'Вільно, конусів':l.fc,'Ціна закупівлі, €/кг':+l.cost.toFixed(2),'Ціна продажу, €/кг':(p=>p.sale?+p.sale.toFixed(2):'')(pricing(x,l)),'Джерело ціни продажу':(p=>p.sale?p.src:'')(pricing(x,l)),'Націнка, %':(p=>p.markup===null?'':+p.markup.toFixed(1))(pricing(x,l)),'Вартість залишку, €':+(l.kg*l.cost).toFixed(2)};});
   const ops = [...S.ops].filter(o=>inPer(o.at)).sort((a,b)=>a.at.localeCompare(b.at)).map(o=>{const x=skuById(o.sku)||{}; return {
     'Дата':new Date(o.at),'Операція':typeName[o.type],'Виробник':x.maker||'','Артикул':x.art||'','Колір':x.color||'',
-    'Кг':(o.type==='out'||o.type==='smp'||o.type==='mov_out')?-o.kg:o.kg,'Конусів':(o.type==='out'||o.type==='smp'||o.type==='mov_out')?-o.cones:o.cones,'Ціна, €/кг':o.price||'','Сума, €':o.price?+(o.kg*o.price).toFixed(2):'',
+    'Кг':(o.type==='out'||o.type==='smp')?-o.kg:o.kg,'Конусів':(o.type==='out'||o.type==='smp')?-o.cones:o.cones,'Ціна, €/кг':o.price||'','Сума, €':o.price?+(o.kg*o.price).toFixed(2):'',
     'Контрагент':o.party||'','Хто вніс':uname(o.who),'Коментар':o.comment||''};});
   const res = [];
   S.reserves.filter(o=>inPer(o.at)).sort((a,b)=>(orderYY(a)-orderYY(b))||(a.no-b.no)).forEach(o=>o.lines.forEach((li,i)=>{ const x=skuById(li.sku)||{}; const q=lq(li); res.push({
@@ -5041,7 +4898,6 @@ function openSku(id){
       <div class="info">
         ${s.maker?`<div>Brand: ${esc(s.maker)}</div>`:''}
         <div>Art.: ${esc(s.art)}</div>
-        <div style="color:var(--muted)">Склад: ${esc(siteTag(siteOf(s)))}</div>
         ${s.color?`<div>Color: ${esc(s.color)}</div>`:''}
         ${s.meter?`<div class="num">${esc(nmText(s.meter))}</div>`:''}
       </div>
@@ -5066,7 +4922,6 @@ function openSku(id){
     <div class="actions">
       <button class="btn" data-op="in" data-sku="${id}" ${can('in')?'':'disabled'}><span class="dot" style="background:var(--green)"></span>Прихід</button>
       <button class="btn" data-op="adj" data-sku="${id}" ${can('adj')?'':'disabled'}><span class="dot" style="background:var(--indigo)"></span>Коригування залишків</button>
-      ${mySites().length>1?`<button class="btn" data-move="${id}" ${can('in')?'':'disabled'}><span class="dot" style="background:var(--gold)"></span>Перемістити на інший склад</button>`:''}
     </div>
     <div class="box">
       <div class="label" aria-label="Етикетка">
@@ -5284,15 +5139,6 @@ function nextSkuCode(){
 /* Копія картки: той самий виробник, артикул, Nm, склад і ціна продажу —
    різниця лише в кольорі. Фото, колір, залишки й ціна закупівлі порожні,
    штрихкод новий: це окрема картка, а не редагування старої. */
-/* Склад за замовчуванням для нової картки: як у джерела копії, інакше —
-   вибраний у шапці, якщо він один; інакше перший дозволений. */
-function defSite(src){
-  const allow = mySites();
-  if(src && allow.includes(siteOf(src))) return siteOf(src);
-  const v = viewSites();
-  if(v.length === 1 && allow.includes(v[0])) return v[0];
-  return allow[0];
-}
 function openSkuForm(id, copyFrom){
   const s = id ? skuById(id) : null;
   const src = (!s && copyFrom) ? skuById(copyFrom) : null;
@@ -5308,10 +5154,6 @@ function openSkuForm(id, copyFrom){
     <datalist id="makers">${[...new Set(liveSkus().map(x=>x.maker).filter(Boolean))].map(m=>`<option value="${esc(m)}">`).join('')}</datalist>
     <label class="f">Артикул<input id="fArt" value="${esc(b?.art||'')}" placeholder="LANA MERINO 2/28" autocomplete="off"></label>
     <label class="f">Nm<input id="fMeter" type="text" value="${esc(b?.meter||'')}" placeholder="2/28" autocomplete="off"></label>
-    ${s ? `<div class="f" style="font-size:14px;color:var(--muted);margin-bottom:6px">Склад: <b style="color:var(--ink)">${esc(siteTag(siteOf(s)))}</b> — змінюється лише переміщенням</div>`
-        : (mySites().length > 1
-            ? `<label class="f">Склад<select id="fSite">${mySites().map(c=>`<option value="${c}" ${c===defSite(src)?'selected':''}>${esc(SITE_NAME[c])}</option>`).join('')}</select></label>`
-            : `<div class="f" style="font-size:14px;color:var(--muted);margin-bottom:6px">Склад: <b style="color:var(--ink)">${esc(siteTag(mySites()[0]))}</b></div>`)}
     <div class="f" style="font-size:14px;color:var(--muted);margin-bottom:6px">Склад пряжі, % — необов'язково</div>
     <div id="compRows"></div>
     <button type="button" class="btn ghost small" id="compAdd" style="margin-bottom:6px">+ Додати складник</button>
@@ -5402,9 +5244,8 @@ function saveSku(id){
   const kg=parseFloat($('#fKg').value)||0, cn=parseInt($('#fCn').value)||0;
   if((kg>0)!==(cn>0)) return fe('Для приходу вкажіть і кг, і кількість конусів.');
   const nid=uid();
-  const nsite = ($('#fSite') && $('#fSite').value) || defSite(null);
   audit(nid,'create','Створено картку'+(draftPhotos.length?` з ${draftPhotos.length} фото`:''));
-  S.skus.push({id:nid,createdBy:S.current,site:nsite,comp,meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):0,maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),photos:[...draftPhotos],created:now()});
+  S.skus.push({id:nid,createdBy:S.current,comp,meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):0,maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),photos:[...draftPhotos],created:now()});
   const price=parseFloat($('#fPrice')?.value)||0;
   if(kg>0){ const at=dateToIso($('#fDate').value); if(price>0) addCost(skuById(nid), at, price); S.ops.push({id:uid(),sku:nid,type:'in',kg,cones:cn,price,who:S.current,at,party:maker,comment:'Перша партія'}); }
   if(save()){ toast('SKU додано'); render(); openSku(nid); }
@@ -5412,80 +5253,6 @@ function saveSku(id){
 
 /* operations */
 const OPT = {in:'Прихід', out:'Продаж', smp:'Пробники', res:'Резерв', adj:'Коригування залишків'};
-/* ---------- переміщення між складами ----------
-   Картка живе на одному складі, тож переїзд — це дві операції: знімаємо
-   кілограми тут і додаємо на картку-двійника там. Двійника шукаємо за
-   виробником, артикулом, кольором і Nm; якщо його ще немає — створюємо
-   копію з новим штрихкодом (етикетку доведеться переклеїти). */
-function twinSku(s, site){
-  const eq = (a,b) => String(a||'').trim().toLowerCase() === String(b||'').trim().toLowerCase();
-  return S.skus.find(x => !x.deleted && siteOf(x) === site
-    && eq(x.maker,s.maker) && eq(x.art,s.art) && eq(x.color,s.color) && eq(x.meter,s.meter));
-}
-function openMove(skuId){
-  const s = skuById(skuId); if(!s || !can('in')) return;
-  const l = levels(skuId);
-  const from = siteOf(s);
-  const to = mySites().filter(c => c !== from);
-  if(!to.length){ toast('Іншого складу вам не призначено'); return; }
-  const tw = twinSku(s, to[0]);
-  openSheet(`${head('Перемістити на інший склад')}
-    ${skuIdHtml(s)}
-    <p class="hint" style="margin:6px 0 10px">Зі складу <b>${esc(siteTag(from))}</b>. Вільно ${fmtKg(l.fk)} кг / ${fmtN(l.fc)} к.</p>
-    <div id="mverr"></div>
-    ${to.length>1?`<label class="f">Куди<select id="mvTo">${to.map(c=>`<option value="${c}">${esc(SITE_NAME[c])}</option>`).join('')}</select></label>`
-                 :`<input type="hidden" id="mvTo" value="${to[0]}"><div class="f" style="font-size:14px;color:var(--muted);margin-bottom:6px">Куди: <b style="color:var(--ink)">${esc(siteTag(to[0]))}</b></div>`}
-    <div class="pair">
-      <label class="f">Кг<input id="mvKg" type="number" inputmode="decimal" step="0.1" min="0" max="${l.fk}"></label>
-      <label class="f">Конусів<input id="mvCn" type="number" inputmode="numeric" step="1" min="0" max="${l.fc}"></label>
-    </div>
-    <label class="f">Дата<input id="mvDate" type="date" value="${todayStr()}"></label>
-    <label class="f">Коментар<input id="mvNote" placeholder="Необов'язково" autocomplete="off"></label>
-    <p class="hint" id="mvHint">${tw ? `На складі «${esc(siteTag(to[0]))}» уже є картка ${esc(tw.code)} — товар ляже на неї.`
-                                     : `На складі «${esc(siteTag(to[0]))}» такої картки ще немає — створимо нову копію з новим штрихкодом.`}</p>
-    <button class="btn" data-mvsave="${skuId}" style="width:100%">Перемістити</button>`);
-}
-function saveMove(skuId){
-  const s = skuById(skuId); if(!s || !can('in')) return;
-  const fe = m => { $('#mverr').innerHTML = `<div class="err">${m}</div>`; $('#panel').scrollTop = 0; };
-  const l = levels(skuId);
-  const to = $('#mvTo').value;
-  const kg = parseFloat($('#mvKg').value) || 0, cn = parseInt($('#mvCn').value) || 0;
-  if(!SITE_NAME[to] || to === siteOf(s)) return fe('Оберіть інший склад.');
-  if(kg <= 0) return fe('Вкажіть кілограми.');
-  if(cn < 0) return fe('Кількість конусів не може бути від\'ємною.');
-  if(kg > l.fk + 0.001) return fe(`Вільно лише ${fmtKg(l.fk)} кг — стільки перемістити не можна.`);
-  if(cn > l.fc) return fe(`Вільно лише ${fmtN(l.fc)} конусів.`);
-  const at = dateToIso($('#mvDate').value || todayStr());
-  const note = $('#mvNote').value.trim();
-
-  let dst = twinSku(s, to), created = false;
-  if(!dst){
-    dst = {id:uid(), createdBy:S.current, site:to, maker:s.maker, art:s.art, color:s.color, hex:s.hex,
-           meter:s.meter, code:nextSkuCode(), comp:(s.comp||[]).map(x=>({...x})), sale:+s.sale||0,
-           note:s.note||'', photos:[...(s.photos||[])], costs:[], costActive:null};
-    S.skus.push(dst); created = true;
-    audit(dst.id,'create',`Картку створено переміщенням зі складу «${siteTag(siteOf(s))}»`);
-    // собівартість переїжджає разом з товаром, інакше на новому складі
-    // маржа рахувалася б від нуля
-    const c = costInfo(s).price;
-    if(c > 0) addCost(dst, at, c);
-  }
-
-  const txt = `${fmtKg(kg)} кг / ${fmtN(cn)} к · ${siteTag(siteOf(s))} → ${siteTag(to)}${note?' · '+note:''}`;
-  S.ops.push({id:uid(), sku:skuId,  type:'mov_out', kg, cones:cn, price:0, who:S.current, at, party:siteTag(to),          comment:'Переміщення на склад ' + siteTag(to)});
-  S.ops.push({id:uid(), sku:dst.id, type:'mov_in',  kg, cones:cn, price:0, who:S.current, at, party:siteTag(siteOf(s)),  comment:'Переміщення зі складу ' + siteTag(siteOf(s))});
-  audit(skuId,'edit','Переміщення: ' + txt);
-  audit(dst.id,'edit','Надійшло переміщенням: ' + txt);
-
-  if(save()){
-    closeSheet();
-    toast(created ? `Переміщено · нова картка ${dst.code}, переклейте етикетку` : `Переміщено на ${siteTag(to)}`);
-    render();
-    openSku(created ? dst.id : skuId);
-  }
-}
-
 function openOp(type, skuId, resId){
   const s=skuById(skuId), l=levels(skuId);
   const r = resId ? S.reserves.find(x=>x.id===resId) : null;
@@ -5924,8 +5691,6 @@ document.addEventListener('click', e=>{
   if(d.xper){ xPeriod(d.xper); return; }
   if(d.edit){ openSkuForm(d.edit); return; }
   if(d.copysku){ openSkuForm(null, d.copysku); return; }
-  if(d.move){ openMove(d.move); return; }
-  if(d.mvsave){ saveMove(d.mvsave); return; }
   if('nohex' in d){
     draftHex=''; $('#hexPrev').style.background='var(--indigo-soft)'; $('#hexName').textContent='без відтінку';
     document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed','false'));
@@ -5955,7 +5720,6 @@ document.addEventListener('click', e=>{
       $('#xerr').innerHTML=''; exportXlsx({sheets,from,to}); break; }
     case 'manualGo': found($('#manualCode').value); break;
     case 'camRetry': lastMiss=''; stopScan(); startCamera(); break;
-    case 'siteBtn': toggleSiteMenu(); break;
     case 'toBottom': window.scrollTo({top: document.documentElement.scrollHeight, behavior:'smooth'}); break;
     case 'fNoCost': toggleCatF('nocost'); break;
     case 'fNoSale': toggleCatF('nosale'); break;
@@ -5974,8 +5738,6 @@ document.addEventListener('click', e=>{
 });
 document.addEventListener('change', async e=>{
   const t=e.target;
-  if(t.dataset && t.dataset.site!==undefined){ pickSite(t.dataset.site, t.checked); return; }
-  if(t.dataset && t.dataset.usite!==undefined){ setUserSite(t.dataset.usite, t.value, t.checked); return; }
   if(t.dataset && t.dataset.photo!==undefined && t.files[0]){
     try{ draftPhotos.push(await compress(t.files[0])); draftPhotos=draftPhotos.slice(0,3); drawSlots(); }
     catch(err){ toast('Не вдалося прочитати фото'); }
@@ -5988,7 +5750,6 @@ document.addEventListener('change', async e=>{
   if(t.id==='fHex'){ draftHex=t.value; $('#hexPrev').style.background=t.value; $('#hexName').textContent=t.value; document.querySelectorAll('.sw').forEach(b=>b.setAttribute('aria-pressed','false')); }
   if(t.dataset && t.dataset.cf!==undefined){ const i=+t.dataset.cf; if(t.value==='__manual'){ draftComp[i].f=''; draftComp[i].manual=true; drawComp(); $(`[data-cfm="${i}"]`)?.focus(); } else { draftComp[i].f=t.value; drawComp(); } }
   if(t.dataset && t.dataset.lsm!==undefined){ syncOD(); OD.lines[+t.dataset.lsm].sample=t.checked; drawOrderEditor(); }
-  if(t.id==='odSite'){ syncOD(); drawOrderEditor(); }
   if(t.id==='odTerms'){ syncOD(); drawOrderEditor(); }
   if(t.id==='dMgr'){ dMgr=t.value; viewDebt(); }
   if(t.id==='oPer'){ const dd=new Date(), y=dd.getFullYear(), m=dd.getMonth(); const f=(Y,M,D)=>new Date(Date.UTC(Y,M,D)).toISOString().slice(0,10);
@@ -5998,7 +5759,6 @@ document.addEventListener('change', async e=>{
   if(t.dataset && t.dataset.xs){ xSync(); }
   if(t.id==='iRole'){
     $('#iRoleDesc').textContent='Може: '+ROLE_DESC[t.value];
-    const sw=$('#iSitesWrap'); if(sw) sw.style.display=(t.value==='admin'||t.value==='accountant')?'none':'';
     const w=$('#iClientWrap'); if(w) w.style.display = t.value==='client' ? 'block' : 'none';
   }
   if(t.dataset && t.dataset.urole){ setRole(t.dataset.urole, t.value); }
