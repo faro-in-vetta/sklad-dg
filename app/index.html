@@ -202,7 +202,9 @@ main{padding-top:14px}
 .tobot{position:fixed;right:16px;bottom:calc(78px + env(safe-area-inset-bottom));z-index:24;width:44px;height:44px;border-radius:50%;
   background:var(--primary);color:var(--on-primary);border:1px solid var(--primary);display:none;align-items:center;justify-content:center;
   box-shadow:0 3px 10px rgba(26,18,8,.28);opacity:0;transition:opacity .18s}
-.tobot.show{display:flex;opacity:1}
+.tobot.show{display:flex;opacity:.55}
+.tobot:active{opacity:.95}
+@media (hover:hover){.tobot.show:hover{opacity:.95}}
 nav.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:25}
 nav.tabs .in{display:flex;max-width:720px;width:100%;align-items:center}
 nav.tabs button{flex:1;min-width:0;background:none;border:0;padding:6px 0;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -2753,6 +2755,23 @@ function syncToBottom(){
   const left = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
   b.classList.toggle('show', cur === 'catalog' && left > 240);
 }
+let lastBottom = 0;
+function goBottom(){
+  const t = Date.now(); if(t - lastBottom < 500) return; lastBottom = t;   // дотик і клік — одна дія
+  window.scrollTo({top: document.documentElement.scrollHeight, behavior:'smooth'});
+}
+/* На телефоні перший дотик після прокрутки браузер витрачає на зупинку
+   інерції — клік до кнопки просто не доходить, і тиснути треба двічі.
+   Тому ловимо сам дотик, а не клік; клік після нього глушимо. */
+(function(){
+  const fire = e => {
+    const b = e.target.closest && e.target.closest('#toBottom'); if(!b) return;
+    e.preventDefault();
+    goBottom();
+  };
+  document.addEventListener('pointerdown', fire, {passive:false});
+  document.addEventListener('touchstart', fire, {passive:false});
+})();
 window.addEventListener('scroll', syncToBottom, {passive:true});
 window.addEventListener('resize', syncToBottom);
 
@@ -5956,7 +5975,7 @@ document.addEventListener('click', e=>{
     case 'manualGo': found($('#manualCode').value); break;
     case 'camRetry': lastMiss=''; stopScan(); startCamera(); break;
     case 'siteBtn': toggleSiteMenu(); break;
-    case 'toBottom': window.scrollTo({top: document.documentElement.scrollHeight, behavior:'smooth'}); break;
+    case 'toBottom': goBottom(); break;
     case 'fNoCost': toggleCatF('nocost'); break;
     case 'fNoSale': toggleCatF('nosale'); break;
     case 'backupBtn': makeBackup(); break;
