@@ -697,7 +697,9 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
 .zoomable{cursor:zoom-in}
 .zoom{position:fixed;inset:0;z-index:90;background:rgba(10,8,5,.92);display:flex;align-items:center;justify-content:center;
   padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));touch-action:pan-y}
-.zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);user-select:none;-webkit-user-drag:none}
+.zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);user-select:none;-webkit-user-drag:none;transform-origin:center center;will-change:transform}
+/* браузер не має перехоплювати щипок і протяг — масштаб рахуємо самі */
+.zoom,.zoom img{touch-action:none}
 .zoom .zx,.zoom .zp,.zoom .zn{position:absolute;border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:50%;
   width:44px;height:44px;font-size:24px;line-height:44px;text-align:center;cursor:pointer;padding:0}
 .zoom .zx{top:calc(12px + env(safe-area-inset-top));right:12px}
@@ -4154,20 +4156,103 @@ function openZoom(skuId, idx){
   z.addEventListener('click', e => {
     if(e.target.closest('.zp')){ zoomStep(-1); return; }
     if(e.target.closest('.zn')){ zoomStep(1); return; }
-    if(e.target.tagName !== 'IMG') closeZoom();
+    if(e.target.closest('.zx')){ closeZoom(); return; }
+    if(e.target.tagName !== 'IMG' && zT.s === 1) closeZoom();   // наближене фото тягнемо, а не закриваємо
   });
-  let x0 = null;
-  z.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, {passive:true});
-  z.addEventListener('touchend', e => {
-    if(x0 === null) return;
-    const dx = e.changedTouches[0].clientX - x0; x0 = null;
-    if(Math.abs(dx) > 50) zoomStep(dx < 0 ? 1 : -1);
-  });
+  zBind(z);
   zoomShow();
+}
+
+/* ---------- масштаб у переглядачі фото ----------
+   Сторінка сама не масштабується (інакше «попливе» вся верстка), тож
+   щипок, протяг і подвійний дотик рахуємо тут і рухаємо саме картинку. */
+const zT = { s:1, x:0, y:0, d0:0, s0:1, px:0, py:0, tap:0, drag:false };
+function zApply(){
+  const im = document.querySelector('#zoom img'); if(!im) return;
+  // за межі екрана картинку не відпускаємо
+  const w = im.offsetWidth * zT.s, h = im.offsetHeight * zT.s;
+  const mx = Math.max(0, (w - window.innerWidth) / 2), my = Math.max(0, (h - window.innerHeight) / 2);
+  zT.x = Math.min(mx, Math.max(-mx, zT.x));
+  zT.y = Math.min(my, Math.max(-my, zT.y));
+  im.style.transform = `translate(${zT.x}px, ${zT.y}px) scale(${zT.s})`;
+  im.style.cursor = zT.s > 1 ? 'grab' : 'zoom-in';
+}
+function zReset(){ zT.s = 1; zT.x = 0; zT.y = 0; zApply(); }
+/* масштабуємо так, щоб точка під пальцями лишалася на місці */
+function zScaleAt(k, mx, my){
+  const ns = Math.min(6, Math.max(1, zT.s * k));
+  k = ns / zT.s; if(k === 1) return;
+  const cx = window.innerWidth / 2 + zT.x, cy = window.innerHeight / 2 + zT.y;
+  zT.x = (mx - (mx - cx) * k) - window.innerWidth / 2;
+  zT.y = (my - (my - cy) * k) - window.innerHeight / 2;
+  zT.s = ns;
+  if(zT.s === 1){ zT.x = 0; zT.y = 0; }
+  zApply();
+}
+const zDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+const zMid  = t => [(t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2];
+
+function zBind(z){
+  let x0 = null, y0 = null;
+  z.addEventListener('touchstart', e => {
+    if(e.touches.length === 2){
+      zT.d0 = zDist(e.touches); zT.s0 = zT.s; x0 = null;
+      e.preventDefault();
+    } else if(e.touches.length === 1){
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+      zT.px = x0; zT.py = y0; zT.drag = zT.s > 1;
+      // подвійний дотик: наблизити / повернути як було
+      const t = Date.now();
+      if(t - zT.tap < 300){
+        zT.tap = 0;
+        if(zT.s > 1) zReset(); else zScaleAt(2.5, x0, y0);
+        e.preventDefault(); x0 = null;
+      } else zT.tap = t;
+    }
+  }, {passive:false});
+
+  z.addEventListener('touchmove', e => {
+    if(e.touches.length === 2 && zT.d0){
+      const [mx, my] = zMid(e.touches);
+      const want = (zDist(e.touches) / zT.d0) * zT.s0;
+      zScaleAt(want / zT.s, mx, my);
+      e.preventDefault();
+    } else if(e.touches.length === 1 && zT.drag){
+      const t = e.touches[0];
+      zT.x += t.clientX - zT.px; zT.y += t.clientY - zT.py;
+      zT.px = t.clientX; zT.py = t.clientY;
+      zApply();
+      e.preventDefault();
+    }
+  }, {passive:false});
+
+  z.addEventListener('touchend', e => {
+    if(e.touches.length === 0) zT.d0 = 0;
+    if(zT.drag){ zT.drag = zT.s > 1; return; }
+    if(x0 === null) return;
+    // гортаємо фото лише коли не наближено
+    const dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if(zT.s === 1 && Math.abs(dx) > 50) zoomStep(dx < 0 ? 1 : -1);
+  });
+
+  // на комп'ютері: колесо масштабує, протяг мишею рухає
+  z.addEventListener('wheel', e => {
+    if(!e.target.closest('img')) return;
+    e.preventDefault();
+    zScaleAt(Math.exp(-e.deltaY * 0.0018), e.clientX, e.clientY);
+  }, {passive:false});
+  z.addEventListener('mousedown', e => {
+    if(zT.s <= 1 || !e.target.closest('img')) return;
+    e.preventDefault(); zT.drag = true; zT.px = e.clientX; zT.py = e.clientY;
+    const mv = ev => { zT.x += ev.clientX - zT.px; zT.y += ev.clientY - zT.py; zT.px = ev.clientX; zT.py = ev.clientY; zApply(); };
+    const up = () => { zT.drag = false; document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+    document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+  });
 }
 function zoomShow(){
   const z = $('#zoom'); if(!z || !zoomState) return;
   z.querySelector('img').src = photoSrc(zoomState.photos[zoomState.i]);
+  zReset();
   const c = z.querySelector('.zc'); if(c) c.textContent = `${zoomState.i+1} / ${zoomState.photos.length}`;
 }
 function zoomStep(d){
