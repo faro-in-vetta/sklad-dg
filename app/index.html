@@ -2891,10 +2891,10 @@ const compCol = x => `<div class="ccol many">${(x.comp||[]).length?compSorted(x.
    операцією переміщення, яка знімає кілограми з картки одного складу й
    додає на картку-двійника іншого. Адмін і бухгалтер бачать обидва склади;
    решті склади призначає адмін у налаштуваннях. */
-const SITES = [['sg','Сан Джованні'], ['lv','Львів']];
+const SITES = [['sg','San Giovanni'], ['lv','Lviv']];
 const SITE_NAME = Object.fromEntries(SITES);
 const allSites = () => SITES.map(x=>x[0]);
-const siteOf = x => (x && SITE_NAME[x.site]) ? x.site : 'sg';   // старі записи — Сан Джованні
+const siteOf = x => (x && SITE_NAME[x.site]) ? x.site : 'sg';   // старі записи — San Giovanni
 function mySites(){
   const u = me() || {};
   if(u.role === 'admin' || u.role === 'accountant') return allSites();
