@@ -2996,10 +2996,10 @@ function render(){
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
   $('#addBtn').disabled = !can('sku');
-  // ціни бачать не всі: кому ціна закрита, тому й фільтр по ній ні до чого
+  // це інструмент для того, хто ціни й проставляє: адмін і бухгалтер
   const fc = $('#fNoCost'), fs = $('#fNoSale');
-  if(fc) fc.style.display = seeCost() ? '' : 'none';
-  if(fs) fs.style.display = seeSale() ? '' : 'none';
+  if(fc) fc.style.display = can('fin') ? '' : 'none';
+  if(fs) fs.style.display = can('fin') ? '' : 'none';
   // хто зараз у базі — внутрішня кухня; клієнтові склад людей не показуємо
   const onBtn = $('#onlineBtn');
   if(isClient()){ onBtn.style.display='none'; }
@@ -3034,7 +3034,7 @@ function viewCatalog(){
     // порядок каталогу — за номером штрихкода від меншого до більшого:
     // саме так картки заводили, і так їх шукають на полиці
     .sort((x,y) => (codeNum(x.code) - codeNum(y.code)) || String(x.code||'').localeCompare(String(y.code||'')));
-  const noCost = catF.nocost && seeCost(), noSale = catF.nosale && seeSale();
+  const noCost = catF.nocost && can('fin'), noSale = catF.nosale && can('fin');
   if(noCost || noSale) list = list.filter(s => (noCost && !costInfo(s).price) || (noSale && !(+s.sale)));
   let totKg=0, totFree=0;
   liveSkus().forEach(s=>{const l=levels(s.id); totKg+=l.kg; totFree+=l.fk;});
