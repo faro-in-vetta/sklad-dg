@@ -5039,14 +5039,14 @@ function openSku(id){
   openSheet(`<div class="panel-head"><button class="btn plat" style="flex:1;min-width:0;margin:0" data-edit="${id}" ${can('sku')?'':'disabled'}>${t('sku.edit')}</button>${can('sku')?`<button class="btn plat" style="flex:1;min-width:0;margin:0" data-copysku="${id}">${t('sku.copy')}</button>`:''}<button class="x" data-close aria-label="${t('close')}">×</button></div>
     <div class="skuhead">
       <div class="info">
+        <div style="color:var(--muted)">Склад: ${esc(siteTag(siteOf(s)))}</div>
         ${s.maker?`<div>Brand: ${esc(s.maker)}</div>`:''}
         <div>Art.: ${esc(s.art)}</div>
-        <div style="color:var(--muted)">Склад: ${esc(siteTag(siteOf(s)))}</div>
         ${s.color?`<div>Color: ${esc(s.color)}</div>`:''}
         ${s.meter?`<div class="num">${esc(nmText(s.meter))}</div>`:''}
       </div>
       <div class="compbox">
-        <b>Склад</b>
+        <b>Composition:</b>
         ${(s.comp||[]).length?compSorted(s.comp).map(x=>`<div class="cl num"><span class="cp">${fmtPctC(x.p)}%</span> ${esc(x.f)}</div>`).join('')+`<div class="ctypes">${compTypes(s.comp).map(t=>`<span>${esc(TYPE_UA[t]||t)}</span>`).join('')}</div>`:'<div class="cl" style="color:var(--muted);font-weight:400">не вказано</div>'}
       </div>
       ${s.photos[0]?`<img class="sw-big zoomable" data-zoom="0" data-sku="${s.id}" src="${photoSrc(s.photos[0])}" alt="Фото пряжі">`:`<div class="sw-big" style="background:${esc(s.hex||'var(--indigo-soft)')}" role="img" aria-label="Відтінок ${esc(s.color||'')}"></div>`}
