@@ -2514,12 +2514,38 @@ async function hydrate() {
   await refreshPhotoUrls();
 }
 
+/* Посилання на фото підписані й живуть 8 годин. Раніше вони існували лише в
+   пам'яті вкладки, тож після кожного оновлення сторінки застосунок замовляв
+   НОВІ посилання — з іншим підписом, а отже й іншою адресою. Для браузера це
+   інші файли, і всі фото качалися наново. Тепер тримаємо їх у localStorage,
+   і повторний вхід бере картинки з кешу браузера. */
+const PU_KEY = 'sklad-photo-urls';
+let PU_EXP = {};
+function loadPhotoUrls(){
+  try{
+    const o = JSON.parse(localStorage.getItem(PU_KEY) || '{}');
+    const now = Date.now();
+    Object.entries(o).forEach(([path, v]) => {
+      if (v && v.u && v.exp > now + 30*60*1000) { PHOTO_URL[path] = v.u; PU_EXP[path] = v.exp; }
+    });
+  }catch(e){}
+}
+function savePhotoUrls(){
+  try{
+    const o = {};
+    Object.keys(PU_EXP).forEach(path => { if (PHOTO_URL[path]) o[path] = { u: PHOTO_URL[path], exp: PU_EXP[path] }; });
+    localStorage.setItem(PU_KEY, JSON.stringify(o));
+  }catch(e){}   // переповнене сховище — просто працюємо без кешу
+}
 async function refreshPhotoUrls() {
+  loadPhotoUrls();
   const paths = [];
   S.skus.forEach(s => (s.photos || []).forEach(p => { if (!p.startsWith('data:') && !PHOTO_URL[p]) paths.push(p); }));
   if (!paths.length) return;
   const { data } = await db.storage.from('sku-photos').createSignedUrls(paths, 60 * 60 * 8);
-  (data || []).forEach(x => { if (x.signedUrl) PHOTO_URL[x.path] = x.signedUrl; });
+  const exp = Date.now() + 8*60*60*1000;
+  (data || []).forEach(x => { if (x.signedUrl) { PHOTO_URL[x.path] = x.signedUrl; PU_EXP[x.path] = exp; } });
+  savePhotoUrls();
 }
 
 /* ---------- запис ---------- */
@@ -3036,7 +3062,10 @@ function render(){
 
 const photoSrc = p => !p ? '' : (p.startsWith('data:') ? p : (PHOTO_URL[p]||''));
 function thumbHtml(s, cls='thumb'){
-  if(s.photos && s.photos[0]) return `<img class="${cls}" src="${photoSrc(s.photos[0])}" alt="">`;
+  // loading="lazy": браузер тягне фото, лише коли картка доходить до екрана.
+  // Без цього відкриття каталогу качало всі 126 фото одразу — десятки мегабайтів
+  // заради мініатюр 34 px.
+  if(s.photos && s.photos[0]) return `<img class="${cls}" src="${photoSrc(s.photos[0])}" alt="" loading="lazy" decoding="async">`;
   return `<div class="${cls}" style="background:${esc(s.hex||'var(--indigo-soft)')}" aria-hidden="true"></div>`;
 }
 
@@ -5155,7 +5184,7 @@ function openSku(id){
       </div>
       ${s.photos[0]?`<img class="sw-big zoomable" data-zoom="0" data-sku="${s.id}" src="${photoSrc(s.photos[0])}" alt="Фото пряжі">`:`<div class="sw-big" style="background:${esc(s.hex||'var(--indigo-soft)')}" role="img" aria-label="Відтінок ${esc(s.color||'')}"></div>`}
     </div>
-    ${s.photos.length>1?`<div class="gallery">${s.photos.slice(1).map((p,i)=>`<img class="zoomable" data-zoom="${i+1}" data-sku="${s.id}" src="${photoSrc(p)}" alt="Фото пряжі">`).join('')}</div>`:''}
+    ${s.photos.length>1?`<div class="gallery">${s.photos.slice(1).map((p,i)=>`<img class="zoomable" data-zoom="${i+1}" data-sku="${s.id}" src="${photoSrc(p)}" alt="Фото пряжі" loading="lazy" decoding="async">`).join('')}</div>`:''}
     <div class="levels-big num${isClient()?' one':''}">
       ${isClient()?'':`
       <div class="lv stock"><b>${t('sku.stock')}</b><div class="kg">${fmtKg(l.kg)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.cn)} ${t('sku.cones')}</div></div>
