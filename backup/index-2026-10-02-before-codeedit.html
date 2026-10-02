@@ -1145,8 +1145,6 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
-    'Присвоюється автоматично, по наростаючій. Адмін може вписати інший номер — етикетку тоді треба переклеїти.':'Assegnato automaticamente, in ordine crescente. L\'amministratore può indicare un altro numero: in quel caso l\'etichetta va rifatta.',
-    'Штрихкод має бути у форматі DG0000001.':'Il codice a barre deve essere nel formato DG0000001.',
     'Зі складу':'Dal magazzino',
     'Дата відвантаження не може бути раніше дати заявки':'La data di spedizione non può essere anteriore alla data dell\'ordine',
     'Вага нетто / брутто':'Peso netto / lordo',
@@ -1837,8 +1835,6 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
-    'Присвоюється автоматично, по наростаючій. Адмін може вписати інший номер — етикетку тоді треба переклеїти.':'Assigned automatically in ascending order. The admin can type a different number — the label then has to be reprinted.',
-    'Штрихкод має бути у форматі DG0000001.':'The barcode must be in the DG0000001 format.',
     'Зі складу':'From warehouse',
     'Дата відвантаження не може бути раніше дати заявки':'The shipping date cannot be earlier than the order date',
     'Вага нетто / брутто':'Net / gross weight',
@@ -5716,11 +5712,8 @@ function openSkuForm(id, copyFrom){
     <button type="button" class="btn ghost small" data-nohex style="margin:-4px 0 12px">Без відтінку</button>
     ${can('fin')?`<label class="f">Ціна продажу за прайсом, €/кг<input id="fSale" type="number" inputmode="decimal" step="0.01" min="0" value="${b?.sale||''}" placeholder="Необов'язково"></label>
     <p class="hint" id="fMk">Якщо не вказати, продаж і націнка рахуються за фактичними відвантаженнями.</p>`:'<p class="hint">Ціни закупівлі та продажу вносить бухгалтер або адмін.</p>'}
-    ${me().role==='admin'
-      ? `<label class="f">Штрихкод<input id="fCode" value="${esc(s?.code||nextCode)}" autocomplete="off" spellcheck="false"></label>
-    <p class="hint">Присвоюється автоматично, по наростаючій. Адмін може вписати інший номер — етикетку тоді треба переклеїти.</p>`
-      : `<label class="f">Штрихкод<input id="fCode" value="${esc(s?.code||nextCode)}" readonly tabindex="-1" style="background:var(--bg);color:var(--muted);cursor:default"></label>
-    <p class="hint">Присвоюється автоматично, по наростаючій. Змінити не можна. Якщо цей код хтось займе раніше, картка отримає наступний вільний — застосунок скаже, який саме.</p>`}
+    <label class="f">Штрихкод<input id="fCode" value="${esc(s?.code||nextCode)}" readonly tabindex="-1" style="background:var(--bg);color:var(--muted);cursor:default"></label>
+    <p class="hint">Присвоюється автоматично, по наростаючій. Змінити не можна. Якщо цей код хтось займе раніше, картка отримає наступний вільний — застосунок скаже, який саме.</p>
     ${s?'':`<div class="pair">
       <label class="f">Прихід, кг<input id="fKg" type="number" inputmode="decimal" step="0.1" min="0"></label>
       <label class="f">Прихід, конусів<input id="fCn" type="number" inputmode="numeric" step="1" min="0"></label>
@@ -5768,12 +5761,11 @@ function compress(file){
   });
 }
 function saveSku(id){
-  const maker=$('#fMaker').value.trim(), art=$('#fArt').value.trim(), color=$('#fColor').value.trim(), code=$('#fCode').value.trim().toUpperCase();
+  const maker=$('#fMaker').value.trim(), art=$('#fArt').value.trim(), color=$('#fColor').value.trim(), code=$('#fCode').value.trim();
   const fe = m => { $('#ferr').innerHTML = `<div class="err">${m}</div>`; $('#panel').scrollTop=0; };
   if(!maker) return fe('Вкажіть виробника.');
   if(!art) return fe('Вкажіть артикул.');
   if(!code) return fe('Вкажіть або згенеруйте штрихкод.');
-  if(!/^DG\d{7}$/.test(code)) return fe('Штрихкод має бути у форматі DG0000001.');
   if(S.skus.some(x=>x.code===code && x.id!==id && !x.deleted)) return fe('Такий штрихкод уже є в каталозі.');
   const comp = draftComp.map(x=>({f:String(x.f||'').trim(),p:x.p})).filter(x=>x.f||String(x.p).trim()!=='').map(x=>({f:x.f,p:parseFloat(x.p)}));
   if(comp.some(x=>!x.f)) return fe('Оберіть волокно в кожному рядку складу.');
