@@ -1145,7 +1145,6 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
-    'Заявка вже в роботі. Зміни перерахують суму й резерв. Якщо оплату вже прийнято або відвантаження дозволено — перевірте дебіторку.':'L\'ordine è già in lavorazione. Le modifiche ricalcolano l\'importo e l\'impegnato. Se il pagamento è già stato incassato o la spedizione autorizzata, controlla i crediti.',
     'Присвоюється автоматично, по наростаючій. Адмін може вписати інший номер — етикетку тоді треба переклеїти.':'Assegnato automaticamente, in ordine crescente. L\'amministratore può indicare un altro numero: in quel caso l\'etichetta va rifatta.',
     'Штрихкод має бути у форматі DG0000001.':'Il codice a barre deve essere nel formato DG0000001.',
     'Зі складу':'Dal magazzino',
@@ -1838,7 +1837,6 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
-    'Заявка вже в роботі. Зміни перерахують суму й резерв. Якщо оплату вже прийнято або відвантаження дозволено — перевірте дебіторку.':'The order is already in progress. Changes recalculate the amount and the reservation. If payment has been received or shipment authorised, check the receivables.',
     'Присвоюється автоматично, по наростаючій. Адмін може вписати інший номер — етикетку тоді треба переклеїти.':'Assigned automatically in ascending order. The admin can type a different number — the label then has to be reprinted.',
     'Штрихкод має бути у форматі DG0000001.':'The barcode must be in the DG0000001 format.',
     'Зі складу':'From warehouse',
@@ -3513,12 +3511,7 @@ function orderCard(o){
   </div>`;
 }
 function refreshOrders(){ closeSheet(); render(); }
-/* Адмін і головний бухгалтер правлять заявку, доки вона не відвантажена:
-   менеджер міг помилково поставити позицію як пробник, і це треба виправити
-   вже після того, як склад узяв заявку в збірку.
-   Менеджер править лише свою заявку й лише до початку збірки. */
-const canEditOrder = o => o.status==='active' && (can('fin')
-  || (oStage(o)==='res' && !o.approvedAt && o.who===S.current && (can('order')||can('smp'))));
+const canEditOrder = o => oStage(o)==='res' && !o.approvedAt && (can('fin') || (o.who===S.current && (can('order')||can('smp'))));
 
 /* --- перегляд --- */
 function openOrderView(id){
@@ -3591,7 +3584,6 @@ function drawOrderEditor(err){
   const clients=[...new Set([...S.reserves.map(x=>x.client),...S.ops.filter(x=>x.type==='out').map(x=>x.party)].filter(Boolean))];
   const tot = OD.lines.reduce((t,li)=>{ const kg=parseFloat(li.kg)||0, c=parseInt(li.cones)||0, p=li.sample?0:(parseFloat(li.price)||0); return {kg:t.kg+kg,cn:t.cn+c,sum:t.sum+kg*p}; },{kg:0,cn:0,sum:0});
   openSheet(`${head('Заявка № '+OD.title)}
-    ${o && oStage(o)!=='res' ? '<p class="hint" style="color:var(--red);margin:0 0 10px">Заявка вже в роботі. Зміни перерахують суму й резерв. Якщо оплату вже прийнято або відвантаження дозволено — перевірте дебіторку.</p>' : ''}
     <label class="f">Клієнт<input id="odClient" list="odClients" autocomplete="off" placeholder="Назва клієнта" value="${esc(OD.client)}" ${isClient()?'readonly title="Заявки оформлюються на вашу компанію"':''}></label>
     ${isClient()?'':`<datalist id="odClients">${clients.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>`}
     ${mySites().length>1
