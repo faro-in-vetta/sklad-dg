@@ -1145,14 +1145,6 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
-    'Кілограми й конуси вже списані зі складу — тут їх не змінюють. Якщо помилка в кількості, оформіть повернення.':'I kg e i coni sono già stati scaricati dal magazzino e qui non si cambiano. Se la quantità è sbagliata, registra un reso.',
-    'Зберегти виправлення':'Salva la correzione',
-    'Усі позиції — пробники: заявка лишиться без оплати.':'Tutte le righe sono campionatura: l\'ordine resta senza pagamento.',
-    'По заявці вже є оплати — після зміни суми перевірте дебіторку.':'Sull\'ordine ci sono già dei pagamenti: dopo il cambio dell\'importo controlla i crediti.',
-    'По заявці вже є повернення — у підсумок іде лише те, що лишилося в клієнта.':'Sull\'ordine ci sono già dei resi: nel totale entra solo ciò che è rimasto al cliente.',
-    'Виправити':'Correggi',
-    'виправлення':'correzione',
-    'Виправлено після відвантаження:':'Corretto dopo la spedizione:',
     'Заявка вже в роботі. Зміни перерахують суму й резерв. Якщо оплату вже прийнято або відвантаження дозволено — перевірте дебіторку.':'L\'ordine è già in lavorazione. Le modifiche ricalcolano l\'importo e l\'impegnato. Se il pagamento è già stato incassato o la spedizione autorizzata, controlla i crediti.',
     'Присвоюється автоматично, по наростаючій. Адмін може вписати інший номер — етикетку тоді треба переклеїти.':'Assegnato automaticamente, in ordine crescente. L\'amministratore può indicare un altro numero: in quel caso l\'etichetta va rifatta.',
     'Штрихкод має бути у форматі DG0000001.':'Il codice a barre deve essere nel formato DG0000001.',
@@ -1846,14 +1838,6 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
-    'Кілограми й конуси вже списані зі складу — тут їх не змінюють. Якщо помилка в кількості, оформіть повернення.':'The kg and cones have already left stock and are not changed here. If the quantity is wrong, register a return.',
-    'Зберегти виправлення':'Save the correction',
-    'Усі позиції — пробники: заявка лишиться без оплати.':'All lines are samples: the order stays unpaid.',
-    'По заявці вже є оплати — після зміни суми перевірте дебіторку.':'The order already has payments — check the receivables after the amount changes.',
-    'По заявці вже є повернення — у підсумок іде лише те, що лишилося в клієнта.':'The order already has returns — only what the customer kept goes into the total.',
-    'Виправити':'Fix',
-    'виправлення':'correction',
-    'Виправлено після відвантаження:':'Corrected after shipment:',
     'Заявка вже в роботі. Зміни перерахують суму й резерв. Якщо оплату вже прийнято або відвантаження дозволено — перевірте дебіторку.':'The order is already in progress. Changes recalculate the amount and the reservation. If payment has been received or shipment authorised, check the receivables.',
     'Присвоюється автоматично, по наростаючій. Адмін може вписати інший номер — етикетку тоді треба переклеїти.':'Assigned automatically in ascending order. The admin can type a different number — the label then has to be reprinted.',
     'Штрихкод має бути у форматі DG0000001.':'The barcode must be in the DG0000001 format.',
@@ -2892,25 +2876,12 @@ async function pushChanges() {
       if (s.costActive) await db.from('sku_costs').update({ active: true }).eq('id', s.costActive);
     }
 
-    /* Операції додаються й ніколи не зникають. Виняток один: адмін і
-       головний бухгалтер виправляють тип і ціну вже проведеного
-       відвантаження, коли менеджер помилково позначив позицію пробником.
-       Кілограми й дату база не пустить — їх стереже тригер guard_op_fix. */
-    const OP_FIX = ['type', 'price', 'party', 'comment'];
+    // операції (тільки додаються)
     for (const o of S.ops) {
       const row = opRowOf(o);
-      const key = snapKey('op', o.id);
-      if (!SNAP[key]) {
+      if (!SNAP[snapKey('op', o.id)]) {
         const { error } = await db.from('ops').insert(row);
         if (error) throw error; remember('op', o.id, row);
-      } else {
-        const was = JSON.parse(SNAP[key]), fix = {};
-        OP_FIX.forEach(k => { if (was[k] !== row[k]) fix[k] = row[k]; });
-        if (Object.keys(fix).length) {
-          const { error } = await db.from('ops').update(fix).eq('id', o.id);
-          if (error) throw error;
-          remember('op', o.id, Object.assign(was, fix));
-        }
       }
     }
 
@@ -3517,7 +3488,6 @@ function orderActions(o){
   if(st==='ready' && can('ship')) b.push(`<button class="btn small out" data-oship="${o.id}">Відвантажити</button>`);
   if(st==='unpaid' && can('fin')) b.push(`<button class="btn small in" data-opaid="${o.id}">Оплату отримано</button>`);
   if(o.status==='shipped' && can('fin')) b.push(`<button class="btn small ghost" data-oret="${o.id}">Повернення</button>`);
-  if(o.status==='shipped' && can('fin')) b.push(`<button class="btn small ghost" data-ofix="${o.id}">Виправити</button>`);
   /* Після відвантаження анулювати нічого: товар уже поїхав до клієнта,
      і єдиний чесний шлях назад — повернення, яке заводить кілограми на
      склад окремим рухом і лишає слід у грошах. */
@@ -4180,92 +4150,6 @@ function savePaid(id){
   if(owed<=0.009){ o.paid=true; o.paidAt=dateToIso(dv); o.paidBy=S.current; oev(o,`Оплату отримано ${fmtDate(o.paidAt)}: ${fmtEur(amt)}, заявку оплачено повністю${tail}`); }
   else oev(o,`Часткова оплата ${fmtDate(dateToIso(dv))}: ${fmtEur(amt)}, залишок ${fmtEur(owed)}${tail}`);
   if(save()){ toast('№ '+orderNo(o)+(owed<=0.009?': оплачено':`: залишок ${fmtEur(owed)}`)); refreshOrders(); }
-}
-/* --- виправлення вже відвантаженої заявки ---
-   Кілограми зі складу вже списані операцією в журналі, а журнал
-   навмисне тільки поповнюється. Тому тут міняємо лише гроші: пробник
-   ↔ продаж, ціну, клієнта й умови оплати. Прив'язану до позиції
-   операцію переписуємо разом із заявкою — інакше аналітика рахувала б
-   пробник там, де насправді продаж. Помилку в кількості лагодять
-   поверненням: воно заводить кілограми назад окремим рухом. */
-const opOfLine = li => li.opId ? S.ops.find(x=>x.id===li.opId) : null;
-function openOrderFix(id){
-  const o=oById(id); if(!o||!can('fin')||o.status!=='shipped') return;
-  const paidN=(o.payments||[]).length;
-  openSheet(`${head('№ '+orderNo(o)+' · виправлення')}
-    <div id="fxerr"></div>
-    <p style="margin:0 0 8px"><b>${esc(o.client)}</b> · відвантажено ${fmtDate(o.shippedAt)}</p>
-    <p class="hint" style="margin:0 0 10px;color:var(--red)">Кілограми й конуси вже списані зі складу — тут їх не змінюють. Якщо помилка в кількості, оформіть повернення.</p>
-    <label class="f">Клієнт<input id="fxClient" autocomplete="off" value="${esc(o.client)}"></label>
-    ${o.lines.map((li,i)=>{const x=skuById(li.sku)||{};
-      return `<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRow(x)}</div>
-        <div class="hint num" style="margin:4px 0">Відвантажено ${fmtKg(lShip(li))} кг / ${fmtN(lShipC(li))} к</div>
-        <label class="check lsmp"><input type="checkbox" data-fxsm="${i}" ${li.sample?'checked':''}> Пробник, без оплати</label>
-        <label class="f" data-fxpw="${i}" style="margin-top:6px${li.sample?';display:none':''}">Ціна продажу, €/кг<input data-fxp="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(li.sample?(x.sale||''):li.price)}"></label>
-      </div>`;}).join('')}
-    <div class="pair" id="fxTermsWrap" style="${o.lines.every(li=>li.sample)?'display:none':''}">
-      <label class="f">Умови оплати<select id="fxTerms">
-        <option value="prepay" ${o.terms!=='deferred'?'selected':''}>Передоплата</option>
-        <option value="def" ${o.terms==='deferred'?'selected':''}>Відтермінування</option>
-      </select></label>
-      <label class="f">Днів<input id="fxDays" type="number" inputmode="numeric" min="1" max="365" step="1" value="${esc(o.days||30)}"></label>
-    </div>
-    ${paidN?'<p class="hint">По заявці вже є оплати — після зміни суми перевірте дебіторку.</p>':''}
-    ${(o.returns||[]).length?'<p class="hint">По заявці вже є повернення — у підсумок іде лише те, що лишилося в клієнта.</p>':''}
-    <p class="hint num" id="fxHint"></p>
-    <button class="btn" data-fxsave="${id}" style="width:100%">Зберегти виправлення</button>`);
-  const upd=()=>{ let smp=true, sum=0;
-    o.lines.forEach((li,i)=>{ const c=$(`[data-fxsm="${i}"]`), w=$(`[data-fxpw="${i}"]`), p=$(`[data-fxp="${i}"]`);
-      if(!c) return;
-      if(w) w.style.display=c.checked?'none':'';
-      if(!c.checked){ smp=false; sum+=lq(li)*(parseFloat(p&&p.value)||0); } });
-    const tw=$('#fxTermsWrap'); if(tw) tw.style.display=smp?'none':'';
-    const h=$('#fxHint'); if(h) h.innerHTML = smp ? 'Усі позиції — пробники: заявка лишиться без оплати.' : `Разом до оплати: <b>${fmtEur(sum)}</b>`;
-  };
-  o.lines.forEach((li,i)=>{ const c=$(`[data-fxsm="${i}"]`), p=$(`[data-fxp="${i}"]`);
-    if(c) c.addEventListener('change',upd); if(p) p.addEventListener('input',upd); });
-  upd();
-}
-function saveOrderFix(id){
-  const o=oById(id); if(!o||!can('fin')||o.status!=='shipped') return;
-  const fe=m=>{$('#fxerr').innerHTML=`<div class="err">${m}</div>`; $('#panel').scrollTop=0;};
-  const client=$('#fxClient').value.trim();
-  if(!client) return fe('Вкажіть клієнта.');
-  if(clientCheck(client)) return fe(clientCheck(client));
-  const next=[];
-  for(let i=0;i<o.lines.length;i++){
-    const li=o.lines[i], x=skuById(li.sku)||{}, name=x.art+(x.color?' · '+x.color:'');
-    const sample=$(`[data-fxsm="${i}"]`).checked;
-    const pel=$(`[data-fxp="${i}"]`);
-    const price=sample?0:(parseFloat(pel&&pel.value)||0);
-    if(!sample && !(price>0)) return fe(`${esc(name)}: вкажіть ціну.`);
-    next.push({sample,price});
-  }
-  const smp=next.every(n=>n.sample);
-  const tsel=($('#fxTerms')||{}).value, dv=parseInt(($('#fxDays')||{}).value)||0;
-  if(!smp && tsel!=='prepay' && !(dv>0 && dv<=365)) return fe('Вкажіть кількість днів відтермінування (від 1 до 365).');
-  const terms=smp?'sample':(tsel==='prepay'?'prepay':'deferred'), days=smp||tsel==='prepay'?0:dv;
-  const art=sid=>(skuById(sid)||{}).art||'?';
-  const ch=[];
-  if(client!==o.client) ch.push(`клієнт: ${o.client} → ${client}`);
-  if(smp!==!!o.sample) ch.push(smp?'тип: продаж → пробники':'тип: пробники → продаж');
-  o.lines.forEach((li,i)=>{ const n=next[i];
-    if(!!li.sample!==n.sample) ch.push(`${art(li.sku)}: ${n.sample?'стало пробником':'стало платною позицією'}`);
-    else if(!n.sample && Math.abs((+li.price||0)-n.price)>0.0001) ch.push(`${art(li.sku)}: ціна ${fmtEur(li.price)} → ${fmtEur(n.price)}`); });
-  if(!smp && (terms!==o.terms || days!==(o.days||0))) ch.push(`умови: ${termsText(o)} → ${terms==='prepay'?'Передоплата':`Відтермінування ${days} дн.`}`);
-  if(!ch.length) return fe('Змін немає.');
-  o.lines.forEach((li,i)=>{ const n=next[i];
-    li.sample=n.sample; li.price=n.price;
-    const op=opOfLine(li);
-    if(op){ op.type=n.sample?'smp':'out'; op.price=n.price; op.party=client;
-            op.comment=n.sample?`Пробники, заявка № ${orderNo(o)}`:`Заявка № ${orderNo(o)}`; } });
-  Object.assign(o,{client,sample:smp,terms,days});
-  o.due = (!smp && terms==='deferred')
-    ? new Date(new Date(o.shippedAt).getTime()+days*86400000).toISOString()
-    : undefined;
-  if(o.paid && oOwed(o)>0.009) o.paid=false;
-  oev(o,'Виправлено після відвантаження: '+ch.join('; '));
-  if(save()){ toast('№ '+orderNo(o)+' виправлено'); refreshOrders(); }
 }
 function openReturn(id){
   const o=oById(id); if(!o||!can('fin')||o.status!=='shipped') return;
@@ -6421,8 +6305,6 @@ document.addEventListener('click', e=>{
   if(d.opaid){ openPaid(d.opaid); return; }
   if(d.pdsave){ savePaid(d.pdsave); return; }
   if(d.oret){ openReturn(d.oret); return; }
-  if(d.ofix){ openOrderFix(d.ofix); return; }
-  if(d.fxsave){ saveOrderFix(d.fxsave); return; }
   if(d.rtsave){ saveReturn(d.rtsave); return; }
   if(d.ocancel){ openCancel(d.ocancel); return; }
   if(d.cnsave){ saveCancel(d.cnsave); return; }
