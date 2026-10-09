@@ -182,13 +182,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 .catf .cfx{flex:none;display:flex;align-items:center;justify-content:center;width:32px;height:30px;padding:0;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:12.5px;line-height:1;white-space:nowrap}
 .catsum{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.25}
 /* на ПК зсуваємо під текст пошуку, а не під лупу; на телефоні місця обмаль — лишаємо з краю */
-@media (min-width:900px){.catsum{margin-left:30px}
-  .oncat .brand .dgtext{display:none}
-  .brand #catSum{display:none;margin:0;font-size:14px;line-height:1.35;min-width:0}
-  .oncat .brand #catSum{display:block}
-  #searchBar #q,#searchBar .btn{height:42px;min-height:42px;box-sizing:border-box}
-  .skuf .btn{font-size:12px;line-height:1.15}
-}
+@media (min-width:900px){.catsum{margin-left:30px}}
 
 .btn{border:1px solid var(--primary);border-radius:var(--radius-sm);padding:11px 14px;font-weight:600;background:var(--primary);color:var(--on-primary);letter-spacing:.2px;transition:background .15s,border-color .15s,color .15s}
 .btn:not(:disabled):hover{border-color:var(--gold)}
@@ -3471,7 +3465,6 @@ function render(){
   if((FIN_TABS.includes(tab)&&!can('fin')) || (tab==='debt'&&!seeSale())) tab='catalog';
   $('#searchBar').style.display = tab==='catalog' ? 'flex' : 'none';
   $('#catFilters').style.display = tab==='catalog' ? 'flex' : 'none';
-  document.body.classList.toggle('oncat', tab==='catalog');
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
   $('#addBtn').disabled = !can('sku');
@@ -6862,14 +6855,6 @@ document.addEventListener('keydown', e=>{
 });
 $('#q').addEventListener('input', ()=>render());
 $('#cfBc').addEventListener('input', e=>{ catF.bc = e.target.value; render(); });
-/* ПК: підсумок каталогу стоїть у шапці замість назви фірми; телефон — над пошуком */
-const DESK_MQ = matchMedia('(min-width:900px)');
-function placeCatSum(){
-  const el = $('#catSum'), to = DESK_MQ.matches ? $('.top-row .brand') : $('#searchBar .qcol');
-  if(el && to && el.parentNode !== to) to.appendChild(el);
-}
-placeCatSum();
-if(DESK_MQ.addEventListener) DESK_MQ.addEventListener('change', placeCatSum); else DESK_MQ.addListener(placeCatSum);
 /* список фільтра: пошук усередині, закриття кліком повз нього, Esc чи зміною розміру */
 document.addEventListener('input', e=>{
   if(!e.target.matches || !e.target.matches('[data-cfq]')) return;

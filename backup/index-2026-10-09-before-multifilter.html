@@ -152,43 +152,16 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 .catf{display:flex;gap:6px;align-items:center;margin-top:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .catf::-webkit-scrollbar{display:none}
 #cfSel{display:contents}
-.catf input{height:30px;font-size:12.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:0 8px}
-.cff{display:flex;flex:1 0 auto;min-width:0;height:30px;border:1px solid var(--line);background:var(--surface);border-radius:8px;overflow:hidden}
-@media (max-width:899px){.cff{flex:none;min-width:112px;max-width:190px}}
-@media (min-width:900px){.catf{flex-wrap:wrap;overflow:visible}.catf #cfBc{flex:1 1 90px;width:auto;min-width:84px}.cfb{padding:0 7px;gap:5px}.cff{flex:0 0 auto}}
-.cfb{flex:1;min-width:0;display:flex;align-items:center;gap:6px;border:0;background:none;padding:0 8px;font-size:12.5px;color:var(--ink);text-align:left;white-space:nowrap}
-.cfb .l,.cfb .v{overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
-.cfb svg{margin-left:auto;flex:none;color:var(--muted)}
-.cfb .n{flex:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--primary);color:var(--on-primary);font-size:11px;line-height:18px;text-align:center}
-.cff.on{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary)}
-.cff.on .cfb{font-weight:600}
-.cfc{flex:none;width:28px;border:0;border-left:1px solid var(--line);background:none;color:var(--muted);font-size:16px;line-height:1;padding:0}
-.cfc:hover{color:var(--red)}
-.cfpop{position:fixed;z-index:60;display:flex;flex-direction:column;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:8px;gap:6px}
-.cfpop[hidden]{display:none}
-.cfpop .cfq{height:34px;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--surface);font-size:13px}
-.cfl{overflow-y:auto;min-height:0;flex:1 1 auto;-webkit-overflow-scrolling:touch}
-.cfo{display:flex;align-items:center;gap:8px;padding:7px 4px;border-radius:6px;font-size:13.5px;cursor:pointer}
-.cfo:hover{background:var(--stone-soft)}
-.cfo input{width:17px;height:17px;flex:none;accent-color:var(--primary);margin:0}
-.cfo .t{flex:1;min-width:0;overflow-wrap:anywhere}
-.cfo small{color:var(--muted);font-size:11.5px;flex:none}
-.cfe{margin:6px 4px;color:var(--muted);font-size:13px}
-.cfa{display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:8px}
-.cfa .btn{flex:1}
+.catf select,.catf input{height:30px;font-size:12.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:0 8px}
+.catf select{flex:1 1 0;min-width:0}
+@media (max-width:899px){.catf select{flex:none;min-width:112px;max-width:170px}}
 .catf input{width:120px;flex:none;padding-left:8px !important}
 .catf .on{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);font-weight:600}
 .catf input.miss{border-color:var(--red)}
-.catf .cfx{flex:none;display:flex;align-items:center;justify-content:center;width:32px;height:30px;padding:0;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:12.5px;line-height:1;white-space:nowrap}
+.catf .cfx{flex:none;height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:15px;line-height:1}
 .catsum{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.25}
 /* на ПК зсуваємо під текст пошуку, а не під лупу; на телефоні місця обмаль — лишаємо з краю */
-@media (min-width:900px){.catsum{margin-left:30px}
-  .oncat .brand .dgtext{display:none}
-  .brand #catSum{display:none;margin:0;font-size:14px;line-height:1.35;min-width:0}
-  .oncat .brand #catSum{display:block}
-  #searchBar #q,#searchBar .btn{height:42px;min-height:42px;box-sizing:border-box}
-  .skuf .btn{font-size:12px;line-height:1.15}
-}
+@media (min-width:900px){.catsum{margin-left:30px}}
 
 .btn{border:1px solid var(--primary);border-radius:var(--radius-sm);padding:11px 14px;font-weight:600;background:var(--primary);color:var(--on-primary);letter-spacing:.2px;transition:background .15s,border-color .15s,color .15s}
 .btn:not(:disabled):hover{border-color:var(--gold)}
@@ -1185,11 +1158,6 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
-    'Нічого не знайдено':'Nessun risultato',
-    'Скинути всі':'Azzera tutti',
-    'Очистити фільтр':'Pulisci filtro',
-    'Очистити':'Pulisci',
-    'Готово':'Fatto',
     'Ціна продажу':'Prezzo di vendita',
     'Склад пряжі':'Composizione',
     'Скинути фільтри':'Azzera i filtri',
@@ -1899,11 +1867,6 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
-    'Нічого не знайдено':'Nothing found',
-    'Скинути всі':'Reset all',
-    'Очистити фільтр':'Clear filter',
-    'Очистити':'Clear',
-    'Готово':'Done',
     'Ціна продажу':'Sale price',
     'Склад пряжі':'Composition',
     'Скинути фільтри':'Clear filters',
@@ -3471,7 +3434,6 @@ function render(){
   if((FIN_TABS.includes(tab)&&!can('fin')) || (tab==='debt'&&!seeSale())) tab='catalog';
   $('#searchBar').style.display = tab==='catalog' ? 'flex' : 'none';
   $('#catFilters').style.display = tab==='catalog' ? 'flex' : 'none';
-  document.body.classList.toggle('oncat', tab==='catalog');
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
   $('#addBtn').disabled = !can('sku');
@@ -3503,7 +3465,7 @@ function thumbHtml(s, cls='thumb'){
 
 /* Перемикачі «без ціни»: натиснута кнопка лишає в каталозі лише такі картки,
    дві натиснуті — картки з обох списків (без закупівельної АБО без продажної). */
-const catF = {nocost:false, nosale:false, brand:[], art:[], sale:[], comp:[], nm:[], bc:''};
+const catF = {nocost:false, nosale:false, brand:'', art:'', sale:'', comp:'', bc:''};
 function toggleCatF(k){
   catF[k] = !catF[k];
   const el = $(k === 'nocost' ? '#fNoCost' : '#fNoSale');
@@ -3557,74 +3519,33 @@ function compMatch(sku, pairs){
   });
 }
 let CF_SIG = '';
-/* фільтри під баром: у кожному можна позначити кілька галочок,
-   біля активного — свій хрестик, що чистить лише його */
-const CF_KEYS = ['brand','art','sale','comp','nm'];
-const CF_LABEL = {brand:'Бренд', art:'Артикул', sale:'Ціна продажу', comp:'Склад пряжі', nm:'Nm'};
-const cfVal = (key, s) => key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? String(+s.sale||0) : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
-const cfShow = (key, v) => key==='sale' ? fmtEur(+v)+'/кг' : key==='nm' ? 'Nm '+v : v;
-let CF_OPEN = '';
-function cfOptions(key){
-  let all = liveSkus();
-  if(key === 'art' && catF.brand.length){ const b = new Set(catF.brand); all = all.filter(x => b.has(x.maker||'')); }
-  const cnt = new Map();
-  all.forEach(x => { const v = cfVal(key, x); if(v === '' || (key==='sale' && v==='0')) return; cnt.set(v, (cnt.get(v)||0) + 1); });
-  const vals = [...cnt.keys()].sort(key==='sale' ? (a,b) => a-b : (a,b) => a.localeCompare(b, undefined, {numeric:true}));
-  return vals.map(v => [v, cnt.get(v)]);
-}
 function drawCatFilters(){
   const box = $('#cfSel'); if(!box) return;
-  if(!seeSale()) catF.sale = [];
-  if(catF.art.length && catF.brand.length){ const ok = new Set(cfOptions('art').map(x => x[0])); catF.art = catF.art.filter(v => ok.has(v)); }
-  const btn = key => {
-    const v = catF[key], n = v.length;
-    const txt = n === 1 ? `<span class="v" translate="no">${esc(cfShow(key, v[0]))}</span>`
-              : `<span class="l">${CF_LABEL[key]}</span>${n ? `<b class="n">${n}</b>` : ''}`;
-    return `<span class="cff${n?' on':''}"><button type="button" class="cfb" data-cfopen="${key}" aria-haspopup="true" aria-expanded="${CF_OPEN===key}" title="${CF_LABEL[key]}">${txt}<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>`
-      + (n ? `<button type="button" class="cfc" data-cfclr="${key}" aria-label="Очистити фільтр" title="Очистити фільтр">×</button>` : '') + '</span>';
-  };
-  const active = CF_KEYS.filter(k => catF[k].length).length + (String(catF.bc||'').trim() ? 1 : 0);
-  const html = btn('brand') + btn('art') + (seeSale() ? btn('sale') : '') + btn('comp') + btn('nm')
-    + (active > 1 ? '<button type="button" class="cfx" data-catfreset title="Скинути фільтри" aria-label="Скинути фільтри"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>' : '');
-  if(html !== CF_SIG){ CF_SIG = html; box.innerHTML = html; }
+  const all = liveSkus();
+  const uniq = arr => [...new Set(arr.filter(v => v !== '' && v != null))];
+  const brands = uniq(all.map(x => x.maker||'')).sort((a,b) => a.localeCompare(b));
+  const arts   = uniq(all.filter(x => !catF.brand || x.maker === catF.brand).map(x => x.art||'')).sort((a,b) => a.localeCompare(b));
+  if(catF.art && !arts.includes(catF.art)) catF.art = '';
+  const prices = seeSale() ? uniq(all.map(x => +x.sale||0).filter(v => v > 0)).sort((a,b) => a-b) : [];
+  const comps  = uniq(all.map(x => compText(x.comp))).sort((a,b) => a.localeCompare(b));
+  const sel = (key, label, vals, show) => `<select data-catf="${key}" class="${catF[key]?'on':''}" aria-label="${label}">
+      <option value="">${label}</option>${vals.map(v => `<option value="${esc(String(v))}" ${String(catF[key])===String(v)?'selected':''}>${esc(show ? show(v) : String(v))}</option>`).join('')}</select>`;
+  const any = catF.brand || catF.art || catF.sale || catF.comp || catF.bc;
+  const html = sel('brand','Бренд',brands) + sel('art','Артикул',arts)
+    + (seeSale() ? sel('sale','Ціна продажу',prices, v => fmtEur(v)+'/кг') : '')
+    + sel('comp','Склад пряжі',comps)
+    + (any ? '<button type="button" class="cfx" data-catfreset aria-label="Скинути фільтри" title="Скинути фільтри">×</button>' : '');
+  if(html === CF_SIG) return;
+  CF_SIG = html; box.innerHTML = html;
 }
-function cfPop(){
-  let p = $('#cfPop');
-  if(!p){ p = document.createElement('div'); p.id = 'cfPop'; p.className = 'cfpop'; p.hidden = true; document.body.appendChild(p); }
-  return p;
-}
-function cfClose(){ CF_OPEN = ''; const p = $('#cfPop'); if(p) p.hidden = true; CF_SIG = ''; drawCatFilters(); }
-function cfOpen(key){
-  if(CF_OPEN === key){ cfClose(); return; }
-  CF_OPEN = key; CF_SIG = ''; drawCatFilters();
-  const p = cfPop(), opts = cfOptions(key), sel = new Set(catF[key]);
-  p.innerHTML = (opts.length > 8 ? `<input type="search" class="cfq" data-cfq placeholder="Знайти" aria-label="Знайти" autocomplete="off">` : '')
-    + `<div class="cfl">${opts.length ? opts.map(([v,c]) => `<label class="cfo"><input type="checkbox" data-cfk="${key}" value="${esc(v)}" ${sel.has(v)?'checked':''}><span class="t" translate="no">${esc(cfShow(key, v))}</span><small class="num">${c}</small></label>`).join('') : '<p class="cfe">Нічого не знайдено</p>'}</div>`
-    + `<div class="cfa"><button type="button" class="btn ghost small" data-cfclr="${key}">Очистити</button><button type="button" class="btn small" data-cfdone>Готово</button></div>`;
-  p.hidden = false;
-  const b = document.querySelector(`[data-cfopen="${key}"]`), r = b ? b.getBoundingClientRect() : {left:12, bottom:120};
-  const w = Math.min(300, window.innerWidth - 24);
-  p.style.width = w + 'px';
-  p.style.left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12)) + 'px';
-  p.style.top = (r.bottom + 6) + 'px';
-  p.style.maxHeight = Math.max(200, window.innerHeight - r.bottom - 24) + 'px';
-  const q = p.querySelector('[data-cfq]'); if(q && !matchMedia('(pointer:coarse)').matches) q.focus();
-}
-function cfToggle(key, v, on){
-  const set = new Set(catF[key]); on ? set.add(v) : set.delete(v);
-  catF[key] = [...set];
+function setCatF(key, val){
+  catF[key] = val;
+  if(key === 'brand') catF.art = '';
   render();
 }
-function cfClear(key){
-  catF[key] = [];
-  if(CF_OPEN === key) cfClose();
-  render();
-}
-function setCatF(key, val){ catF[key] = val; render(); }
 function resetCatF(){
-  Object.assign(catF, {brand:[], art:[], sale:[], comp:[], nm:[], bc:''});
+  Object.assign(catF, {brand:'', art:'', sale:'', comp:'', bc:''});
   const bc = $('#cfBc'); if(bc) bc.value = '';
-  if(CF_OPEN) cfClose();
   render();
 }
 let JUMPED = '';
@@ -3645,11 +3566,10 @@ function viewCatalog(){
   if(noCost || noSale) list = list.filter(s => (noCost && !costInfo(s).price) || (noSale && !(+s.sale)));
   /* фільтри під баром; при переході за штрихкодом не діють — показуємо всіх сусідів */
   if(!jump){
-    CF_KEYS.forEach(k => {
-      if(!catF[k].length || (k === 'sale' && !seeSale())) return;
-      const set = new Set(catF[k]);
-      list = list.filter(s => set.has(cfVal(k, s)));
-    });
+    if(catF.brand) list = list.filter(s => (s.maker||'') === catF.brand);
+    if(catF.art)   list = list.filter(s => (s.art||'') === catF.art);
+    if(catF.sale && seeSale()) list = list.filter(s => Math.abs((+s.sale||0) - (+catF.sale)) < 0.001);
+    if(catF.comp)  list = list.filter(s => compText(s.comp) === catF.comp);
   }
   let totKg=0, totFree=0;
   const LIDX = levelIndex();
@@ -6753,9 +6673,6 @@ document.addEventListener('click', e=>{
   if(d.costdel){ costDel(t); return; }
   if(d.costedit){ costEdit(t.dataset.sku, d.costedit); return; }
   if('catfreset' in d){ resetCatF(); return; }
-  if(d.cfopen){ cfOpen(d.cfopen); return; }
-  if(d.cfclr){ cfClear(d.cfclr); return; }
-  if('cfdone' in d){ cfClose(); return; }
   if(d.costsave){ costSave(t.dataset.sku, d.costsave); return; }
   if(d.costcancel){ costCancel(d.costcancel); return; }
   if(d.costadd){ costAdd(d.costadd); return; }
@@ -6824,7 +6741,7 @@ document.addEventListener('click', e=>{
 });
 document.addEventListener('change', async e=>{
   const t=e.target;
-  if(t.dataset && t.dataset.cfk!==undefined){ cfToggle(t.dataset.cfk, t.value, t.checked); return; }
+  if(t.dataset && t.dataset.catf!==undefined){ setCatF(t.dataset.catf, t.value); return; }
   if(t.dataset && t.dataset.site!==undefined){ pickSite(t.dataset.site, t.checked); return; }
   if(t.dataset && t.dataset.usite!==undefined){ setUserSite(t.dataset.usite, t.value, t.checked); return; }
   if(t.dataset && t.dataset.photo!==undefined && t.files[0]){
@@ -6862,27 +6779,6 @@ document.addEventListener('keydown', e=>{
 });
 $('#q').addEventListener('input', ()=>render());
 $('#cfBc').addEventListener('input', e=>{ catF.bc = e.target.value; render(); });
-/* ПК: підсумок каталогу стоїть у шапці замість назви фірми; телефон — над пошуком */
-const DESK_MQ = matchMedia('(min-width:900px)');
-function placeCatSum(){
-  const el = $('#catSum'), to = DESK_MQ.matches ? $('.top-row .brand') : $('#searchBar .qcol');
-  if(el && to && el.parentNode !== to) to.appendChild(el);
-}
-placeCatSum();
-if(DESK_MQ.addEventListener) DESK_MQ.addEventListener('change', placeCatSum); else DESK_MQ.addListener(placeCatSum);
-/* список фільтра: пошук усередині, закриття кліком повз нього, Esc чи зміною розміру */
-document.addEventListener('input', e=>{
-  if(!e.target.matches || !e.target.matches('[data-cfq]')) return;
-  const q = e.target.value.trim().toLowerCase();
-  document.querySelectorAll('#cfPop .cfo').forEach(l => { l.style.display = !q || l.textContent.toLowerCase().includes(q) ? '' : 'none'; });
-});
-document.addEventListener('pointerdown', e=>{
-  if(!CF_OPEN) return;
-  if(e.target.closest && (e.target.closest('#cfPop') || e.target.closest('[data-cfopen]'))) return;
-  cfClose();
-}, true);
-document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && CF_OPEN) cfClose(); });
-window.addEventListener('resize', ()=>{ if(CF_OPEN && !matchMedia('(pointer:coarse)').matches) cfClose(); });
 function clampLine(t){
   if(!OD) return;
   const isKg=t.dataset.lk!==undefined, i=+(isKg?t.dataset.lk:t.dataset.lc);
