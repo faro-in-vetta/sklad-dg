@@ -2732,42 +2732,20 @@ const lineRowOf = (o, l, i) => ({
 });
 
 /* ---------- завантаження ---------- */
-/* Supabase віддає не більше 1000 рядків за один запит (налаштування API
-   «Max rows»). Без сторінок каталог понад 1000 карток і журнал понад 1000
-   операцій мовчки обрізалися б — і залишки рахувалися б неправильно.
-   Перша сторінка заодно питає загальну кількість, тож зайвих запитів немає. */
-async function fetchAll(table, opt = {}) {
-  const STEP = 1000, out = [], key = opt.key || 'id';
-  let total = null;
-  for (;;) {
-    let q = db.from(table).select('*', total === null ? { count: 'exact' } : undefined);
-    if (opt.filter) q = opt.filter(q);
-    if (opt.order) q = q.order(opt.order, { ascending: !opt.desc });
-    q = q.order(key, { ascending: true }).range(out.length, out.length + STEP - 1);
-    const { data, error, count } = await q;
-    if (error) return { data: null, error };
-    if (total === null) total = count == null ? Infinity : count;
-    out.push(...(data || []));
-    const goal = opt.max ? Math.min(total, opt.max) : total;
-    if (!data || !data.length || out.length >= goal) break;
-  }
-  return { data: opt.max ? out.slice(0, opt.max) : out, error: null };
-}
-
 async function hydrate(opts) {
   const gen = WGEN;
   const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au, st] = await Promise.all([
-    fetchAll('profiles'),
-    fetchAll('invites', { filter: q => q.is('accepted_at', null) }),
-    fetchAll('skus'),
-    fetchAll('sku_costs'),
-    fetchAll('ops', { order: 'happened_on', desc: true }),        // увесь журнал: з нього рахуються залишки
-    fetchAll('orders'),
-    fetchAll('order_lines'),
-    fetchAll('payments'),
-    fetchAll('returns'),
-    fetchAll('order_events'),
-    fetchAll('audit', { order: 'created_at', desc: true, max: 3000 }),  // історія — лише свіжа частина
+    db.from('profiles').select('*'),
+    db.from('invites').select('*').is('accepted_at', null),
+    db.from('skus').select('*'),
+    db.from('sku_costs').select('*'),
+    db.from('ops').select('*').order('happened_on', { ascending: false }).limit(5000),
+    db.from('orders').select('*'),
+    db.from('order_lines').select('*'),
+    db.from('payments').select('*'),
+    db.from('returns').select('*'),
+    db.from('order_events').select('*'),
+    db.from('audit').select('*').order('created_at', { ascending: false }).limit(2000),
     db.from('app_settings').select('*')
   ]);
   const err = [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au].find(r => r.error);
@@ -2805,8 +2783,8 @@ async function hydrate(opts) {
     S.reserves = S.reserves.filter(ownOrder);
     try{
       const [rv, st2] = await Promise.all([
-        fetchAll('sku_reserved', { key: 'sku_id' }),
-        fetchAll('sku_stock', { key: 'sku_id' })
+        db.from('sku_reserved').select('*'),
+        db.from('sku_stock').select('*')
       ]);
       S.resAll = Object.fromEntries(((rv && rv.data) || []).map(r => [r.sku_id, { kg:+r.kg||0, cones:+r.cones||0 }]));
       S.stockAll = Object.fromEntries(((st2 && st2.data) || []).map(r => [r.sku_id,
@@ -2859,11 +2837,9 @@ async function refreshPhotoUrls() {
   const paths = [];
   S.skus.forEach(s => (s.photos || []).forEach(p => { if (!p.startsWith('data:') && !PHOTO_URL[p]) paths.push(p); }));
   if (!paths.length) return;
+  const { data } = await db.storage.from('sku-photos').createSignedUrls(paths, 60 * 60 * 8);
   const exp = Date.now() + 8*60*60*1000;
-  for (let i = 0; i < paths.length; i += 500) {   // на 2000 карток це ~4500 фото — порціями
-    const { data } = await db.storage.from('sku-photos').createSignedUrls(paths.slice(i, i + 500), 60 * 60 * 8);
-    (data || []).forEach(x => { if (x.signedUrl) { PHOTO_URL[x.path] = x.signedUrl; PU_EXP[x.path] = exp; } });
-  }
+  (data || []).forEach(x => { if (x.signedUrl) { PHOTO_URL[x.path] = x.signedUrl; PU_EXP[x.path] = exp; } });
   savePhotoUrls();
 }
 
@@ -3174,7 +3150,6 @@ async function reloadSoon() {
   clearTimeout(reloadTimer);
   reloadTimer = setTimeout(async () => {
     if (SYNCING || DIRTY) return;
-    if (document.hidden) return;          // вкладка у фоні — повернеться, тоді й оновимо (focus)
     try {
       if (await hydrate({ soft: true }) === false) return;
       render();
@@ -3356,18 +3331,7 @@ function pricing(sku, l){
   return {cost:l.cost, sale, src, markup};
 }
 const fmtPct = p => p===null ? '—' : (p>0?'+':'')+p.toLocaleString('uk-UA',{maximumFractionDigits:1})+'%';
-/* Індекс для масового підрахунку залишків: журнал і резерви розкладаються по
-   картках за один прохід. Без нього каталог на кожну картку двічі перебирав
-   увесь журнал — на 2000 карток це десятки мільйонів порівнянь на кожне оновлення. */
-function levelIndex(){
-  const ops = {}, res = {}, byId = {};
-  S.skus.forEach(x => { byId[x.id] = x; });
-  if(!(isClient() && S.stockAll)) S.ops.forEach(o => { (ops[o.sku] = ops[o.sku] || []).push(o); });
-  if(!(isClient() && S.resAll)) S.reserves.forEach(o => { if(o.status==='active') (o.lines||[]).forEach(li => {
-    const r = res[li.sku] || (res[li.sku] = {kg:0, cn:0}); r.kg += li.kg; r.cn += li.cones; }); });
-  return {ops, res, byId};
-}
-function levels(skuId, idx){
+function levels(skuId){
   let kg=0, cn=0, inKg=0, inCn=0, pk=0, pv=0;
   if(isClient() && S.stockAll){
     /* Клієнтові рух товару закритий і в застосунку, і в базі: там назви
@@ -3376,7 +3340,7 @@ function levels(skuId, idx){
     const a = S.stockAll[skuId];
     if(a){ kg=a.kg; cn=a.cones; inKg=a.inKg; inCn=a.inCones; }
   } else {
-    (idx ? (idx.ops[skuId] || []) : S.ops.filter(o=>o.sku===skuId)).forEach(o=>{
+    S.ops.filter(o=>o.sku===skuId).forEach(o=>{
       const sgn = (o.type==='out'||o.type==='smp'||o.type==='mov_out') ? -1 : 1;
       kg += sgn*o.kg; cn += sgn*o.cones;
       if(o.type==='in'){ inKg+=o.kg; inCn+=o.cones; if(o.price>0){ pk+=o.kg; pv+=o.kg*o.price; } }
@@ -3390,15 +3354,13 @@ function levels(skuId, idx){
        із сервера: цифри без імен і сум. */
     const a = S.resAll[skuId];
     if(a){ rk = a.kg || 0; rc = a.cones || 0; }
-  } else if(idx){
-    const r = idx.res[skuId]; if(r){ rk = r.kg; rc = r.cn; }
   } else {
     S.reserves.forEach(o=>{ if(o.status==='active') (o.lines||[]).forEach(li=>{ if(li.sku===skuId){ rk+=li.kg; rc+=li.cones; } }); });
   }
   const avg = inCn ? inKg/inCn : 0;
   const curAvg = cn>0 ? kg/cn : 0;
   const drift = avg && cn>0 ? Math.abs(curAvg-avg)/avg : 0;
-  return {kg, cn, rk, rc, fk:kg-rk, fc:cn-rc, avg, drift, cost: costInfo((idx ? idx.byId[skuId] : skuById(skuId))||{}).price};
+  return {kg, cn, rk, rc, fk:kg-rk, fc:cn-rc, avg, drift, cost: costInfo(skuById(skuId)||{}).price};
 }
 
 /* ---------- views ---------- */
@@ -3461,8 +3423,7 @@ function viewCatalog(){
   const noCost = catF.nocost && can('fin'), noSale = catF.nosale && can('fin');
   if(noCost || noSale) list = list.filter(s => (noCost && !costInfo(s).price) || (noSale && !(+s.sale)));
   let totKg=0, totFree=0;
-  const LIDX = levelIndex();
-  liveSkus().forEach(s=>{const l=levels(s.id, LIDX); totKg+=l.kg; totFree+=l.fk;});
+  liveSkus().forEach(s=>{const l=levels(s.id); totKg+=l.kg; totFree+=l.fk;});
   /* підсумок закріплений у шапці під пошуком — видно, хоч куди прокрутив каталог.
      Клієнтові лише вільне: із «на складі» мінус «вільно» він вирахував би резерв. */
   const sumEl = $('#catSum');
@@ -3471,7 +3432,7 @@ function viewCatalog(){
     : t('cat.sum').replace('{n}',liveSkus().length).replace('{kg}',fmtKg(totKg)).replace('{free}',fmtKg(totFree));
   $('#view').innerHTML = `
     ${list.length ? list.map(s=>{
-      const l=levels(s.id, LIDX);
+      const l=levels(s.id);
       const pr=pricing(s,l);
       return `<button class="sku" data-open="${s.id}">
         <div class="body">
@@ -5807,13 +5768,11 @@ function openEditCost(id){
     <div id="perr"></div>
     <p class="hint" style="margin:0 0 8px">Галочкою позначена ціна, яка вважається закупівельною. Нова ціна з найпізнішою датою стає активною автоматично.</p>
     <div class="box">${ci.list.length?ci.list.map(c=>COST_EDIT===c.id
-      ? `<div class="costrow" style="flex-wrap:wrap">
+      ? `<div class="costrow">
       <span class="sub" style="white-space:nowrap">від ${fmtDate(c.date)}</span>
-      <input id="cEditPrice" type="number" inputmode="decimal" step="0.01" min="0" value="${esc(c.price)}" aria-label="Ціна, €/кг" style="flex:1 1 90px;min-width:0">
-      <div style="display:flex;gap:6px;flex:1 1 210px">
-        <button class="btn small" style="flex:1" data-costsave="${c.id}" data-sku="${id}">Зберегти</button>
-        <button class="btn small ghost" style="flex:1" data-costcancel="${id}">Скасувати</button>
-      </div>
+      <input id="cEditPrice" type="number" inputmode="decimal" step="0.01" min="0" value="${esc(c.price)}" aria-label="Ціна, €/кг" style="flex:1;min-width:0">
+      <button class="btn small" data-costsave="${c.id}" data-sku="${id}">Зберегти</button>
+      <button class="btn small ghost" data-costcancel="${id}">Скасувати</button>
     </div>`
       : `<div class="costrow">
       <label class="cr"><input type="radio" name="costAct" data-costact="${c.id}" data-sku="${id}" ${ci.act&&ci.act.id===c.id?'checked':''}>
