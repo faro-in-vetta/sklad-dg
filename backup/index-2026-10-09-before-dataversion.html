@@ -2694,13 +2694,6 @@ const db = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession
 let ME = null;              // профіль поточного користувача
 let SNAP = {};              // знімок останнього стану з бази (для diff)
 let SYNCING = false, DIRTY = false;
-/* Лічильник змін бази (таблиця data_version, SQL 24). Раз на 45 с застосунок
-   питає лише це одне число й тягне всю базу тільки тоді, коли хтось справді
-   щось змінив. Так трафік у години, коли склад просто відкритий, майже нульовий.
-   Якщо таблиці ще немає або запит не вдався — працюємо по-старому: повне оновлення. */
-let DATA_V = null;                 // версія бази, з якою зараз збігається пам'ять
-let FULL_AT = 0;                   // коли востаннє тягнули всю базу
-const FULL_EVERY = 15 * 60000;     // про всяк випадок — повне оновлення хоча б раз на 15 хв
 const PHOTO_URL = {};       // шлях у Storage → тимчасове посилання
 
 const snapKey = (t, id) => t + ':' + id;
@@ -2819,18 +2812,8 @@ async function fetchAll(table, opt = {}) {
   return { data: opt.max ? out.slice(0, opt.max) : out, error: null };
 }
 
-async function dataVersion() {
-  try {
-    const { data, error } = await db.from('data_version').select('v').eq('id', 1).maybeSingle();
-    return (error || !data) ? null : String(data.v);
-  } catch (e) { return null; }
-}
-
 async function hydrate(opts) {
   const gen = WGEN;
-  // версію беремо ДО даних: якщо хтось збереже під час завантаження,
-  // наступна перевірка побачить новішу версію й дотягне його зміни
-  const ver = await dataVersion();
   const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au, st] = await Promise.all([
     fetchAll('profiles'),
     fetchAll('invites', { filter: q => q.is('accepted_at', null) }),
@@ -2902,7 +2885,6 @@ async function hydrate(opts) {
   (au.data || []).forEach(a => remember('audit', a.id, a));
   (pf.data || []).forEach(p => remember('profile', p.id, { id: p.id, name: p.name, role: p.role, client: p.client || null, sites: Array.isArray(p.sites) && p.sites.length ? p.sites : allSites(), removed: p.removed }));
   (iv.data || []).forEach(i => remember('invite', i.id, { id: i.id, email: i.email, name: i.name, role: i.role }));
-  DATA_V = ver; FULL_AT = Date.now();
 
   await refreshPhotoUrls();
 }
@@ -3252,30 +3234,11 @@ async function reloadSoon() {
     if (SYNCING || DIRTY) return;
     if (document.hidden) return;          // вкладка у фоні — повернеться, тоді й оновимо (focus)
     try {
-      if (!(await needFullReload())) return;
       if (await hydrate({ soft: true }) === false) return;
       render();
       if (sheetKind === 'online') openOnline();   // перемальовуємо відкриту панель присутності
     } catch (e) { console.error(e); }
   }, 300);
-}
-
-/* Дешева перевірка замість повного завантаження: одне число версії
-   і відмітки «був у мережі» (вони міняються щохвилини й версію не чіпають). */
-async function needFullReload() {
-  if (DATA_V === null || Date.now() - FULL_AT > FULL_EVERY) return true;
-  let v = null, pf = null;
-  try { [v, pf] = await Promise.all([dataVersion(), db.from('profiles').select('id,last_seen')]); }
-  catch (e) { return true; }
-  if (v === null || v !== DATA_V) return true;
-  if (pf && !pf.error && pf.data && S && S.users) {
-    const before = activeUsers().filter(isOnline).map(u => u.id).join();
-    S.seen = Object.fromEntries(pf.data.filter(p => p.last_seen).map(p => [p.id, new Date(p.last_seen).getTime()]));
-    const after = activeUsers().filter(isOnline).map(u => u.id).join();
-    if (before !== after) drawOnlineBtn();
-    if (sheetKind === 'online') openOnline();
-  }
-  return false;
 }
 
 /* ---------- вхід ---------- */
@@ -3519,7 +3482,13 @@ function render(){
   if(fc) fc.style.display = can('fin') ? '' : 'none';
   if(fs) fs.style.display = can('fin') ? '' : 'none';
   // хто зараз у базі — внутрішня кухня; клієнтові склад людей не показуємо
-  drawOnlineBtn();
+  const onBtn = $('#onlineBtn');
+  if(isClient()){ onBtn.style.display='none'; }
+  else {
+    onBtn.style.display='';
+    const on = activeUsers().filter(isOnline);
+    onBtn.innerHTML = `<span class="avs">${on.slice(0,2).map(u=>avatar(u,'',false)).join('')}</span><span class="num">${on.length} онлайн</span>`;
+  }
   ({catalog:viewCatalog, reserves:viewReserves, debt:viewDebt, journal:viewJournal, stats:viewStats})[tab]();
   drawSiteBtn();
   setTimeout(syncToBottom, 0);
@@ -4697,13 +4666,6 @@ const AVC=['#1A1208','#B68C5A','#3D7350','#7A4E6E','#8A6030','#4A3C2E','#A5362C'
 function avatar(u, cls, dot){
   const i=S.users.indexOf(u); const ini=u.name.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
   return `<span class="av ${cls||''}" style="background:${AVC[i%AVC.length]}" title="${esc(u.name)}">${esc(ini)}${dot!==false?`<span class="st ${isOnline(u)?'on':''}"></span>`:''}</span>`;
-}
-function drawOnlineBtn(){
-  const onBtn = $('#onlineBtn'); if(!onBtn) return;
-  if(isClient()){ onBtn.style.display='none'; return; }
-  onBtn.style.display='';
-  const on = activeUsers().filter(isOnline);
-  onBtn.innerHTML = `<span class="avs">${on.slice(0,2).map(u=>avatar(u,'',false)).join('')}</span><span class="num">${on.length} онлайн</span>`;
 }
 function seenAt(u){ if(u.id===S.current) return Date.now(); return (S.seen && S.seen[u.id]) || 0; }
 function isOnline(u){ return Date.now()-seenAt(u) < 5*60000; }
