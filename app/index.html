@@ -2904,12 +2904,18 @@ async function pushChanges() {
         const { error } = await db.from('ops').insert(row);
         if (error) throw error; remember('op', o.id, row);
       } else {
-        const was = JSON.parse(SNAP[key]), fix = {};
-        OP_FIX.forEach(k => { if (was[k] !== row[k]) fix[k] = row[k]; });
-        if (Object.keys(fix).length) {
-          const { error } = await db.from('ops').update(fix).eq('id', o.id);
-          if (error) throw error;
-          remember('op', o.id, Object.assign(was, fix));
+        /* База пускає зміну лише для 'out' і 'smp' (див. 23_fix_shipped.sql).
+           Усе інше навіть не пробуємо, а невдачу не піднімаємо вище:
+           виправлення однієї операції не має зривати весь запис. */
+        const was = JSON.parse(SNAP[key]);
+        if (was.type === 'out' || was.type === 'smp') {
+          const fix = {};
+          OP_FIX.forEach(k => { if (was[k] !== row[k]) fix[k] = row[k]; });
+          if (Object.keys(fix).length) {
+            const { error } = await db.from('ops').update(fix).eq('id', o.id);
+            if (error) console.error('op fix', o.id, error);
+            else remember('op', o.id, Object.assign(was, fix));
+          }
         }
       }
     }
@@ -3005,7 +3011,8 @@ async function pushChanges() {
   } catch (e) {
     console.error(e);
     setSync('err');
-    toast('Не вдалося зберегти: ' + (e.message || 'помилка мережі'));
+    toast('Не вдалося зберегти\n' + [e.code, e.message || 'помилка мережі', e.details, e.hint]
+            .filter(Boolean).join(' · '), 9000, true);
   } finally {
     SYNCING = false;
     if (DIRTY) queueSync();
