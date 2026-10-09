@@ -148,16 +148,6 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 .skuf .btn:not(.on):not(:disabled):hover{background:var(--indigo-soft);color:var(--ink)}
 .skuf .btn.on,.skuf .btn.on:hover{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
 @media (max-width:420px){#catSum{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.search .btn{padding:4px 12px}}
-.catf{display:flex;gap:6px;align-items:center;margin-top:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.catf::-webkit-scrollbar{display:none}
-#cfSel{display:contents}
-.catf select,.catf input{height:30px;font-size:12.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:0 8px}
-.catf select{flex:1 1 0;min-width:0}
-@media (max-width:899px){.catf select{flex:none;min-width:112px;max-width:170px}}
-.catf input{width:120px;flex:none;padding-left:8px !important}
-.catf .on{border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);font-weight:600}
-.catf input.miss{border-color:var(--red)}
-.catf .cfx{flex:none;height:30px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:15px;line-height:1}
 .catsum{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.25}
 /* на ПК зсуваємо під текст пошуку, а не під лупу; на телефоні місця обмаль — лишаємо з краю */
 @media (min-width:900px){.catsum{margin-left:30px}}
@@ -177,7 +167,6 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 main{padding-top:14px}
 .sku{display:flex;gap:12px;align-items:stretch;background:var(--surface);border-radius:var(--radius-lg);padding:10px;margin-bottom:10px;border:1px solid var(--line);width:100%;text-align:left}
 .thumb{width:74px;height:74px;border-radius:12px;flex:none;object-fit:cover;background:var(--indigo-soft);display:grid;place-items:center;overflow:hidden}
-.sku.hit{box-shadow:0 0 0 3px var(--gold);transition:box-shadow .3s}
 .sku .body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between}
 .sku .sinfo{font-weight:700;font-size:12.5px;line-height:1.25;overflow-wrap:anywhere;display:grid;grid-template-columns:1fr 1fr;gap:1px 10px}
 .sku .sthumb{width:34px;height:34px;border-radius:8px;align-self:flex-start;border:1px solid var(--line)}
@@ -755,7 +744,6 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
       </div>
       <button class="btn" id="addBtn" data-i18n="cat.add">Нове SKU</button>
     </div>
-    <div class="catf" id="catFilters"><span id="cfSel"></span><input id="cfBc" type="search" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Штрихкод" aria-label="Штрихкод"></div>
     <div class="search" id="orderBar" style="display:none">
       <button class="btn gold" data-onew id="newOrderBtn" style="flex:1" data-i18n="cat.neworder">Нова заявка</button>
     </div>
@@ -1157,9 +1145,6 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
-    'Ціна продажу':'Prezzo di vendita',
-    'Склад пряжі':'Composizione',
-    'Скинути фільтри':'Azzera i filtri',
     'Змінити':'Modifica',
     'Скасувати':'Annulla',
     'Ціну змінено':'Prezzo modificato',
@@ -1866,9 +1851,6 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
-    'Ціна продажу':'Sale price',
-    'Склад пряжі':'Composition',
-    'Скинути фільтри':'Clear filters',
     'Змінити':'Edit',
     'Скасувати':'Cancel',
     'Ціну змінено':'Price changed',
@@ -3432,7 +3414,6 @@ function render(){
   document.querySelectorAll('nav.tabs button').forEach(el=>{ el.style.display = hidden(el) ? 'none' : ''; });
   if((FIN_TABS.includes(tab)&&!can('fin')) || (tab==='debt'&&!seeSale())) tab='catalog';
   $('#searchBar').style.display = tab==='catalog' ? 'flex' : 'none';
-  $('#catFilters').style.display = tab==='catalog' ? 'flex' : 'none';
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
   $('#addBtn').disabled = !can('sku');
@@ -3464,112 +3445,21 @@ function thumbHtml(s, cls='thumb'){
 
 /* Перемикачі «без ціни»: натиснута кнопка лишає в каталозі лише такі картки,
    дві натиснуті — картки з обох списків (без закупівельної АБО без продажної). */
-const catF = {nocost:false, nosale:false, brand:'', art:'', sale:'', comp:'', bc:''};
+const catF = {nocost:false, nosale:false};
 function toggleCatF(k){
   catF[k] = !catF[k];
   const el = $(k === 'nocost' ? '#fNoCost' : '#fNoSale');
   if(el){ el.classList.toggle('on', catF[k]); el.setAttribute('aria-pressed', catF[k] ? 'true' : 'false'); }
   viewCatalog();
 }
-/* ---------- пошук у каталозі ----------
-   1) Штрихкод (DG0000302, dg302): каталог не звужується, а прокручується
-      до цієї картки й підсвічує її — видно сусідів на полиці.
-   2) Склад пряжі («WM 100%», «100% WM», «WO 40% WM 20%», «mohair»): лишаються
-      лише картки з таким волокном; відсоток рахується сумою всіх різновидів
-      (WM = Mohair + Superkid + Kid), тож «WM 100%» — це чистий мохер.
-   3) Усе інше — як і раніше: пошук за артикулом, брендом, кольором, кодом. */
-function barcodeJump(q){
-  const m = /^dg0*(\d{1,9})$/i.exec(q); if(!m) return null;
-  const n = parseInt(m[1], 10);
-  const hit = liveSkus().find(x => codeNum(x.code) === n);
-  return hit ? hit.id : null;
-}
-function fiberMap(){
-  const map = {};
-  const put = (word, f) => { const w = String(word||'').toLowerCase(); if(w.length < 2) return; (map[w] = map[w] || new Set()).add(String(f).toLowerCase()); };
-  FIBERS.forEach(([t,l]) => l.forEach(([c,n]) => { String(c).split(/\s+/).forEach(w => put(w, c)); String(n||'').split(/\s+/).forEach(w => put(w, c)); }));
-  (S.customFibers||[]).forEach(f => String(f).split(/\s+/).forEach(w => put(w, f)));
-  return map;
-}
-function compQuery(q){
-  if(!q) return null;
-  const map = fiberMap();
-  const toks = q.toLowerCase().replace(/([a-z\u0400-\u04ff])(\d)/gi, '$1 $2').match(/\d+(?:[.,]\d+)?\s*%?|[^\s%]+/g) || [];
-  const items = [];
-  for(const t of toks){
-    const m = /^(\d+(?:[.,]\d+)?)\s*%?$/.exec(t);
-    if(m){ items.push({p: parseFloat(m[1].replace(',', '.'))}); continue; }
-    if(map[t]){ items.push({f: map[t]}); continue; }
-    return null;                                   // є щось, крім волокон і відсотків — звичайний пошук
-  }
-  if(!items.some(x => x.f)) return null;
-  const pctFirst = items[0].p !== undefined;      // «100% WM» чи «WM 100%» — як людина звикла писати
-  const pairs = [];
-  items.forEach((it, i) => { if(!it.f) return;
-    const nb = pctFirst ? items[i-1] : items[i+1];
-    pairs.push({f: it.f, p: nb && nb.p !== undefined ? nb.p : null}); });
-  return pairs;
-}
-function compMatch(sku, pairs){
-  return pairs.every(pr => {
-    let tot = 0, has = false;
-    (sku.comp||[]).forEach(x => { if(pr.f.has(String(x.f).toLowerCase())){ has = true; tot += +x.p || 0; } });
-    return pr.p == null ? has : (has && Math.abs(tot - pr.p) < 0.01);
-  });
-}
-let CF_SIG = '';
-function drawCatFilters(){
-  const box = $('#cfSel'); if(!box) return;
-  const all = liveSkus();
-  const uniq = arr => [...new Set(arr.filter(v => v !== '' && v != null))];
-  const brands = uniq(all.map(x => x.maker||'')).sort((a,b) => a.localeCompare(b));
-  const arts   = uniq(all.filter(x => !catF.brand || x.maker === catF.brand).map(x => x.art||'')).sort((a,b) => a.localeCompare(b));
-  if(catF.art && !arts.includes(catF.art)) catF.art = '';
-  const prices = seeSale() ? uniq(all.map(x => +x.sale||0).filter(v => v > 0)).sort((a,b) => a-b) : [];
-  const comps  = uniq(all.map(x => compText(x.comp))).sort((a,b) => a.localeCompare(b));
-  const sel = (key, label, vals, show) => `<select data-catf="${key}" class="${catF[key]?'on':''}" aria-label="${label}">
-      <option value="">${label}</option>${vals.map(v => `<option value="${esc(String(v))}" ${String(catF[key])===String(v)?'selected':''}>${esc(show ? show(v) : String(v))}</option>`).join('')}</select>`;
-  const any = catF.brand || catF.art || catF.sale || catF.comp || catF.bc;
-  const html = sel('brand','Бренд',brands) + sel('art','Артикул',arts)
-    + (seeSale() ? sel('sale','Ціна продажу',prices, v => fmtEur(v)+'/кг') : '')
-    + sel('comp','Склад пряжі',comps)
-    + (any ? '<button type="button" class="cfx" data-catfreset aria-label="Скинути фільтри" title="Скинути фільтри">×</button>' : '');
-  if(html === CF_SIG) return;
-  CF_SIG = html; box.innerHTML = html;
-}
-function setCatF(key, val){
-  catF[key] = val;
-  if(key === 'brand') catF.art = '';
-  render();
-}
-function resetCatF(){
-  Object.assign(catF, {brand:'', art:'', sale:'', comp:'', bc:''});
-  const bc = $('#cfBc'); if(bc) bc.value = '';
-  render();
-}
-let JUMPED = '';
 function viewCatalog(){
-  const qRaw = $('#q').value.trim();
-  const q = qRaw.toLowerCase();
-  const bcRaw = String(catF.bc||'').trim();
-  const bcJump = bcRaw ? barcodeJump(/^\d+$/.test(bcRaw) ? 'DG'+bcRaw : bcRaw) : null;
-  const bcEl = $('#cfBc'); if(bcEl) bcEl.classList.toggle('miss', bcRaw.length >= 3 && !bcJump);
-  const jump = barcodeJump(qRaw) || bcJump;
-  drawCatFilters();
-  const cq = jump ? null : compQuery(q);
-  let list = liveSkus().filter(s=>jump || !q || (cq ? compMatch(s, cq) : [s.art,s.maker,s.color,s.code,compText(s.comp),compTypes(s.comp).map(t=>t+' '+(TYPE_UA[t]||'')).join(' ')].some(v=>String(v).toLowerCase().includes(q))))
+  const q = $('#q').value.trim().toLowerCase();
+  let list = liveSkus().filter(s=>!q || [s.art,s.maker,s.color,s.code,compText(s.comp),compTypes(s.comp).map(t=>t+' '+(TYPE_UA[t]||'')).join(' ')].some(v=>String(v).toLowerCase().includes(q)))
     // порядок каталогу — за номером штрихкода від меншого до більшого:
     // саме так картки заводили, і так їх шукають на полиці
     .sort((x,y) => (codeNum(x.code) - codeNum(y.code)) || String(x.code||'').localeCompare(String(y.code||'')));
   const noCost = catF.nocost && can('fin'), noSale = catF.nosale && can('fin');
   if(noCost || noSale) list = list.filter(s => (noCost && !costInfo(s).price) || (noSale && !(+s.sale)));
-  /* фільтри під баром; при переході за штрихкодом не діють — показуємо всіх сусідів */
-  if(!jump){
-    if(catF.brand) list = list.filter(s => (s.maker||'') === catF.brand);
-    if(catF.art)   list = list.filter(s => (s.art||'') === catF.art);
-    if(catF.sale && seeSale()) list = list.filter(s => Math.abs((+s.sale||0) - (+catF.sale)) < 0.001);
-    if(catF.comp)  list = list.filter(s => compText(s.comp) === catF.comp);
-  }
   let totKg=0, totFree=0;
   const LIDX = levelIndex();
   liveSkus().forEach(s=>{const l=levels(s.id, LIDX); totKg+=l.kg; totFree+=l.fk;});
@@ -3603,14 +3493,6 @@ function viewCatalog(){
       </button>`;
     }).join('') : `<div class="empty">${q||noCost||noSale?t('cat.none'):t('cat.empty')}</div>`}
   `;
-  /* прокручуємо лише раз на новий запит: фонове оновлення кожні 45 с не має
-     смикати сторінку, поки штрихкод лишається в полі пошуку */
-  if(jump && JUMPED !== jump){
-    JUMPED = jump;
-    requestAnimationFrame(() => { const el = document.querySelector(`#view [data-open="${jump}"]`);
-      if(el){ el.scrollIntoView({block:'center', behavior:'smooth'}); el.classList.add('hit'); setTimeout(() => el.classList.remove('hit'), 2600); } });
-  }
-  if(!jump) JUMPED = '';
 }
 
 /* ---------- заявки (кілька позицій) ---------- */
@@ -6671,7 +6553,6 @@ document.addEventListener('click', e=>{
   if(d.savesale){ saveSale(d.savesale); return; }
   if(d.costdel){ costDel(t); return; }
   if(d.costedit){ costEdit(t.dataset.sku, d.costedit); return; }
-  if('catfreset' in d){ resetCatF(); return; }
   if(d.costsave){ costSave(t.dataset.sku, d.costsave); return; }
   if(d.costcancel){ costCancel(d.costcancel); return; }
   if(d.costadd){ costAdd(d.costadd); return; }
@@ -6740,7 +6621,6 @@ document.addEventListener('click', e=>{
 });
 document.addEventListener('change', async e=>{
   const t=e.target;
-  if(t.dataset && t.dataset.catf!==undefined){ setCatF(t.dataset.catf, t.value); return; }
   if(t.dataset && t.dataset.site!==undefined){ pickSite(t.dataset.site, t.checked); return; }
   if(t.dataset && t.dataset.usite!==undefined){ setUserSite(t.dataset.usite, t.value, t.checked); return; }
   if(t.dataset && t.dataset.photo!==undefined && t.files[0]){
@@ -6777,7 +6657,6 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Enter' && e.target.id==='manualCode') found(e.target.value);
 });
 $('#q').addEventListener('input', ()=>render());
-$('#cfBc').addEventListener('input', e=>{ catF.bc = e.target.value; render(); });
 function clampLine(t){
   if(!OD) return;
   const isKg=t.dataset.lk!==undefined, i=+(isKg?t.dataset.lk:t.dataset.lc);
