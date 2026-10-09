@@ -186,8 +186,6 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
   .oncat .brand .dgtext{display:none}
   .brand #catSum{display:none;margin:0;font-size:14px;line-height:1.35;min-width:0}
   .oncat .brand #catSum{display:block}
-  .brand #catSum .cs1,.brand #catSum .cs2{display:block;white-space:nowrap}
-  .brand #catSum .csd{display:none}
   #searchBar #q,#searchBar .btn{height:42px;min-height:42px;box-sizing:border-box}
   .skuf .btn{font-size:12px;line-height:1.15}
 }
@@ -3659,16 +3657,9 @@ function viewCatalog(){
   /* підсумок закріплений у шапці під пошуком — видно, хоч куди прокрутив каталог.
      Клієнтові лише вільне: із «на складі» мінус «вільно» він вирахував би резерв. */
   const sumEl = $('#catSum');
-  if(sumEl){
-    const sumTxt = isClient()
-      ? `${liveSkus().length} SKU · вільно ${fmtKg(totFree)} кг`
-      : t('cat.sum').replace('{n}',liveSkus().length).replace('{kg}',fmtKg(totKg)).replace('{free}',fmtKg(totFree));
-    /* на ПК кількість SKU — першим рядком, кілограми — другим, одним рядком */
-    const cut = sumTxt.indexOf(' · ');
-    const html = cut < 0 ? esc(sumTxt)
-      : `<span class="cs1">${esc(sumTxt.slice(0,cut))}</span><span class="csd"> · </span><span class="cs2">${esc(sumTxt.slice(cut+3))}</span>`;
-    if(sumEl.dataset.sig !== html){ sumEl.dataset.sig = html; sumEl.innerHTML = html; }
-  }
+  if(sumEl) sumEl.textContent = isClient()
+    ? `${liveSkus().length} SKU · вільно ${fmtKg(totFree)} кг`
+    : t('cat.sum').replace('{n}',liveSkus().length).replace('{kg}',fmtKg(totKg)).replace('{free}',fmtKg(totFree));
   $('#view').innerHTML = `
     ${list.length ? list.map(s=>{
       const l=levels(s.id, LIDX);
