@@ -2784,8 +2784,7 @@ async function hydrate(opts) {
 
   // знімок для diff
   (sk.data || []).forEach(r => remember('sku', r.id, skuRowDb(fromSku(r, (sc.data || []).filter(c => c.sku_id === r.id)))));
-  (sc.data || []).forEach(c => remember('cost', c.id, { id: c.id, sku_id: c.sku_id, price: +c.price, date: dOnly(c.date) }));
-  S.skus.forEach(x => remember('act', x.id, x.costActive || null));
+  (sc.data || []).forEach(c => remember('cost', c.id, { id: c.id, sku_id: c.sku_id, price: +c.price, date: c.date }));
   (op.data || []).forEach(r => remember('op', r.id, opRowOf(fromOp(r))));
   (or_.data || []).forEach(r => remember('order', r.id, orderRowOf(fromOrder(r, ol.data || [], pa.data || [], rt.data || [], ev.data || []))));
   (ol.data || []).forEach(l => remember('line', l.id, l));
@@ -2865,13 +2864,6 @@ async function pushChanges() {
     }
 
     // SKU
-    const FIN_SYNC = can('fin');
-    const COST_KEYS = {};
-    if (FIN_SYNC) for (const k of Object.keys(SNAP)) {
-      if (!k.startsWith('cost:')) continue;
-      const sid = JSON.parse(SNAP[k]).sku_id;
-      (COST_KEYS[sid] = COST_KEYS[sid] || []).push(k);
-    }
     for (const s of S.skus) {
       let row = skuRowDb(s);
       if (changed('sku', s.id, row)) {
@@ -2890,33 +2882,24 @@ async function pushChanges() {
           toast(`Штрихкод ${was} зайнято\nзмінено на ${s.code}`, 2000, true);
         }
       }
-      /* Ціни закупівлі пише лише адмін і бухгалтер (так і в базі).
-         Раніше тут щоразу летіли сотні запитів: знімок ціни не мав поля
-         created_by, тож кожна ціна здавалася зміненою, а «активна ціна»
-         оновлювалася для кожної картки без умови. З ростом каталогу один
-         запис тривав хвилину — на телефоні його обривало, і картка губилася. */
-      if (FIN_SYNC) {
-        for (const c of (s.costs || [])) {
-          const cmp = { id: c.id, sku_id: s.id, price: +c.price, date: dOnly(c.date) };
-          if (changed('cost', c.id, cmp)) {
-            const isNew = !SNAP[snapKey('cost', c.id)];
-            const { error } = await db.from('sku_costs').upsert(isNew ? Object.assign({ created_by: S.current || null }, cmp) : cmp);
-            if (error) console.error('cost', c.id, error); else remember('cost', c.id, cmp);
-          }
-        }
-        const localIds = new Set((s.costs || []).map(c => c.id));
-        for (const k of (COST_KEYS[s.id] || [])) {
-          const row2 = JSON.parse(SNAP[k] || 'null');
-          if (row2 && !localIds.has(row2.id)) {
-            await db.from('sku_costs').delete().eq('id', row2.id);
-            delete SNAP[k];
-          }
-        }
-        if (s.costActive && changed('act', s.id, s.costActive)) {
-          const { error } = await db.from('sku_costs').update({ active: true }).eq('id', s.costActive);
-          if (!error) remember('act', s.id, s.costActive);
+      // ціни закупівлі
+      for (const c of (s.costs || [])) {
+        const row2 = { id: c.id, sku_id: s.id, price: +c.price, date: dOnly(c.date), created_by: S.current || null };
+        if (changed('cost', c.id, row2)) {
+          const { error } = await db.from('sku_costs').upsert(row2);
+          if (!error) remember('cost', c.id, row2);
         }
       }
+      const localIds = new Set((s.costs || []).map(c => c.id));
+      for (const k of Object.keys(SNAP)) {
+        if (!k.startsWith('cost:')) continue;
+        const row2 = JSON.parse(SNAP[k]);
+        if (row2.sku_id === s.id && !localIds.has(row2.id)) {
+          await db.from('sku_costs').delete().eq('id', row2.id);
+          delete SNAP[k];
+        }
+      }
+      if (s.costActive) await db.from('sku_costs').update({ active: true }).eq('id', s.costActive);
     }
 
     /* Операції додаються й ніколи не зникають. Виняток один: адмін і
