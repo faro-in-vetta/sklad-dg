@@ -5892,25 +5892,13 @@ function compress(file){
   });
 }
 function saveSku(id){
-  const maker=$('#fMaker').value.trim(), art=$('#fArt').value.trim(), color=$('#fColor').value.trim();
-  let code=$('#fCode').value.trim().toUpperCase();
+  const maker=$('#fMaker').value.trim(), art=$('#fArt').value.trim(), color=$('#fColor').value.trim(), code=$('#fCode').value.trim().toUpperCase();
   const fe = m => { $('#ferr').innerHTML = `<div class="err">${m}</div>`; $('#panel').scrollTop=0; };
   if(!maker) return fe('Вкажіть виробника.');
   if(!art) return fe('Вкажіть артикул.');
   if(!code) return fe('Вкажіть або згенеруйте штрихкод.');
   if(!/^DG\d{7}$/.test(code)) return fe('Штрихкод має бути у форматі DG0000001.');
-  /* Код могли зайняти, поки форма була відкрита: дані оновлюються раз на
-     45 секунд, і чужа картка приїжджає в пам'ять уже після того, як форма
-     показала номер. Для НОВОЇ картки це не привід відмовляти в збереженні —
-     мовчки беремо наступний вільний і кажемо, який саме. Те саме правило
-     повторює синхронізація, якщо код перехопили вже на сервері.
-     Для наявної картки номер вписав адмін руками, тож тут кажемо прямо. */
-  let bumped = '';
-  if(S.skus.some(x=>x.code===code && x.id!==id && !x.deleted)){
-    if(id) return fe('Такий штрихкод уже є в каталозі.');
-    bumped = code; code = nextSkuCode();
-    toast(`Штрихкод ${bumped} зайнято\nзмінено на ${code}`, 2000, true);
-  }
+  if(S.skus.some(x=>x.code===code && x.id!==id && !x.deleted)) return fe('Такий штрихкод уже є в каталозі.');
   const comp = draftComp.map(x=>({f:String(x.f||'').trim(),p:x.p})).filter(x=>x.f||String(x.p).trim()!=='').map(x=>({f:x.f,p:parseFloat(x.p)}));
   if(comp.some(x=>!x.f)) return fe('Оберіть волокно в кожному рядку складу.');
   if(comp.some(x=>!(x.p>0)||x.p>100)) return fe('Відсоток складника має бути від 0 до 100.');
@@ -5937,7 +5925,6 @@ function saveSku(id){
   const nid=uid();
   const nsite = ($('#fSite') && $('#fSite').value) || defSite(null);
   audit(nid,'create','Створено картку'+(draftPhotos.length?` з ${draftPhotos.length} фото`:''));
-  if(bumped) audit(nid,'edit',`Штрихкод: ${bumped} → ${code} (код зайняв інший користувач)`);
   S.skus.push({id:nid,createdBy:S.current,site:nsite,comp,meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):0,maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),photos:[...draftPhotos],created:now()});
   const price=parseFloat($('#fPrice')?.value)||0;
   if(kg>0){ const at=dateToIso($('#fDate').value); if(price>0) addCost(skuById(nid), at, price); S.ops.push({id:uid(),sku:nid,type:'in',kg,cones:cn,price,who:S.current,at,party:maker,comment:'Перша партія'}); }
