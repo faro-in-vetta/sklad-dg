@@ -2722,8 +2722,7 @@ const lineRowOf = (o, l, i) => ({
 });
 
 /* ---------- завантаження ---------- */
-async function hydrate(opts) {
-  const gen = WGEN;
+async function hydrate() {
   const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au, st] = await Promise.all([
     db.from('profiles').select('*'),
     db.from('invites').select('*').is('accepted_at', null),
@@ -2740,11 +2739,6 @@ async function hydrate(opts) {
   ]);
   const err = [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au].find(r => r.error);
   if (err) throw err.error;
-
-  /* Фонове оновлення: поки йшло завантаження, людина могла зберегти картку
-     (на телефоні — якраз після повернення з камери, коли спрацьовує focus).
-     Тоді ці дані вже застарілі — не чіпаємо пам'ять, оновимося наступного разу. */
-  if (opts && opts.soft && (DIRTY || SYNCING || WGEN !== gen)) return false;
 
   SNAP = {};
   S = {
@@ -2833,11 +2827,7 @@ async function refreshPhotoUrls() {
 }
 
 /* ---------- запис ---------- */
-/* WGEN росте з кожним локальним записом. Фонове оновлення (hydrate) запам'ятовує
-   його на старті й викидає свої дані, якщо за час завантаження хтось щось зберіг:
-   інакше свіжа картка зникала з пам'яті раніше, ніж встигала дійти до бази. */
-let WGEN = 0;
-function save() { DIRTY = true; WGEN++; queueSync(); return true; }
+function save() { DIRTY = true; queueSync(); return true; }
 
 let syncTimer = null;
 function queueSync() {
@@ -3124,8 +3114,7 @@ async function reloadSoon() {
   reloadTimer = setTimeout(async () => {
     if (SYNCING || DIRTY) return;
     try {
-      if (await hydrate({ soft: true }) === false) return;
-      render();
+      await hydrate(); render();
       if (sheetKind === 'online') openOnline();   // перемальовуємо відкриту панель присутності
     } catch (e) { console.error(e); }
   }, 300);
