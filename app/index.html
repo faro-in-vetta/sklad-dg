@@ -1189,6 +1189,9 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'середня по залишку':'media sulla giacenza',
+    'залишок за ціною продажу':'giacenza al prezzo di vendita',
+    'залишок за собівартістю':'giacenza al costo',
     'Нічого не знайдено':'Nessun risultato',
     'Скинути всі':'Azzera tutti',
     'Очистити фільтр':'Pulisci filtro',
@@ -1903,6 +1906,9 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'середня по залишку':'average on stock',
+    'залишок за ціною продажу':'stock at sale price',
+    'залишок за собівартістю':'stock at cost',
     'Нічого не знайдено':'Nothing found',
     'Скинути всі':'Reset all',
     'Очистити фільтр':'Clear filter',
@@ -5702,8 +5708,6 @@ const MONTHS=['січ','лют','бер','кві','тра','чер','лип','с
 const mLabel = k => MONTHS[+k.slice(5,7)-1]+' '+k.slice(2,4);
 function viewStats(){
   const rows = monthly();
-  let stockVal=0, stockKg=0;
-  S.skus.forEach(x=>{const l=levels(x.id); stockKg+=l.kg; stockVal+=l.kg*l.cost;});
   const tot = rows.reduce((t,r)=>{for(const k in r) if(k!=='month') t[k]=(t[k]||0)+r[k]; return t;},{});
   const maxKg = Math.max(1,...rows.map(r=>Math.max(r.inKg,r.outKg)));
   const cur = rows.find(r=>r.month===todayStr().slice(0,7)) || {rev:0,margin:0,outKg:0,shipExp:0};
@@ -5714,10 +5718,36 @@ function viewStats(){
   const ovd = unp.filter(o=>o.due && o.due.slice(0,10)<todayStr());
   const ovdSum = ovd.reduce((t,o)=>t+oOwed(o),0);
   const pc = (a,b) => b>0 ? Math.round(a/b*100) : 0;
+  /* загальний залишок — як у картці SKU, але по всіх лотах вибраних складів:
+     кг і конуси сумою, закупівля й продаж — вартість залишку, націнка — середня,
+     зважена за вартістю (лише лоти, де є обидві ціни) */
+  const LIDX = levelIndex();
+  const actSale = {};   // середня фактична ціна продажу — як у pricing(), коли прайсу немає
+  S.ops.forEach(o=>{ if(o.type==='out' && o.price>0){ const a = actSale[o.sku] || (actSale[o.sku] = {k:0,v:0}); a.k+=o.kg; a.v+=o.kg*o.price; } });
+  const T = {kg:0,cn:0,rk:0,rc:0,fk:0,fc:0,cost:0,sale:0,mCost:0,mSale:0};
+  liveSkus().forEach(x=>{
+    const l = levels(x.id, LIDX);
+    T.kg+=l.kg; T.cn+=l.cn; T.rk+=l.rk; T.rc+=l.rc; T.fk+=l.fk; T.fc+=l.fc;
+    if(l.kg<=0) return;
+    const a = actSale[x.id];
+    const sale = +x.sale || (a && a.k ? a.v/a.k : 0);
+    const cv = l.kg*(l.cost||0), sv = l.kg*sale;
+    T.cost+=cv; T.sale+=sv;
+    if(cv>0 && sv>0){ T.mCost+=cv; T.mSale+=sv; }
+  });
+  const avgMk = T.mCost ? (T.mSale-T.mCost)/T.mCost*100 : null;
   $('#view').innerHTML = `
+    <div class="levels-big num">
+      <div class="lv stock"><b>${t('sku.stock')}</b><div class="kg">${fmtKg(T.kg)} ${t('unit.kg')}</div><div class="cn">${fmtN(T.cn)} ${t('sku.cones')}</div></div>
+      <div class="lv resv"><b>${t('sku.resv')}</b><div class="kg">${fmtKg(T.rk)} ${t('unit.kg')}</div><div class="cn">${fmtN(T.rc)} ${t('sku.cones')}</div></div>
+      <div class="lv free"><b>${t('sku.free')}</b><div class="kg">${fmtKg(T.fk)} ${t('unit.kg')}</div><div class="cn">${fmtN(T.fc)} ${t('sku.cones')}</div></div>
+    </div>
+    <div class="pricebox num">
+      <div class="pt"><b>${t('sku.buy')}</b><div class="v">${fmtEur0(T.cost)}</div><b>залишок за собівартістю</b></div>
+      <div class="pt"><b>${t('sku.sell')}</b><div class="v">${fmtEur0(T.sale)}</div><b>залишок за ціною продажу</b></div>
+      <div class="pt"><b>${t('sku.markup')}</b><div class="v ${avgMk!==null&&avgMk<0?'neg':'pos'}">${fmtPct(avgMk)}</div><b>середня по залишку</b></div>
+    </div>
     <div class="kpis num">
-      <div class="kpi"><b>Залишок за собівартістю</b><div>${fmtEur0(stockVal)}</div></div>
-      <div class="kpi"><b>На складі</b><div>${fmtKg(stockKg)} кг</div></div>
       <div class="kpi"><b>Виручка цього місяця</b><div>${fmtEur0(cur.rev)}</div>${cur.shipExp?`<span class="ksub">витрати на доставку ${fmtEur0(cur.shipExp)}</span>`:''}</div>
       <div class="kpi"><b>Маржа цього місяця</b><div class="${cur.margin<0?'neg':''}">${fmtEur0(cur.margin)}</div></div>
       <div class="kpi"><b>Не оплачено накладних</b><div class="${unp.length?'neg':''}">${pc(unp.length,inv.length)}%</div><span class="ksub">${unp.length} з ${inv.length} · ${fmtEur0(unpSum)} (${pc(unpSum,invSum)}% суми)</span></div>
