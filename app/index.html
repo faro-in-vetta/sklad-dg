@@ -161,7 +161,10 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 }
 .fscroll{display:none}
 @media (pointer:coarse){
-  .fscroll{display:block;position:fixed;right:0;top:0;width:36px;height:64px;z-index:15;touch-action:none;opacity:0;pointer-events:none;transition:opacity .25s}
+  /* рідну смугу ховаємо, щоб не було двох бігунків (Android слухається; iOS — як вирішить Safari) */
+  html{scrollbar-width:none}
+  html::-webkit-scrollbar{display:none;width:0;height:0}
+  .fscroll{display:block;position:fixed;right:0;top:0;width:36px;height:64px;z-index:15;touch-action:none;opacity:0;pointer-events:none;transition:opacity .25s;will-change:transform}
   .fscroll.show,.fscroll.drag{opacity:1;pointer-events:auto}
   .fscroll i{position:absolute;right:4px;top:0;bottom:0;width:14px;border-radius:7px;background:rgba(74,46,31,.5);box-shadow:0 1px 4px rgba(0,0,0,.18)}
   .fscroll.drag i{background:var(--primary)}
@@ -3291,18 +3294,27 @@ window.addEventListener('scroll', syncToBottom, {passive:true});
     hideT = setTimeout(() => { if(!drag) el.classList.remove('show'); }, 1500);
   };
   window.addEventListener('scroll', () => { if(!drag) show(); }, {passive:true});
+  /* Під час перетягування межі й висоту сторінки рахуємо один раз (інакше кожен
+     рух пальця перемірює сторінку, а фото, що довантажуються, міняють її висоту —
+     бігунок смикається), а саму прокрутку робимо не частіше за кадр екрана. */
+  let raf = 0, wantY = 0;
+  const apply = () => {
+    raf = 0; if(!drag) return;
+    const r = drag.r, y = Math.min(r.top + r.len, Math.max(r.top, wantY));
+    el.style.transform = `translateY(${y}px)`;
+    window.scrollTo({top: Math.round((r.len ? (y - r.top) / r.len : 0) * drag.m), behavior: 'instant'});
+  };
   el.addEventListener('pointerdown', e => {
     e.preventDefault();
-    drag = {dy: e.clientY - el.getBoundingClientRect().top};
+    drag = {dy: e.clientY - el.getBoundingClientRect().top, r: range(), m: maxScroll()};
     el.classList.add('drag'); clearTimeout(hideT);
     try{ el.setPointerCapture(e.pointerId); }catch(_){}
   });
   el.addEventListener('pointermove', e => {
     if(!drag) return;
-    const r = range();
-    const y = Math.min(r.top + r.len, Math.max(r.top, e.clientY - drag.dy));
-    el.style.transform = `translateY(${y}px)`;
-    window.scrollTo(0, (r.len ? (y - r.top) / r.len : 0) * maxScroll());
+    e.preventDefault();
+    wantY = e.clientY - drag.dy;
+    if(!raf) raf = requestAnimationFrame(apply);
   });
   const end = () => { if(!drag) return; drag = null; el.classList.remove('drag'); show(); };
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
