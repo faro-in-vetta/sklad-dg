@@ -273,6 +273,8 @@ nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true
 @media (prefers-reduced-motion: reduce){.panel{animation:none}}
 .panel-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .panel-head h2{flex:1;margin:0;font-size:20px}
+/* шапка вікна (кнопки й хрестик) лишається вгорі, поки гортаєш картку */
+.panel:not(.mini) > .panel-head:first-child{position:sticky;top:-16px;z-index:6;background:var(--bg);margin:-16px 0 12px;padding:16px 0 10px;box-shadow:0 1px 0 var(--line)}
 .x{background:var(--surface);border:1px solid var(--line);border-radius:50%;width:36px;height:36px;font-size:20px;line-height:1}
 
 label.f{display:block;margin-bottom:12px;font-size:14px;color:var(--muted)}
