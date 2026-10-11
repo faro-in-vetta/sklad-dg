@@ -3268,6 +3268,7 @@ async function reloadSoon() {
     try {
       if (!(await needFullReload())) return;
       if (await hydrate({ soft: true }) === false) return;
+      syncShippedOps();
       render();
       if (sheetKind === 'online') openOnline();   // перемальовуємо відкриту панель присутності
     } catch (e) { console.error(e); }
@@ -3328,6 +3329,7 @@ async function afterLogin() {
   $('#auth').style.display = 'none';
   document.body.classList.remove('locked');
   await hydrate();
+  syncShippedOps();
   render();
   await touchPresence();
   checkUsage();
@@ -4530,6 +4532,49 @@ function savePaid(id){
    пробник там, де насправді продаж. Помилку в кількості лагодять
    поверненням: воно заводить кілограми назад окремим рухом. */
 const opOfLine = li => li.opId ? S.ops.find(x=>x.id===li.opId) : null;
+/* Позиція відвантаженої заявки ↔ її операція руху. Зв'язок opId живе лише в
+   пам'яті вкладки, де відвантажували, — після перезавантаження його немає.
+   Тому шукаємо операцію за заявкою, SKU і вагою (а як ні — за заявкою й SKU). */
+function orderLineOps(o){
+  const used = new Set();
+  const cand = S.ops.filter(x => x.order===o.id && (x.type==='out' || x.type==='smp'));
+  return (o.lines||[]).map(li => {
+    let op = li.opId ? cand.find(x => x.id===li.opId) : null;
+    if(!op){
+      const kg = li.shipKg != null ? +li.shipKg : +li.kg;
+      op = cand.find(x => !used.has(x.id) && x.sku===li.sku && Math.abs(x.kg-kg) < 0.0005)
+        || cand.find(x => !used.has(x.id) && x.sku===li.sku) || null;
+    }
+    if(op) used.add(op.id);
+    return op;
+  });
+}
+/* Правило: для відвантаженої заявки головне — позиція заявки. Якщо операцію
+   колись не вдалося виправити разом із заявкою (пробник → продаж чи ціна),
+   адмін або бухгалтер при вході мовчки підтягують її до заявки. Кожну — один
+   раз за сесію, щоб відмова бази не перетворилась на безкінечні спроби. */
+const OP_SYNCED = new Set();
+function syncShippedOps(){
+  if(!can('fin')) return false;
+  let n = 0;
+  S.reserves.forEach(o => {
+    if(o.status!=='shipped') return;
+    orderLineOps(o).forEach((op, i) => {
+      const li = o.lines[i];
+      if(!op || OP_SYNCED.has(op.id)) return;
+      const type = li.sample ? 'smp' : 'out';
+      const badPrice = !li.sample && Math.abs((+op.price||0) - (+li.price||0)) > 0.0001;
+      if(op.type===type && !badPrice) return;
+      OP_SYNCED.add(op.id);
+      op.type = type;
+      if(!li.sample) op.price = +li.price || 0;
+      op.comment = (li.sample ? 'Пробники, заявка № ' : 'Заявка № ') + orderNo(o);
+      n++;
+    });
+  });
+  if(n){ save(); return true; }
+  return false;
+}
 function openOrderFix(id){
   const o=oById(id); if(!o||!can('fin')||o.status!=='shipped') return;
   const paidN=(o.payments||[]).length;
@@ -4595,9 +4640,10 @@ function saveOrderFix(id){
     else if(!n.sample && Math.abs((+li.price||0)-n.price)>0.0001) ch.push(`${art(li.sku)}: ціна ${fmtEur(li.price)} → ${fmtEur(n.price)}`); });
   if(!smp && (terms!==o.terms || days!==(o.days||0))) ch.push(`умови: ${termsText(o)} → ${terms==='prepay'?'Передоплата':`Відтермінування ${days} дн.`}`);
   if(!ch.length) return fe('Змін немає.');
+  const lineOps = orderLineOps(o);
   o.lines.forEach((li,i)=>{ const n=next[i];
     li.sample=n.sample; li.price=n.price;
-    const op=opOfLine(li);
+    const op=lineOps[i];
     if(op){ op.type=n.sample?'smp':'out'; op.price=n.price; op.party=client;
             op.comment=n.sample?`Пробники, заявка № ${orderNo(o)}`:`Заявка № ${orderNo(o)}`; } });
   Object.assign(o,{client,sample:smp,terms,days});
@@ -5683,8 +5729,15 @@ function monthly(){
   // рахуємо лише ті склади, що зараз вибрані в шапці; видалені картки теж,
   // бо їхні рухи були
   const mine = new Set(S.skus.filter(x=>seesSite(siteOf(x))).map(x=>x.id));
+  /* відвантаження рахуємо так, як записано в заявці: якщо позицію виправили
+     з пробника на продаж (чи змінили ціну), аналітика бере це з заявки,
+     навіть коли сама операція в базі ще стара */
+  const OV = {};
+  S.reserves.forEach(o=>{ if(o.status==='shipped') orderLineOps(o).forEach((op,i)=>{ const li=o.lines[i];
+    if(op) OV[op.id] = li.sample ? {type:'smp', price:op.price} : {type:'out', price:+li.price||0}; }); });
   const m = {};
-  S.ops.forEach(o=>{
+  S.ops.forEach(o0=>{
+    const o = OV[o0.id] ? Object.assign({}, o0, OV[o0.id]) : o0;
     if(!mine.has(o.sku)) return;
     const k = o.at.slice(0,7);
     const r = m[k] || (m[k]={month:k,inKg:0,inCn:0,inSum:0,outKg:0,outCn:0,rev:0,cogs:0,smpKg:0,smpCost:0,ship:0,car:0,shipExp:0});
