@@ -227,6 +227,9 @@ main{padding-top:14px}
 .thumb{width:74px;height:74px;border-radius:12px;flex:none;object-fit:cover;background:var(--indigo-soft);display:grid;place-items:center;overflow:hidden}
 .sku.hit{box-shadow:0 0 0 3px var(--gold);transition:box-shadow .3s}
 .sku .body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between}
+/* картки поза екраном браузер не малює — швидка прокрутка не встигала
+   намалювати сотні карток із фото, і сторінка блимала білим */
+.view .sku,#view .sku{content-visibility:auto;contain-intrinsic-size:auto 150px}
 .sku .sinfo{font-weight:700;font-size:12.5px;line-height:1.25;overflow-wrap:anywhere;display:grid;grid-template-columns:1fr 1fr;gap:1px 10px}
 .sku .sthumb{width:34px;height:34px;border-radius:8px;align-self:flex-start;border:1px solid var(--line)}
 .sku:has(.slevels) .body{justify-content:flex-start}
@@ -2967,13 +2970,79 @@ async function refreshPhotoUrls() {
   loadPhotoUrls();
   const paths = [];
   S.skus.forEach(s => (s.photos || []).forEach(p => { if (!p.startsWith('data:') && !PHOTO_URL[p]) paths.push(p); }));
-  if (!paths.length) return;
   const exp = Date.now() + 8*60*60*1000;
   for (let i = 0; i < paths.length; i += 500) {   // на 2000 карток це ~4500 фото — порціями
     const { data } = await db.storage.from('sku-photos').createSignedUrls(paths.slice(i, i + 500), 60 * 60 * 8);
     (data || []).forEach(x => { if (x.signedUrl) { PHOTO_URL[x.path] = x.signedUrl; PU_EXP[x.path] = exp; } });
   }
+  try { await refreshThumbUrls(exp); } catch (e) { console.warn('мініатюри', e); }
   savePhotoUrls();
+  setTimeout(makeThumbs, 3000);
+}
+
+/* ---------- мініатюри ----------
+   У списках фото показується 30–44 px, а файл — 1280 px / ~280 КБ. Телефон при
+   швидкій прокрутці не встигав розпаковувати десятки таких фото, сторінка блимала,
+   і трафіку йшло вдесятеро більше потрібного. Тож поруч із першим фото кожної
+   картки лежить мініатюра 128×128 (~6 КБ): thumbs/<шлях фото>. Нема мініатюри —
+   показуємо повне фото, а хтось із правом на фото (адмін, бухгалтер, комірник)
+   тихо робить її у фоні. */
+const THUMB_PX = 128;
+const thumbPath = p => 'thumbs/' + p;
+const THUMB_MISS = new Set();    // мініатюри ще немає
+const THUMB_TRIED = new Set();   // уже пробували зробити в цій сесії
+const thumbSrc = p => !p ? '' : (p.startsWith('data:') ? p : (PHOTO_URL[thumbPath(p)] || PHOTO_URL[p] || ''));
+async function refreshThumbUrls(exp) {
+  const paths = [];
+  S.skus.forEach(s => { const p = (s.photos || [])[0];
+    if (p && !p.startsWith('data:') && !PHOTO_URL[thumbPath(p)] && !THUMB_MISS.has(p)) paths.push(thumbPath(p)); });
+  for (let i = 0; i < paths.length; i += 500) {
+    const { data } = await db.storage.from('sku-photos').createSignedUrls(paths.slice(i, i + 500), 60 * 60 * 8);
+    (data || []).forEach(x => {
+      if (x.signedUrl) { PHOTO_URL[x.path] = x.signedUrl; PU_EXP[x.path] = exp; }
+      else if (x.path && x.path.startsWith('thumbs/')) THUMB_MISS.add(x.path.slice(7));
+    });
+  }
+}
+/* квадрат по центру, 128×128, JPEG — з будь-якого джерела (підписане посилання чи data:) */
+async function thumbBlob(src) {
+  let url = src, tmp = null;
+  if (!src.startsWith('data:')) {
+    const r = await fetch(src, { cache: 'no-store' });
+    if (!r.ok) throw new Error('фото ' + r.status);
+    tmp = url = URL.createObjectURL(await r.blob());
+  }
+  try {
+    const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('img')); i.src = url; });
+    const w = im.naturalWidth, h = im.naturalHeight, m = Math.min(w, h);
+    const c = document.createElement('canvas'); c.width = c.height = THUMB_PX;
+    const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+    g.drawImage(im, (w - m) / 2, (h - m) / 2, m, m, 0, 0, THUMB_PX, THUMB_PX);
+    return await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('blob')), 'image/jpeg', 0.8));
+  } finally { if (tmp) URL.revokeObjectURL(tmp); }
+}
+async function uploadThumb(path, src) {
+  const blob = await thumbBlob(src);
+  const { error } = await db.storage.from('sku-photos').upload(thumbPath(path), blob, { contentType: 'image/jpeg', upsert: false });
+  if (error && !/exist|duplicate/i.test(error.message || '')) throw error;
+  PHOTO_URL[thumbPath(path)] = URL.createObjectURL(blob);   // у цій вкладці — одразу з пам'яті
+  THUMB_MISS.delete(path);
+}
+let THUMB_BUSY = false;
+async function makeThumbs() {
+  if (THUMB_BUSY || !(can('sku') || can('fin')) || !THUMB_MISS.size) return;
+  THUMB_BUSY = true; let made = 0;
+  try {
+    for (const p of [...THUMB_MISS]) {
+      if (document.hidden) break;
+      if (THUMB_TRIED.has(p) || !PHOTO_URL[p]) continue;
+      THUMB_TRIED.add(p);
+      try { await uploadThumb(p, PHOTO_URL[p]); made++; } catch (e) { console.warn('мініатюра', p, e); }
+      await new Promise(r => setTimeout(r, 120));
+      if (made && made % 25 === 0 && tab === 'catalog') render();
+    }
+  } finally { THUMB_BUSY = false; }
+  if (made && tab === 'catalog') render();
 }
 
 /* ---------- запис ---------- */
@@ -3002,7 +3071,10 @@ async function pushChanges() {
           const blob = await (await fetch(p)).blob();
           const path = `${s.id}/${crypto.randomUUID()}.jpg`;
           const { error } = await db.storage.from('sku-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
-          if (!error) { s.photos[i] = path; PHOTO_URL[path] = p; }
+          if (!error) {
+            s.photos[i] = path; PHOTO_URL[path] = p;
+            try { await uploadThumb(path, p); } catch (e) { THUMB_MISS.add(path); }
+          }
         }
       }
     }
@@ -3615,7 +3687,7 @@ function thumbHtml(s, cls='thumb'){
   // loading="lazy": браузер тягне фото, лише коли картка доходить до екрана.
   // Без цього відкриття каталогу качало всі 126 фото одразу — десятки мегабайтів
   // заради мініатюр 34 px.
-  if(s.photos && s.photos[0]) return `<img class="${cls}" src="${photoSrc(s.photos[0])}" alt="" loading="lazy" decoding="async">`;
+  if(s.photos && s.photos[0]) return `<img class="${cls}" src="${thumbSrc(s.photos[0])}" alt="" loading="lazy" decoding="async">`;
   return `<div class="${cls}" style="background:${esc(s.hex||'var(--indigo-soft)')}" aria-hidden="true"></div>`;
 }
 
