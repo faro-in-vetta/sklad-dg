@@ -151,6 +151,21 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 @media (max-width:420px){#catSum{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.search .btn{padding:4px 12px}}
 .catf{display:flex;gap:6px;align-items:center;margin-top:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .catf::-webkit-scrollbar{display:none}
+/* Смуга прокрутки сторінки. ПК: ширша й помітніша. Телефон: браузер свою
+   смугу ширшою зробити не дає, тож там власний бігунок, який можна тягнути пальцем. */
+@media (pointer:fine){
+  html::-webkit-scrollbar{width:16px}
+  html::-webkit-scrollbar-track{background:var(--bg)}
+  html::-webkit-scrollbar-thumb{background:#B9A58D;border-radius:8px;border:3px solid var(--bg);min-height:64px}
+  html::-webkit-scrollbar-thumb:hover{background:var(--gold)}
+}
+.fscroll{display:none}
+@media (pointer:coarse){
+  .fscroll{display:block;position:fixed;right:0;top:0;width:36px;height:64px;z-index:15;touch-action:none;opacity:0;pointer-events:none;transition:opacity .25s}
+  .fscroll.show,.fscroll.drag{opacity:1;pointer-events:auto}
+  .fscroll i{position:absolute;right:4px;top:0;bottom:0;width:14px;border-radius:7px;background:rgba(74,46,31,.5);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+  .fscroll.drag i{background:var(--primary)}
+}
 #cfSel{display:contents}
 .catf input{height:30px;font-size:12.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:0 8px}
 .cff{display:flex;flex:1 0 auto;min-width:0;height:30px;border:1px solid var(--line);background:var(--surface);border-radius:8px;overflow:hidden}
@@ -801,6 +816,7 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
 </header>
 
 <main class="wrap" id="view"></main>
+<div class="fscroll" id="fScroll" aria-hidden="true"><i></i></div>
 <button class="tobot" id="toBottom" aria-label="Прокрутити донизу"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v13M6 13l6 6 6-6"/></svg></button>
 
 <nav class="tabs"><div class="in">
@@ -3250,6 +3266,47 @@ function goBottom(){
   document.addEventListener('touchstart', fire, {passive:false});
 })();
 window.addEventListener('scroll', syncToBottom, {passive:true});
+/* бігунок на телефоні: з'являється під час прокрутки, його можна тягнути */
+(function(){
+  const el = document.getElementById('fScroll'); if(!el) return;
+  const TH = 64;
+  let hideT = null, drag = null;
+  const maxScroll = () => document.documentElement.scrollHeight - window.innerHeight;
+  const range = () => {
+    const head = document.querySelector('header.top');
+    const top = (head ? head.getBoundingClientRect().bottom : 0) + 8;
+    const bottom = window.innerHeight - 62 - 70;   // над нижнім меню й кнопкою «донизу»
+    return {top, len: Math.max(0, bottom - TH - top)};
+  };
+  const place = () => {
+    const m = maxScroll();
+    if(m < window.innerHeight * 1.5){ el.classList.remove('show'); return false; }
+    const r = range();
+    el.style.transform = `translateY(${r.top + r.len * Math.min(1, Math.max(0, window.scrollY / m))}px)`;
+    return true;
+  };
+  const show = () => {
+    if(!place()) return;
+    el.classList.add('show'); clearTimeout(hideT);
+    hideT = setTimeout(() => { if(!drag) el.classList.remove('show'); }, 1500);
+  };
+  window.addEventListener('scroll', () => { if(!drag) show(); }, {passive:true});
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    drag = {dy: e.clientY - el.getBoundingClientRect().top};
+    el.classList.add('drag'); clearTimeout(hideT);
+    try{ el.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  el.addEventListener('pointermove', e => {
+    if(!drag) return;
+    const r = range();
+    const y = Math.min(r.top + r.len, Math.max(r.top, e.clientY - drag.dy));
+    el.style.transform = `translateY(${y}px)`;
+    window.scrollTo(0, (r.len ? (y - r.top) / r.len : 0) * maxScroll());
+  });
+  const end = () => { if(!drag) return; drag = null; el.classList.remove('drag'); show(); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+})();
 window.addEventListener('resize', syncToBottom);
 
 function setSync(state) {
