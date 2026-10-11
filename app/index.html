@@ -265,6 +265,12 @@ nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true
 /* Коротке вікно (присутність) кріпимо згори: знизу воно виглядало
    як обрізана шухляда, половина екрана під ним порожня. */
 .panel.mini{top:6vh;bottom:auto;max-height:84vh;max-width:460px;border-radius:20px;padding:12px 14px 14px}
+/* На телефоні vh — це висота БЕЗ панелей браузера, тож верх вікна ховався під
+   адресним рядком разом із кнопками й хрестиком. dvh — видима висота зараз. */
+@supports (height:100dvh){
+  .panel{max-height:calc(94dvh - 62px - env(safe-area-inset-bottom))}
+  .panel.mini{top:6dvh;max-height:84dvh}
+}
 .panel.mini .panel-head{margin-bottom:6px}
 .panel.mini .panel-head h2{font-size:18px}
 .panel.mini .hint{margin:0 0 6px}
