@@ -3008,7 +3008,10 @@ async function refreshThumbUrls(exp) {
 async function thumbBlob(src) {
   let url = src, tmp = null;
   if (!src.startsWith('data:')) {
-    const r = await fetch(src, { cache: 'no-store' });
+    // спершу з кешу браузера (фото там уже є — зайвого трафіку немає), а як ні — заново
+    let r = null;
+    try { r = await fetch(src, { cache: 'force-cache' }); } catch (e) {}
+    if (!r || !r.ok) r = await fetch(src, { cache: 'no-store' });
     if (!r.ok) throw new Error('фото ' + r.status);
     tmp = url = URL.createObjectURL(await r.blob());
   }
@@ -3031,13 +3034,13 @@ async function uploadThumb(path, src) {
 let THUMB_BUSY = false;
 async function makeThumbs() {
   if (THUMB_BUSY || !(can('sku') || can('fin')) || !THUMB_MISS.size) return;
-  THUMB_BUSY = true; let made = 0;
+  THUMB_BUSY = true; let made = 0, fails = 0;
   try {
     for (const p of [...THUMB_MISS]) {
-      if (document.hidden) break;
+      if (document.hidden || fails >= 3) break;   // тричі поспіль не вийшло — до наступного входу
       if (THUMB_TRIED.has(p) || !PHOTO_URL[p]) continue;
       THUMB_TRIED.add(p);
-      try { await uploadThumb(p, PHOTO_URL[p]); made++; } catch (e) { console.warn('мініатюра', p, e); }
+      try { await uploadThumb(p, PHOTO_URL[p]); made++; fails = 0; } catch (e) { fails++; console.warn('мініатюра', p, e); }
       await new Promise(r => setTimeout(r, 120));
       if (made && made % 25 === 0 && tab === 'catalog') render();
     }
