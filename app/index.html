@@ -3718,7 +3718,7 @@ function thumbHtml(s, cls='thumb'){
 
 /* Перемикачі «без ціни»: натиснута кнопка лишає в каталозі лише такі картки,
    дві натиснуті — картки з обох списків (без закупівельної АБО без продажної). */
-const catF = {nocost:false, nosale:false, brand:[], art:[], color:[], sale:[], comp:[], nm:[], bc:''};
+const catF = {nocost:false, nosale:false, brand:[], art:[], color:[], cost:[], sale:[], comp:[], nm:[], bc:''};
 function toggleCatF(k){
   catF[k] = !catF[k];
   const el = $(k === 'nocost' ? '#fNoCost' : '#fNoSale');
@@ -3774,44 +3774,47 @@ function compMatch(sku, pairs){
 let CF_SIG = '';
 /* фільтри під баром: у кожному можна позначити кілька галочок,
    біля активного — свій хрестик, що чистить лише його */
-const CF_KEYS = ['brand','art','color','sale','comp','nm'];
-const CF_LABEL = {brand:'Бренд', art:'Артикул', sale:'Ціна продажу', comp:'Склад пряжі', nm:'Nm', color:'Колір'};
+const CF_KEYS = ['brand','art','color','cost','sale','comp','nm'];
+const CF_LABEL = {brand:'Бренд', art:'Артикул', sale:'Ціна продажу', comp:'Склад пряжі', nm:'Nm', color:'Колір', cost:'Ціна закупівлі'};
 /* колір групуємо за назвою без номера: «Rosso 111» і «Rosso 403» — один «Rosso» */
 const colorName = c => { const t = String(c||'').replace(/\d+/g,' ').replace(/[\/\\_.,#–-]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
   return t ? t[0].toUpperCase() + t.slice(1) : ''; };
-const cfVal = (key, s) => key==='color' ? colorName(s.color) : key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? String(+s.sale||0) : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
-const cfShow = (key, v) => key==='sale' ? fmtEur(+v)+'/кг' : key==='nm' ? 'Nm '+v : v;
+const cfVal = (key, s) => key==='color' ? colorName(s.color) : key==='cost' ? String(+costInfo(s).price||0) : key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? String(+s.sale||0) : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
+const cfShow = (key, v) => (key==='sale' || key==='cost') ? fmtEur(+v)+'/кг' : key==='nm' ? 'Nm '+v : v;
 let CF_OPEN = '';
 /* Фільтри взаємозалежні: у списку кожного фільтра лише те, що лишається після
    пошуку й УСІХ ІНШИХ вибраних фільтрів (його власні галочки не звужують
    його ж список — щоб можна було додати ще значення). Уже позначене, але
    тепер порожнє, теж показуємо — з нулем, щоб його можна було зняти. */
+/* ціну закупівлі бачать лише адмін і головний бухгалтер, ціну продажу — хто її бачить у каталозі */
+const cfAllowed = k => k==='cost' ? seeCost() : k==='sale' ? seeSale() : true;
 let CF_BASE = null;   // каталог після пошуку й «Без ціни», до фільтрів під баром
 function cfOptions(key){
   let all = CF_BASE || liveSkus();
   CF_KEYS.forEach(k => {
-    if(k === key || !catF[k].length || (k === 'sale' && !seeSale())) return;
+    if(k === key || !catF[k].length || !cfAllowed(k)) return;
     const set = new Set(catF[k]);
     all = all.filter(x => set.has(cfVal(k, x)));
   });
   const cnt = new Map();
-  all.forEach(x => { const v = cfVal(key, x); if(v === '' || (key==='sale' && v==='0')) return; cnt.set(v, (cnt.get(v)||0) + 1); });
+  all.forEach(x => { const v = cfVal(key, x); if(v === '' || ((key==='sale' || key==='cost') && v==='0')) return; cnt.set(v, (cnt.get(v)||0) + 1); });
   catF[key].forEach(v => { if(!cnt.has(v)) cnt.set(v, 0); });
-  const vals = [...cnt.keys()].sort(key==='sale' ? (a,b) => a-b : (a,b) => a.localeCompare(b, undefined, {numeric:true}));
+  const vals = [...cnt.keys()].sort((key==='sale' || key==='cost') ? (a,b) => a-b : (a,b) => a.localeCompare(b, undefined, {numeric:true}));
   return vals.map(v => [v, cnt.get(v)]);
 }
 function drawCatFilters(){
   const box = $('#cfSel'); if(!box) return;
   if(!seeSale()) catF.sale = [];
+  if(!seeCost()) catF.cost = [];
   const btn = key => {
     const v = catF[key], n = v.length;
     const txt = n === 1 ? `<span class="v" translate="no">${esc(cfShow(key, v[0]))}</span>`
-              : `<span class="l">${key==='sale' ? '€/кг' : CF_LABEL[key]}</span>${n ? `<b class="n">${n}</b>` : ''}`;   // «Ціна продажу» на кнопці коротко — щоб ряд влазив
+              : `<span class="l">${CF_LABEL[key]}</span>${n ? `<b class="n">${n}</b>` : ''}`;
     return `<span class="cff${n?' on':''}"><button type="button" class="cfb" data-cfopen="${key}" aria-haspopup="true" aria-expanded="${CF_OPEN===key}" title="${CF_LABEL[key]}">${txt}<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>`
       + (n ? `<button type="button" class="cfc" data-cfclr="${key}" aria-label="Очистити фільтр" title="Очистити фільтр">×</button>` : '') + '</span>';
   };
   const active = CF_KEYS.filter(k => catF[k].length).length + (String(catF.bc||'').trim() ? 1 : 0);
-  const html = btn('brand') + btn('art') + btn('color') + (seeSale() ? btn('sale') : '') + btn('comp') + btn('nm')
+  const html = btn('brand') + btn('art') + btn('color') + (seeCost() ? btn('cost') : '') + (seeSale() ? btn('sale') : '') + btn('comp') + btn('nm')
     + (active > 1 ? '<button type="button" class="cfx" data-catfreset title="Скинути фільтри" aria-label="Скинути фільтри"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>' : '');
   if(html !== CF_SIG){ const sl = box.scrollLeft; CF_SIG = html; box.innerHTML = html; box.scrollLeft = sl; }   // смуга не відскакує на початок
 }
@@ -3849,7 +3852,7 @@ function cfClear(key){
 }
 function setCatF(key, val){ catF[key] = val; render(); }
 function resetCatF(){
-  Object.assign(catF, {brand:[], art:[], color:[], sale:[], comp:[], nm:[], bc:''});
+  Object.assign(catF, {brand:[], art:[], color:[], cost:[], sale:[], comp:[], nm:[], bc:''});
   const bc = $('#cfBc'); if(bc) bc.value = '';
   if(CF_OPEN) cfClose();
   render();
@@ -3875,7 +3878,7 @@ function viewCatalog(){
   CF_BASE = jump ? liveSkus() : list.slice();
   if(!jump){
     CF_KEYS.forEach(k => {
-      if(!catF[k].length || (k === 'sale' && !seeSale())) return;
+      if(!catF[k].length || !cfAllowed(k)) return;
       const set = new Set(catF[k]);
       list = list.filter(s => set.has(cfVal(k, s)));
     });
@@ -4921,7 +4924,8 @@ const OPN = {in:'прихід', out:'продаж', smp:'пробники', adj:
 function opRow(o, withSku){
   const s = skuById(o.sku)||{};
   const sign = (o.type==='out'||o.type==='smp'||o.type==='mov_out') ? '−' : (o.kg<0||o.cones<0 ? '' : '+');
-  const money = (seeSale() && o.price>0) ? ` · ${fmtEur(o.price)}/кг = ${fmtEur(o.kg*o.price)}` : '';
+  // ціна приходу — це ціна закупівлі: її бачать лише адмін і головний бухгалтер
+  const money = ((o.type==='in' ? seeCost() : seeSale()) && o.price>0) ? ` · ${fmtEur(o.price)}/кг = ${fmtEur(o.kg*o.price)}` : '';
   return `<div class="row"><span class="tag ${o.type}">${OPN[o.type]}</span><div class="grow">
     ${withSku?`<b>${esc(s.art)}</b> <span class="sub">${esc(s.maker||'')}</span><br>`:''}<span class="num">${sign}${fmtKg(o.kg)} кг / ${o.cones?sign:''}${fmtN(o.cones)} к${money}</span>${o.partial?' · частина конуса':''}
     <div class="sub">${fmtDate(o.at)} · ${esc(uname(o.who))}${o.party?' · '+esc(o.party):''}${o.comment?' · '+esc(o.comment):''}</div></div></div>`;
@@ -6366,7 +6370,7 @@ function historyItems(id, noOrders){
   const it=[];
   if(!seeHistory()) return it;   // рух товару містить назви інших клієнтів, постачальників і ціни
   S.ops.filter(o=>o.sku===id).forEach(o=>it.push({k:'mv',at:o.at,html:opRow(o,false)}));
-  (S.audit||[]).filter(a=>a.sku===id).forEach(a=>it.push({k:'ch',at:a.at,html:`<div class="row"><span class="tag chg">${({create:'створено',edit:'зміна',price:'ціна',delete:'видалено'})[a.act]||'зміна'}</span><div class="grow">${esc(a.text)}<div class="sub">${fmtDT(a.at)} · ${esc(uname(a.who))}</div></div></div>`}));
+  (S.audit||[]).filter(a=>a.sku===id && (seeCost() || !/закупівл/i.test(a.text||''))).forEach(a=>it.push({k:'ch',at:a.at,html:`<div class="row"><span class="tag chg">${({create:'створено',edit:'зміна',price:'ціна',delete:'видалено'})[a.act]||'зміна'}</span><div class="grow">${esc(a.text)}<div class="sub">${fmtDT(a.at)} · ${esc(uname(a.who))}</div></div></div>`}));
   if(!noOrders) S.reserves.filter(r=>(r.lines||[]).some(li=>li.sku===id)).forEach(o=>(o.events||[]).forEach(e=>it.push({k:'rs',at:e.at,html:`<div class="row"><span class="tag res">заявка</span><div class="grow">№ ${esc(orderNo(o))} · <b>${esc(o.client)}</b>: ${esc(e.text)}<div class="sub">${fmtDT(e.at)} · ${e.who?esc(uname(e.who)):'система'}</div></div></div>`})));
   return it.sort((a,b)=>b.at.localeCompare(a.at));
 }
