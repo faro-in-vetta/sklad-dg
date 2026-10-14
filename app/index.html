@@ -3004,8 +3004,8 @@ const THUMB_TRIED = new Set();   // уже пробували зробити в 
 const thumbSrc = p => !p ? '' : (p.startsWith('data:') ? p : (PHOTO_URL[thumbPath(p)] || PHOTO_URL[p] || ''));
 async function refreshThumbUrls(exp) {
   const paths = [];
-  S.skus.forEach(s => { const p = (s.photos || [])[0];
-    if (p && !p.startsWith('data:') && !PHOTO_URL[thumbPath(p)] && !THUMB_MISS.has(p)) paths.push(thumbPath(p)); });
+  S.skus.forEach(s => (s.photos || []).slice(0, 2).forEach(p => {   // перше — для списків, перші два — для вивантаження
+    if (p && !p.startsWith('data:') && !PHOTO_URL[thumbPath(p)] && !THUMB_MISS.has(p)) paths.push(thumbPath(p)); }));
   for (let i = 0; i < paths.length; i += 500) {
     const { data } = await db.storage.from('sku-photos').createSignedUrls(paths.slice(i, i + 500), 60 * 60 * 8);
     (data || []).forEach(x => {
@@ -3680,6 +3680,7 @@ function render(){
   if((FIN_TABS.includes(tab)&&!can('fin')) || (tab==='debt'&&!seeSale())) tab='catalog';
   $('#searchBar').style.display = tab==='catalog' ? 'flex' : 'none';
   $('#catFilters').style.display = tab==='catalog' ? 'flex' : 'none';
+  { const ex = $('#cfExport'); if(ex) ex.style.display = isClient() ? 'none' : ''; }
   document.body.classList.toggle('oncat', tab==='catalog');
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
@@ -6019,6 +6020,7 @@ function catFilterText(){
   return parts.join(' · ');
 }
 function openCatExport(){
+  if(isClient()) return;             // клієнтові вивантаження недоступне
   const n = CAT_LIST.length;
   if(!n){ toast('Список порожній — нема чого вивантажувати'); return; }
   const f = catFilterText();
@@ -6030,8 +6032,51 @@ function openCatExport(){
       <button class="btn" data-catdoc>Word</button>
     </div>`, 'mini');
 }
+/* ---- фото для вивантаження: перші два фото кожної картки, мініатюрами (~6 КБ),
+   щоб файл був легким і не з'їдав трафік. Немає мініатюри — робимо з повного фото. ---- */
+async function exportThumb(p){
+  if(!p) return null;
+  try{
+    if(p.startsWith('data:')) return new Uint8Array(await (await thumbBlob(p)).arrayBuffer());
+    const t = PHOTO_URL[thumbPath(p)];
+    if(t){ const r = await fetch(t); if(r.ok) return new Uint8Array(await r.arrayBuffer()); }
+    if(!PHOTO_URL[p]) return null;
+    const blob = await thumbBlob(PHOTO_URL[p]);
+    if(can('sku') || can('fin')){                 // заодно збережемо мініатюру на майбутнє
+      db.storage.from('sku-photos').upload(thumbPath(p), blob, {contentType:'image/jpeg', upsert:false})
+        .then(()=>{ PHOTO_URL[thumbPath(p)] = URL.createObjectURL(blob); THUMB_MISS.delete(p); }).catch(()=>{});
+    }
+    return new Uint8Array(await blob.arrayBuffer());
+  }catch(e){ console.warn('фото для вивантаження', p, e); return null; }
+}
+async function exportPhotos(list){
+  const jobs = [];
+  list.forEach((x, i) => (x.photos || []).slice(0, 2).forEach((p, k) => jobs.push({i, k, p})));
+  const out = list.map(() => [null, null]);
+  let done = 0, next = 0;
+  const worker = async () => { while(next < jobs.length){ const j = jobs[next++];
+    out[j.i][j.k] = await exportThumb(j.p);
+    if(++done % 20 === 0) toast(`Фото ${done} / ${jobs.length}…`, 1200); } };
+  await Promise.all(Array.from({length: 6}, worker));
+  return out;
+}
+let EXCELJS_P = null;
+function loadExcelJS(){
+  if(window.ExcelJS) return Promise.resolve(window.ExcelJS);
+  return EXCELJS_P || (EXCELJS_P = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+    sc.onload = () => window.ExcelJS ? res(window.ExcelJS) : rej(new Error('ExcelJS'));
+    sc.onerror = () => { EXCELJS_P = null; rej(new Error('ExcelJS')); };
+    document.head.appendChild(sc);
+  }));
+}
 async function exportCatXlsx(){
-  if(!window.XLSX){ toast('Бібліотека Excel не завантажилась'); return; }
+  if(isClient()) return;
+  let EJ;
+  try{ EJ = await loadExcelJS(); }catch(e){ toast('Бібліотека Excel не завантажилась'); return; }
+  toast('Готую Excel із фото…', 1500);
+  const pics = await exportPhotos(CAT_LIST);
   const rows = catExportRows().map(({x,l,sale,cost,cl}, i) => {
     const r = {'№':i+1,'Штрихкод':x.code||'','Бренд':x.maker||'','Артикул':x.art||'','Колір':x.color||'','Nm':x.meter||'','Склад пряжі':compText(x.comp)};
     if(!cl){ r['На складі, кг'] = +l.kg.toFixed(2); r['Резерв, кг'] = +l.rk.toFixed(2); }
@@ -6040,17 +6085,32 @@ async function exportCatXlsx(){
     if(seeSale()) r['Ціна продажу, €/кг'] = sale ? +sale.toFixed(2) : '';
     if(!cl) r['Склад'] = SITE_NAME[siteOf(x)] || '';
     return r; });
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(rows);
   const keys = rows[0] ? Object.keys(rows[0]) : [];
-  ws['!cols'] = keys.map(k => ({wch: Math.min(50, Math.max(8, k.length + 2, ...rows.slice(0,200).map(r => String(r[k]).length + 1)))}));
-  XLSX.utils.book_append_sheet(wb, ws, 'SKU');
-  const buf = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const wb = new EJ.Workbook();
+  const ws = wb.addWorksheet('SKU', {views:[{state:'frozen', ySplit:1}]});
+  const PH = 64;                                  // фото 64×64 px, дві колонки одразу після №
+  ws.columns = [{header:'№', key:'№', width:5}, {header:'Фото 1', key:'f1', width:10}, {header:'Фото 2', key:'f2', width:10}]
+    .concat(keys.filter(k => k!=='№').map(k => ({header:k, key:k,
+      width: Math.min(50, Math.max(10, k.length + 4, ...rows.slice(0,200).map(r => String(r[k]).length + 2)))})));
+  ws.getRow(1).font = {bold:true};
+  ws.getRow(1).fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF3EADC'}};
+  rows.forEach((r, i) => {
+    const row = ws.addRow(r);
+    row.height = 52; row.alignment = {vertical:'middle', wrapText:true};
+    (pics[i] || []).forEach((buf, k) => { if(!buf) return;
+      const id = wb.addImage({buffer: buf, extension: 'jpeg'});
+      ws.addImage(id, {tl:{col: 1 + k + 0.08, row: i + 1 + 0.08}, ext:{width: PH, height: PH}, editAs:'oneCell'}); });
+  });
+  const buf = await wb.xlsx.writeBuffer();
   await deliverFile(buf, `DG Filati SKU ${rows.length} (${todayStr()}).xlsx`);
 }
-function catDocx(){
+function catDocx(pics){
   const data = catExportRows(), cl = !can('fin'), sale = seeSale();
-  const cols = [['№',420,'c'],['Штрихкод',1250,'l'],['Бренд',1500,'l'],['Артикул',1700,'l'],['Колір',1900,'l'],['Nm',900,'c'],['Склад пряжі',3300,'l']]
+  const media = [];                                 // {name, rid, bytes}
+  const EMU = 540000;                               // 1,5 см
+  const pic = (bytes) => { const n = media.length + 1, rid = 'rIdImg' + n; media.push({name:'img'+n+'.jpeg', rid, bytes});
+    return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="36000"><wp:extent cx="${EMU}" cy="${EMU}"/><wp:docPr id="${n}" name="Фото ${n}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="img${n}.jpeg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU}" cy="${EMU}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>`; };
+  const cols = [['№',420,'c'],['Фото',2500,'c'],['Штрихкод',1250,'l'],['Бренд',1500,'l'],['Артикул',1700,'l'],['Колір',1900,'l'],['Nm',900,'c'],['Склад пряжі',3300,'l']]
     .concat(cl ? [] : [['На складі, кг',1100,'c']])
     .concat([['Вільно, кг',1100,'c'],['Конусів',850,'c']])
     .concat(sale ? [['Ціна, €/кг',1000,'c']] : []);
@@ -6060,9 +6120,11 @@ function catDocx(){
   const cell = (v,i,o2) => wCell(wP([{t:String(v??'').trim()||'—',sz:16,...(o2||{})}],{space:0,align:cols[i][2]==='l'?'left':'center'}),{w:W[i]});
   let tKg=0, tFk=0, tFc=0;
   const rows = data.map(({x,l,sale:sp}, n) => { tKg+=l.kg; tFk+=l.fk; tFc+=l.fc;
-    const v = [n+1, x.code, x.maker, x.art, x.color, x.meter, compText(x.comp)]
+    const v = [n+1, null, x.code, x.maker, x.art, x.color, x.meter, compText(x.comp)]
       .concat(cl ? [] : [fmtKg(l.kg)]).concat([fmtKg(l.fk), fmtN(l.fc)]).concat(sale ? [sp ? fmtEur(sp) : '—'] : []);
-    return '<w:tr><w:trPr><w:cantSplit/></w:trPr>' + v.map((t,i) => cell(t,i, i===6?{color:'555555',sz:15}:null)).join('') + '</w:tr>'; }).join('');
+    const ph = ((pics && pics[n]) || []).filter(Boolean);
+    const photoCell = wCell(`<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="0"/></w:pPr>${ph.length ? ph.map(pic).join('') : '<w:r><w:rPr><w:sz w:val="16"/><w:color w:val="999999"/></w:rPr><w:t>—</w:t></w:r>'}</w:p>`, {w:W[1]});
+    return '<w:tr><w:trPr><w:cantSplit/></w:trPr>' + v.map((t,i) => i===1 ? photoCell : cell(t,i, i===7?{color:'555555',sz:15}:null)).join('') + '</w:tr>'; }).join('');
   const table = `<w:tbl><w:tblPr><w:tblW w:w="15000" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${W.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid><w:tr><w:trPr><w:tblHeader/></w:trPr>${th}</w:tr>${rows}</w:tbl>`;
   const f = catFilterText();
   const body =
@@ -6075,13 +6137,19 @@ function catDocx(){
     + wP([{t:(cl?'':'На складі: '+fmtKg(tKg)+' кг · ')+'Вільно: '+fmtKg(tFk)+' кг / '+fmtN(tFc)+' конусів',b:true,sz:17}],{space:60,align:'right'})
     + `<w:p><w:pPr><w:spacing w:after="20"/></w:pPr><w:hyperlink r:id="rIdSite"><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="8A6030"/><w:u w:val="single"/></w:rPr><w:t>dgfilati.online</w:t></w:r></w:hyperlink></w:p>`;
   const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${body}<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/><w:pgMar w:top="800" w:right="900" w:bottom="800" w:left="900"/></w:sectPr></w:body></w:document>`;
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body}<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/><w:pgMar w:top="800" w:right="900" w:bottom="800" w:left="900"/></w:sectPr></w:body></w:document>`;
   const inv = invoiceDocxParts();
-  return zipStore([inv[0], inv[1], inv[2], {name:'word/document.xml', data:doc}]);
+  const ct = Object.assign({}, inv[0], {data: inv[0].data.replace('<Default Extension="xml"', '<Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="xml"')});
+  const rels = Object.assign({}, inv[2], {data: inv[2].data.replace('</Relationships>',
+    media.map(m => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${m.name}"/>`).join('') + '</Relationships>')});
+  return zipStore([ct, inv[1], rels, {name:'word/document.xml', data:doc}].concat(media.map(m => ({name:'word/media/'+m.name, data:m.bytes}))));
 }
 async function exportCatDocx(){
+  if(isClient()) return;
+  toast('Готую Word із фото…', 1500);
+  const pics = await exportPhotos(CAT_LIST);
   let bytes;
-  try{ bytes = catDocx(); }catch(e){ console.error(e); toast('Не вдалося сформувати документ'); return; }
+  try{ bytes = catDocx(pics); }catch(e){ console.error(e); toast('Не вдалося сформувати документ'); return; }
   await deliverFile(bytes, `DG Filati SKU ${CAT_LIST.length} (${todayStr()}).docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 }
 function openExport(){
