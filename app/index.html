@@ -199,6 +199,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 .cfl{overflow-y:auto;min-height:0;flex:1 1 auto;-webkit-overflow-scrolling:touch}
 .cfo{display:flex;align-items:center;gap:8px;padding:7px 4px;border-radius:6px;font-size:13.5px;cursor:pointer}
 .cfo:hover{background:var(--stone-soft)}
+.cfo.cfall{font-weight:600;border-bottom:1px solid var(--line);border-radius:6px 6px 0 0;margin-bottom:2px}
 .cfo input{width:17px;height:17px;flex:none;accent-color:var(--primary);margin:0}
 .cfo .t{flex:1;min-width:0;overflow-wrap:anywhere}
 .cfo small{color:var(--muted);font-size:11.5px;flex:none}
@@ -1230,6 +1231,9 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Зняти всі':'Deseleziona tutto',
+    'Вибрати всі':'Seleziona tutto',
+    'Пусто':'Vuoto',
     'Без фільтрів — увесь каталог вибраних складів.':'Senza filtri — tutto il catalogo dei magazzini selezionati.',
     'Список порожній — нема чого вивантажувати':'Elenco vuoto — niente da esportare',
     'Наявність на складі':'Disponibilità in magazzino',
@@ -1951,6 +1955,9 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Зняти всі':'Clear all',
+    'Вибрати всі':'Select all',
+    'Пусто':'Empty',
     'Без фільтрів — увесь каталог вибраних складів.':'No filters — the whole catalogue of the selected warehouses.',
     'Список порожній — нема чого вивантажувати':'The list is empty — nothing to export',
     'Наявність на складі':'Stock availability',
@@ -3779,8 +3786,9 @@ const CF_LABEL = {brand:'Бренд', art:'Артикул', sale:'Ціна пр�
 /* колір групуємо за назвою без номера: «Rosso 111» і «Rosso 403» — один «Rosso» */
 const colorName = c => { const t = String(c||'').replace(/\d+/g,' ').replace(/[\/\\_.,#–-]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
   return t ? t[0].toUpperCase() + t.slice(1) : ''; };
-const cfVal = (key, s) => key==='color' ? colorName(s.color) : key==='cost' ? String(+costInfo(s).price||0) : key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? String(+s.sale||0) : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
-const cfShow = (key, v) => (key==='sale' || key==='cost') ? fmtEur(+v)+'/кг' : key==='nm' ? 'Nm '+v : v;
+const cfVal = (key, s) => key==='color' ? colorName(s.color) : key==='cost' ? (+costInfo(s).price ? String(+costInfo(s).price) : '') : key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? (+s.sale ? String(+s.sale) : '') : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
+/* порожнє значення (немає ціни, кольору, Nm…) — окремий пункт «Пусто» */
+const cfShow = (key, v) => v === '' ? 'Пусто' : (key==='sale' || key==='cost') ? fmtEur(+v)+'/кг' : key==='nm' ? 'Nm '+v : v;
 let CF_OPEN = '';
 /* Фільтри взаємозалежні: у списку кожного фільтра лише те, що лишається після
    пошуку й УСІХ ІНШИХ вибраних фільтрів (його власні галочки не звужують
@@ -3797,9 +3805,10 @@ function cfOptions(key){
     all = all.filter(x => set.has(cfVal(k, x)));
   });
   const cnt = new Map();
-  all.forEach(x => { const v = cfVal(key, x); if(v === '' || ((key==='sale' || key==='cost') && v==='0')) return; cnt.set(v, (cnt.get(v)||0) + 1); });
+  all.forEach(x => { const v = cfVal(key, x); cnt.set(v, (cnt.get(v)||0) + 1); });
   catF[key].forEach(v => { if(!cnt.has(v)) cnt.set(v, 0); });
-  const vals = [...cnt.keys()].sort((key==='sale' || key==='cost') ? (a,b) => a-b : (a,b) => a.localeCompare(b, undefined, {numeric:true}));
+  const vals = [...cnt.keys()].sort((a,b) => (a==='') !== (b==='') ? (a==='' ? 1 : -1)
+    : (key==='sale' || key==='cost') ? a-b : a.localeCompare(b, undefined, {numeric:true}));   // «Пусто» — у кінці
   return vals.map(v => [v, cnt.get(v)]);
 }
 function drawCatFilters(){
@@ -3829,7 +3838,7 @@ function cfOpen(key){
   CF_OPEN = key; CF_SIG = ''; drawCatFilters();
   const p = cfPop(), opts = cfOptions(key), sel = new Set(catF[key]);
   p.innerHTML = (opts.length > 8 ? `<input type="search" class="cfq" data-cfq placeholder="Знайти" aria-label="Знайти" autocomplete="off">` : '')
-    + `<div class="cfl">${opts.length ? opts.map(([v,c]) => `<label class="cfo"><input type="checkbox" data-cfk="${key}" value="${esc(v)}" ${sel.has(v)?'checked':''}><span class="t" translate="no">${esc(cfShow(key, v))}</span><small class="num">${c}</small></label>`).join('') : '<p class="cfe">Нічого не знайдено</p>'}</div>`
+    + `<div class="cfl">${opts.length ? `<label class="cfo cfall"><input type="checkbox" data-cfall="${key}"><span class="t"></span></label>` : ''}${opts.length ? opts.map(([v,c]) => `<label class="cfo"><input type="checkbox" data-cfk="${key}" value="${esc(v)}" ${sel.has(v)?'checked':''}><span class="t" translate="no">${esc(cfShow(key, v))}</span><small class="num">${c}</small></label>`).join('') : '<p class="cfe">Нічого не знайдено</p>'}</div>`
     + `<div class="cfa"><button type="button" class="btn ghost small" data-cfclr="${key}">Очистити</button><button type="button" class="btn small" data-cfdone>Готово</button></div>`;
   p.hidden = false;
   const b = document.querySelector(`[data-cfopen="${key}"]`), r = b ? b.getBoundingClientRect() : {left:12, bottom:120};
@@ -3838,11 +3847,29 @@ function cfOpen(key){
   p.style.left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12)) + 'px';
   p.style.top = (r.bottom + 6) + 'px';
   p.style.maxHeight = Math.max(200, window.innerHeight - r.bottom - 24) + 'px';
+  cfSyncAll();
   const q = p.querySelector('[data-cfq]'); if(q && !matchMedia('(pointer:coarse)').matches) q.focus();
 }
 function cfToggle(key, v, on){
   const set = new Set(catF[key]); on ? set.add(v) : set.delete(v);
   catF[key] = [...set];
+  cfSyncAll();
+  render();
+}
+/* «Вибрати всі» / «Зняти всі», як в Excel: діє на значення, видимі зараз у списку
+   (з урахуванням пошуку всередині списку) */
+const cfVisible = () => [...document.querySelectorAll('#cfPop .cfo:not(.cfall)')].filter(l => l.style.display !== 'none').map(l => l.querySelector('input'));
+function cfSyncAll(){
+  const a = document.querySelector('#cfPop [data-cfall]'); if(!a) return;
+  const vis = cfVisible(), all = vis.length > 0 && vis.every(i => i.checked);
+  a.checked = all;
+  a.nextElementSibling.textContent = all ? 'Зняти всі' : 'Вибрати всі';
+}
+function cfSetAll(key, on){
+  const set = new Set(catF[key]);
+  cfVisible().forEach(i => { i.checked = on; on ? set.add(i.value) : set.delete(i.value); });
+  catF[key] = [...set];
+  cfSyncAll();
   render();
 }
 function cfClear(key){
@@ -7307,6 +7334,7 @@ document.addEventListener('click', e=>{
 document.addEventListener('change', async e=>{
   const t=e.target;
   if(t.dataset && t.dataset.cfk!==undefined){ cfToggle(t.dataset.cfk, t.value, t.checked); return; }
+  if(t.dataset && t.dataset.cfall!==undefined){ cfSetAll(t.dataset.cfall, t.checked); return; }
   if(t.dataset && t.dataset.site!==undefined){ pickSite(t.dataset.site, t.checked); return; }
   if(t.dataset && t.dataset.usite!==undefined){ setUserSite(t.dataset.usite, t.value, t.checked); return; }
   if(t.dataset && t.dataset.photo!==undefined && t.files[0]){
@@ -7362,7 +7390,8 @@ if(DESK_MQ.addEventListener) DESK_MQ.addEventListener('change', placeCatSum); el
 document.addEventListener('input', e=>{
   if(!e.target.matches || !e.target.matches('[data-cfq]')) return;
   const q = e.target.value.trim().toLowerCase();
-  document.querySelectorAll('#cfPop .cfo').forEach(l => { l.style.display = !q || l.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+  document.querySelectorAll('#cfPop .cfo:not(.cfall)').forEach(l => { l.style.display = !q || l.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+  cfSyncAll();
 });
 document.addEventListener('pointerdown', e=>{
   if(!CF_OPEN) return;
