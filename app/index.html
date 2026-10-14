@@ -3782,18 +3782,27 @@ const colorName = c => { const t = String(c||'').replace(/\d+/g,' ').replace(/[\
 const cfVal = (key, s) => key==='color' ? colorName(s.color) : key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? String(+s.sale||0) : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
 const cfShow = (key, v) => key==='sale' ? fmtEur(+v)+'/кг' : key==='nm' ? 'Nm '+v : v;
 let CF_OPEN = '';
+/* Фільтри взаємозалежні: у списку кожного фільтра лише те, що лишається після
+   пошуку й УСІХ ІНШИХ вибраних фільтрів (його власні галочки не звужують
+   його ж список — щоб можна було додати ще значення). Уже позначене, але
+   тепер порожнє, теж показуємо — з нулем, щоб його можна було зняти. */
+let CF_BASE = null;   // каталог після пошуку й «Без ціни», до фільтрів під баром
 function cfOptions(key){
-  let all = liveSkus();
-  if(key === 'art' && catF.brand.length){ const b = new Set(catF.brand); all = all.filter(x => b.has(x.maker||'')); }
+  let all = CF_BASE || liveSkus();
+  CF_KEYS.forEach(k => {
+    if(k === key || !catF[k].length || (k === 'sale' && !seeSale())) return;
+    const set = new Set(catF[k]);
+    all = all.filter(x => set.has(cfVal(k, x)));
+  });
   const cnt = new Map();
   all.forEach(x => { const v = cfVal(key, x); if(v === '' || (key==='sale' && v==='0')) return; cnt.set(v, (cnt.get(v)||0) + 1); });
+  catF[key].forEach(v => { if(!cnt.has(v)) cnt.set(v, 0); });
   const vals = [...cnt.keys()].sort(key==='sale' ? (a,b) => a-b : (a,b) => a.localeCompare(b, undefined, {numeric:true}));
   return vals.map(v => [v, cnt.get(v)]);
 }
 function drawCatFilters(){
   const box = $('#cfSel'); if(!box) return;
   if(!seeSale()) catF.sale = [];
-  if(catF.art.length && catF.brand.length){ const ok = new Set(cfOptions('art').map(x => x[0])); catF.art = catF.art.filter(v => ok.has(v)); }
   const btn = key => {
     const v = catF[key], n = v.length;
     const txt = n === 1 ? `<span class="v" translate="no">${esc(cfShow(key, v[0]))}</span>`
@@ -3863,6 +3872,7 @@ function viewCatalog(){
   const noCost = catF.nocost && can('fin'), noSale = catF.nosale && can('fin');
   if(noCost || noSale) list = list.filter(s => (noCost && !costInfo(s).price) || (noSale && !(+s.sale)));
   /* фільтри під баром; при переході за штрихкодом не діють — показуємо всіх сусідів */
+  CF_BASE = jump ? liveSkus() : list.slice();
   if(!jump){
     CF_KEYS.forEach(k => {
       if(!catF[k].length || (k === 'sale' && !seeSale())) return;
