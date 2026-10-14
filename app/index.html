@@ -186,7 +186,8 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 /* ПК: усі фільтри, штрихкод і кнопка вивантаження — завжди в один ряд; бракує місця — фільтри звужуються з «…» */
 /* ПК: фільтри не стискаються — коли їх багато, смугу гортають бігунком або коліщатком */
 @media (min-width:900px){
-  .catf{gap:6px}
+  /* під фільтрами є смуга прокрутки — тож вирівнюємо по верху, щоб штрихкод і кнопка стояли в рівень із фільтрами */
+  .catf{gap:6px;align-items:flex-start}
   #cfSel{gap:5px;scrollbar-width:thin;scrollbar-color:#B9A58D transparent;padding-bottom:3px;margin-bottom:-3px}
   #cfSel::-webkit-scrollbar{display:block;height:6px}
   #cfSel::-webkit-scrollbar-thumb{background:#B9A58D;border-radius:3px}
