@@ -563,6 +563,9 @@ table.t tr.tot td{font-weight:700}
   background:#FFD84D;color:#1A1208;border:2px solid var(--gold);border-radius:24px;padding:28px 40px;font-size:30px;line-height:1.25;font-weight:700;
   text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
 .updnote.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.updnote{width:max-content;box-sizing:border-box}
+.updnote span{display:block;text-align:center;margin:0 auto}
+.updnote .gap{height:1.25em}
 @media (max-width:600px){.updnote{font-size:22px;padding:22px 24px;border-radius:20px}}
 .toast.warn{background:#FFD84D;color:#1A1208;border:1px solid #E0B32E;font-weight:600;text-align:center;white-space:pre-line;line-height:1.35}
 nav.tabs{border-top:2.5px solid var(--gold);box-shadow:0 -2px 8px rgba(0,0,0,.05)}
@@ -1245,7 +1248,8 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
-    'Були додані нові функції — оновіть сторінку!':'Sono state aggiunte nuove funzioni — aggiorna la pagina!',
+    'Додано нові функції':'Nuove funzioni aggiunte',
+    'Оновіть сторінку!':'Aggiorna la pagina!',
     'Зняти всі':'Deseleziona tutto',
     'Вибрати всі':'Seleziona tutto',
     'Пусто':'Vuoto',
@@ -1970,7 +1974,8 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
-    'Були додані нові функції — оновіть сторінку!':'New features have been added — please reload the page!',
+    'Додано нові функції':'New features added',
+    'Оновіть сторінку!':'Please reload the page!',
     'Зняти всі':'Clear all',
     'Вибрати всі':'Select all',
     'Пусто':'Empty',
@@ -3497,7 +3502,7 @@ async function appTag(){
 function showUpdateNote(){
   let el = $('#updNote');
   if(!el){ el = document.createElement('div'); el.id = 'updNote'; el.className = 'updnote'; el.setAttribute('role','status'); document.body.appendChild(el); }
-  el.textContent = 'Були додані нові функції — оновіть сторінку!';
+  el.innerHTML = '<span>Додано нові функції</span><span class="gap"></span><span>Оновіть сторінку!</span>';   // рядок, порожній рядок, рядок
   el.classList.add('show');
   clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 4000);
 }
