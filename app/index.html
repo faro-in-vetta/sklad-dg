@@ -6003,8 +6003,10 @@ const XSHEETS = [
   ['log','Історія змін','хто і що змінював у картках SKU, цінах і резервах']
 ];
 /* ---------- вивантаження відфільтрованого каталогу (Word або Excel) ---------- */
+/* У вивантаженні по фільтрах «На складі», «Резерв», ціну закупівлі й склад
+   бачать лише адмін і головний бухгалтер; решта — тільки «Вільно» і ціну продажу. */
 function catExportRows(){
-  const LIDX = levelIndex(), cl = isClient(), sale = seeSale(), cost = seeCost();
+  const LIDX = levelIndex(), cl = !can('fin'), sale = seeSale(), cost = can('fin') && seeCost();
   return CAT_LIST.map(x => { const l = levels(x.id, LIDX), pr = sale ? pricing(x, l) : null;
     return {x, l, sale: pr && pr.sale ? pr.sale : 0, cost: cost ? (l.cost||0) : 0, cl}; });
 }
@@ -6034,9 +6036,9 @@ async function exportCatXlsx(){
     const r = {'№':i+1,'Штрихкод':x.code||'','Бренд':x.maker||'','Артикул':x.art||'','Колір':x.color||'','Nm':x.meter||'','Склад пряжі':compText(x.comp)};
     if(!cl){ r['На складі, кг'] = +l.kg.toFixed(2); r['Резерв, кг'] = +l.rk.toFixed(2); }
     r['Вільно, кг'] = +l.fk.toFixed(2); r['Вільно, конусів'] = l.fc;
-    if(seeCost()) r['Ціна закупівлі, €/кг'] = cost ? +cost.toFixed(2) : '';
+    if(!cl && seeCost()) r['Ціна закупівлі, €/кг'] = cost ? +cost.toFixed(2) : '';
     if(seeSale()) r['Ціна продажу, €/кг'] = sale ? +sale.toFixed(2) : '';
-    if(mySites().length > 1) r['Склад'] = SITE_NAME[siteOf(x)] || '';
+    if(!cl) r['Склад'] = SITE_NAME[siteOf(x)] || '';
     return r; });
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows);
@@ -6047,7 +6049,7 @@ async function exportCatXlsx(){
   await deliverFile(buf, `DG Filati SKU ${rows.length} (${todayStr()}).xlsx`);
 }
 function catDocx(){
-  const data = catExportRows(), cl = isClient(), sale = seeSale();
+  const data = catExportRows(), cl = !can('fin'), sale = seeSale();
   const cols = [['№',420,'c'],['Штрихкод',1250,'l'],['Бренд',1500,'l'],['Артикул',1700,'l'],['Колір',1900,'l'],['Nm',900,'c'],['Склад пряжі',3300,'l']]
     .concat(cl ? [] : [['На складі, кг',1100,'c']])
     .concat([['Вільно, кг',1100,'c'],['Конусів',850,'c']])
