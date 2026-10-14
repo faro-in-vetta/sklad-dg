@@ -550,6 +550,10 @@ table.t tr.tot td{font-weight:700}
 .ohead b{font-family:var(--serif);font-size:17px}
 .empty,.demo-note{font-family:var(--serif);font-style:italic}
 .toast{background:var(--primary);color:var(--on-primary);border:1px solid var(--gold)}
+.updnote{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:60;max-width:min(88vw,420px);
+  background:#FFD84D;color:#1A1208;border:1px solid var(--gold);border-radius:14px;padding:14px 20px;font-size:15px;font-weight:600;
+  text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+.updnote.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .toast.warn{background:#FFD84D;color:#1A1208;border:1px solid #E0B32E;font-weight:600;text-align:center;white-space:pre-line;line-height:1.35}
 nav.tabs{border-top:2.5px solid var(--gold);box-shadow:0 -2px 8px rgba(0,0,0,.05)}
 nav.tabs button[aria-current="true"]{color:var(--gold-deep)}
@@ -1231,6 +1235,7 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Були додані нові функції — оновіть сторінку!':'Sono state aggiunte nuove funzioni — aggiorna la pagina!',
     'Зняти всі':'Deseleziona tutto',
     'Вибрати всі':'Seleziona tutto',
     'Пусто':'Vuoto',
@@ -1955,6 +1960,7 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Були додані нові функції — оновіть сторінку!':'New features have been added — please reload the page!',
     'Зняти всі':'Clear all',
     'Вибрати всі':'Select all',
     'Пусто':'Empty',
@@ -3465,6 +3471,38 @@ async function needFullReload() {
   return false;
 }
 
+/* ---------- нова версія застосунку ----------
+   Після кожного Push сторінка на сервері змінюється (міняється її ETag). Раз на
+   кілька хвилин і при поверненні на вкладку питаємо лише заголовки сторінки
+   (без завантаження, до бази не ходимо). Змінилася — посеред екрана на 4 с
+   нагадування оновити сторінку. Роботі не заважає; повторюється раз на 30 хв,
+   поки людина не оновить. */
+let APP_TAG = null, APP_NOTE_AT = 0;
+async function appTag(){
+  try{
+    const r = await fetch(location.pathname, {method:'HEAD', cache:'no-store'});
+    return r.ok ? (r.headers.get('etag') || r.headers.get('last-modified') || null) : null;
+  }catch(e){ return null; }
+}
+function showUpdateNote(){
+  let el = $('#updNote');
+  if(!el){ el = document.createElement('div'); el.id = 'updNote'; el.className = 'updnote'; el.setAttribute('role','status'); document.body.appendChild(el); }
+  el.textContent = 'Були додані нові функції — оновіть сторінку!';
+  el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 4000);
+}
+async function checkAppUpdate(){
+  if(document.hidden) return;
+  const tag = await appTag(); if(!tag) return;
+  if(APP_TAG === null){ APP_TAG = tag; return; }
+  if(tag !== APP_TAG && Date.now() - APP_NOTE_AT > 30*60000){ APP_NOTE_AT = Date.now(); showUpdateNote(); }
+}
+function watchAppUpdates(){
+  checkAppUpdate();
+  setInterval(checkAppUpdate, 3*60000);
+  document.addEventListener('visibilitychange', () => { if(!document.hidden) checkAppUpdate(); });
+}
+
 /* ---------- вхід ---------- */
 function wireAuth(){
   const f=$('#authForm');
@@ -3507,6 +3545,7 @@ async function afterLogin() {
   checkUsage();
   setInterval(touchPresence, 60000);
   setInterval(reloadSoon, 45000);
+  watchAppUpdates();
   window.addEventListener('focus', reloadSoon);
 }
 
