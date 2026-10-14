@@ -172,6 +172,14 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 /* фільтри гортаються вбік у своїй смузі, а штрихкод і кнопка вивантаження стоять на місці */
 #cfSel{display:flex;gap:6px;align-items:center;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 #cfSel::-webkit-scrollbar{display:none}
+/* телефон — як було: увесь ряд разом зі штрихкодом гортається пальцем, кнопки вивантаження немає (вона лише для ПК) */
+@media (max-width:899px){
+  .catf{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .catf::-webkit-scrollbar{display:none}
+  #cfSel{display:contents}
+  .catf #cfExport{display:none !important}
+  .catf #cfBc{width:120px;flex:none}
+}
 .catf input{height:30px;font-size:12.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:0 8px}
 .cff{display:flex;flex:1 0 auto;min-width:0;height:30px;border:1px solid var(--line);background:var(--surface);border-radius:8px;overflow:hidden}
 @media (max-width:899px){.cff{flex:none;min-width:112px;max-width:190px}}
