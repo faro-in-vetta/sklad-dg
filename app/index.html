@@ -558,10 +558,11 @@ table.t tr.tot td{font-weight:700}
 .ohead b{font-family:var(--serif);font-size:17px}
 .empty,.demo-note{font-family:var(--serif);font-style:italic}
 .toast{background:var(--primary);color:var(--on-primary);border:1px solid var(--gold)}
-.updnote{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:60;max-width:min(88vw,420px);
-  background:#FFD84D;color:#1A1208;border:1px solid var(--gold);border-radius:14px;padding:14px 20px;font-size:15px;font-weight:600;
+.updnote{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:60;max-width:min(92vw,840px);
+  background:#FFD84D;color:#1A1208;border:2px solid var(--gold);border-radius:24px;padding:28px 40px;font-size:30px;line-height:1.25;font-weight:700;
   text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
 .updnote.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+@media (max-width:600px){.updnote{font-size:22px;padding:22px 24px;border-radius:20px}}
 .toast.warn{background:#FFD84D;color:#1A1208;border:1px solid #E0B32E;font-weight:600;text-align:center;white-space:pre-line;line-height:1.35}
 nav.tabs{border-top:2.5px solid var(--gold);box-shadow:0 -2px 8px rgba(0,0,0,.05)}
 nav.tabs button[aria-current="true"]{color:var(--gold-deep)}
