@@ -6800,7 +6800,9 @@ function saveSku(id){
     return;
   }
   const kg=parseFloat($('#fKg').value)||0, cn=parseInt($('#fCn').value)||0;
-  if((kg>0)!==(cn>0)) return fe('Для приходу вкажіть і кг, і кількість конусів.');
+  // конуси не обов'язкові: є пряжа без конусів
+  if(cn<0) return fe('Кількість конусів не може бути від\'ємною.');
+  if(cn>0 && !(kg>0)) return fe('Вкажіть вагу в кг.');
   const nid=uid();
   const nsite = ($('#fSite') && $('#fSite').value) || defSite(null);
   audit(nid,'create','Створено картку'+(draftPhotos.length?` з ${draftPhotos.length} фото`:''));
@@ -6957,8 +6959,8 @@ function saveOp(type, skuId, resId){
   if(resId && !r) return fe('Цей резерв уже закритий.');
   if(type==='adj'){
     const fkv=$('#oKg').value.trim(), fcv=$('#oCn').value.trim();
-    if(fkv===''||fcv==='') return fe('Впишіть фактичні кг і конуси.');
-    const fk=parseFloat(fkv), fc=parseInt(fcv);
+    if(fkv==='') return fe('Вкажіть вагу в кг.');
+    const fk=parseFloat(fkv), fc=fcv===''?l.cn:parseInt(fcv); // порожні конуси — без змін
     if(fk<0 || fc<0) return fe('Фактичний залишок не може бути від\'ємним.');
     const dk=Math.round((fk-l.kg)*1000)/1000, dc=fc-l.cn;
     if(Math.abs(dk)<0.001 && dc===0) return fe('Фактичний залишок збігається з обліком, коригувати нічого.');
@@ -6973,7 +6975,7 @@ function saveOp(type, skuId, resId){
   } else {
     if(kg<=0) return fe('Вкажіть вагу в кг.');
     if(type==='smp' && cn<0) return fe('Кількість конусів не може бути від\'ємною.');
-    if(cn<=0 && type!=='smp' && !(type==='out' && part)) return fe(type==='out' ? 'Вкажіть кількість конусів або позначте «Частина конуса».' : 'Вкажіть кількість конусів.');
+    if(cn<0) return fe('Кількість конусів не може бути від\'ємною.'); // 0 конусів дозволено: є пряжа без конусів
     if(type==='out' && !price) return fe('Вкажіть ціну продажу. Безкоштовні зразки проводьте через «Пробники».');
     if(type==='out'||type==='res'||type==='smp'){
       if(!party) return fe('Вкажіть клієнта.');
