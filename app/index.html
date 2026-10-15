@@ -1248,6 +1248,7 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Націнка':'Ricarico',
     'Додано нові функції':'Nuove funzioni aggiunte',
     'Оновіть сторінку!':'Aggiorna la pagina!',
     'Зняти всі':'Deseleziona tutto',
@@ -1974,6 +1975,7 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Націнка':'Margin',
     'Додано нові функції':'New features added',
     'Оновіть сторінку!':'Please reload the page!',
     'Зняти всі':'Clear all',
@@ -3779,7 +3781,7 @@ function thumbHtml(s, cls='thumb'){
 
 /* Перемикачі «без ціни»: натиснута кнопка лишає в каталозі лише такі картки,
    дві натиснуті — картки з обох списків (без закупівельної АБО без продажної). */
-const catF = {nocost:false, nosale:false, brand:[], art:[], color:[], cost:[], sale:[], comp:[], nm:[], bc:''};
+const catF = {nocost:false, nosale:false, brand:[], art:[], color:[], cost:[], sale:[], mk:[], comp:[], nm:[], bc:''};
 function toggleCatF(k){
   catF[k] = !catF[k];
   const el = $(k === 'nocost' ? '#fNoCost' : '#fNoSale');
@@ -3835,21 +3837,40 @@ function compMatch(sku, pairs){
 let CF_SIG = '';
 /* фільтри під баром: у кожному можна позначити кілька галочок,
    біля активного — свій хрестик, що чистить лише його */
-const CF_KEYS = ['brand','art','color','cost','sale','comp','nm'];
-const CF_LABEL = {brand:'Бренд', art:'Артикул', sale:'Ціна продажу', comp:'Склад пряжі', nm:'Nm', color:'Колір', cost:'Ціна закупівлі'};
+const CF_KEYS = ['brand','art','color','cost','sale','mk','comp','nm'];
+const CF_LABEL = {brand:'Бренд', art:'Артикул', sale:'Ціна продажу', comp:'Склад пряжі', nm:'Nm', color:'Колір', cost:'Ціна закупівлі', mk:'Націнка'};
+/* Націнка — як у картці SKU: (ціна продажу − закупівлі) / закупівлі. Ціна продажу — з прайсу,
+   а якщо її нема — середня фактична з продажів. Значення неперервні, тому групуємо діапазонами. */
+const MK_LBL = {'-1':'< 0%', '0':'0–10%', '10':'10–20%', '20':'20–30%', '30':'30–50%', '50':'50–100%', '100':'≥ 100%'};
+let MK_AVG = null, MK_AVG_SIG = '';
+function mkAvgSale(id){
+  const sig = S.ops.length + ':' + (S.ops[S.ops.length-1]||{}).id;
+  if(!MK_AVG || MK_AVG_SIG !== sig){
+    const k = {}, v = {};
+    S.ops.forEach(o => { if(o.type==='out' && o.price>0){ k[o.sku]=(k[o.sku]||0)+o.kg; v[o.sku]=(v[o.sku]||0)+o.kg*o.price; } });
+    MK_AVG = {}; Object.keys(k).forEach(x => { if(k[x]) MK_AVG[x] = v[x]/k[x]; }); MK_AVG_SIG = sig;
+  }
+  return MK_AVG[id] || 0;
+}
+function mkBucket(s){
+  const cost = +costInfo(s).price || 0, sale = +s.sale || mkAvgSale(s.id);
+  if(!(cost > 0) || !(sale > 0)) return '';
+  const m = (sale - cost) / cost * 100;
+  return m < 0 ? '-1' : m < 10 ? '0' : m < 20 ? '10' : m < 30 ? '20' : m < 50 ? '30' : m < 100 ? '50' : '100';
+}
 /* колір групуємо за назвою без номера: «Rosso 111» і «Rosso 403» — один «Rosso» */
 const colorName = c => { const t = String(c||'').replace(/\d+/g,' ').replace(/[\/\\_.,#–-]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
   return t ? t[0].toUpperCase() + t.slice(1) : ''; };
-const cfVal = (key, s) => key==='color' ? colorName(s.color) : key==='cost' ? (+costInfo(s).price ? String(+costInfo(s).price) : '') : key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? (+s.sale ? String(+s.sale) : '') : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
+const cfVal = (key, s) => key==='mk' ? mkBucket(s) : key==='color' ? colorName(s.color) : key==='cost' ? (+costInfo(s).price ? String(+costInfo(s).price) : '') : key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? (+s.sale ? String(+s.sale) : '') : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
 /* порожнє значення (немає ціни, кольору, Nm…) — окремий пункт «Пусто» */
-const cfShow = (key, v) => v === '' ? 'Пусто' : (key==='sale' || key==='cost') ? fmtEur(+v)+'/кг' : key==='nm' ? 'Nm '+v : v;
+const cfShow = (key, v) => v === '' ? 'Пусто' : key==='mk' ? (MK_LBL[v] || v) : (key==='sale' || key==='cost') ? fmtEur(+v)+'/кг' : key==='nm' ? 'Nm '+v : v;
 let CF_OPEN = '';
 /* Фільтри взаємозалежні: у списку кожного фільтра лише те, що лишається після
    пошуку й УСІХ ІНШИХ вибраних фільтрів (його власні галочки не звужують
    його ж список — щоб можна було додати ще значення). Уже позначене, але
    тепер порожнє, теж показуємо — з нулем, щоб його можна було зняти. */
 /* ціну закупівлі бачать лише адмін і головний бухгалтер, ціну продажу — хто її бачить у каталозі */
-const cfAllowed = k => k==='cost' ? seeCost() : k==='sale' ? seeSale() : true;
+const cfAllowed = k => (k==='cost' || k==='mk') ? seeCost() : k==='sale' ? seeSale() : true;
 let CF_BASE = null;   // каталог після пошуку й «Без ціни», до фільтрів під баром
 function cfOptions(key){
   let all = CF_BASE || liveSkus();
@@ -3862,13 +3883,13 @@ function cfOptions(key){
   all.forEach(x => { const v = cfVal(key, x); cnt.set(v, (cnt.get(v)||0) + 1); });
   catF[key].forEach(v => { if(!cnt.has(v)) cnt.set(v, 0); });
   const vals = [...cnt.keys()].sort((a,b) => (a==='') !== (b==='') ? (a==='' ? 1 : -1)
-    : (key==='sale' || key==='cost') ? a-b : a.localeCompare(b, undefined, {numeric:true}));   // «Пусто» — у кінці
+    : (key==='sale' || key==='cost' || key==='mk') ? a-b : a.localeCompare(b, undefined, {numeric:true}));   // «Пусто» — у кінці
   return vals.map(v => [v, cnt.get(v)]);
 }
 function drawCatFilters(){
   const box = $('#cfSel'); if(!box) return;
   if(!seeSale()) catF.sale = [];
-  if(!seeCost()) catF.cost = [];
+  if(!seeCost()){ catF.cost = []; catF.mk = []; }
   const btn = key => {
     const v = catF[key], n = v.length;
     const txt = n === 1 ? `<span class="v" translate="no">${esc(cfShow(key, v[0]))}</span>`
@@ -3877,7 +3898,7 @@ function drawCatFilters(){
       + (n ? `<button type="button" class="cfc" data-cfclr="${key}" aria-label="Очистити фільтр" title="Очистити фільтр">×</button>` : '') + '</span>';
   };
   const active = CF_KEYS.filter(k => catF[k].length).length + (String(catF.bc||'').trim() ? 1 : 0);
-  const html = btn('brand') + btn('art') + btn('color') + (seeCost() ? btn('cost') : '') + (seeSale() ? btn('sale') : '') + btn('comp') + btn('nm')
+  const html = btn('brand') + btn('art') + btn('color') + (seeCost() ? btn('cost') : '') + (seeSale() ? btn('sale') : '') + (seeCost() ? btn('mk') : '') + btn('comp') + btn('nm')
     + (active > 1 ? '<button type="button" class="cfx" data-catfreset title="Скинути фільтри" aria-label="Скинути фільтри"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>' : '');
   if(html !== CF_SIG){ const sl = box.scrollLeft; CF_SIG = html; box.innerHTML = html; box.scrollLeft = sl; }   // смуга не відскакує на початок
 }
@@ -3933,7 +3954,7 @@ function cfClear(key){
 }
 function setCatF(key, val){ catF[key] = val; render(); }
 function resetCatF(){
-  Object.assign(catF, {brand:[], art:[], color:[], cost:[], sale:[], comp:[], nm:[], bc:''});
+  Object.assign(catF, {brand:[], art:[], color:[], cost:[], sale:[], mk:[], comp:[], nm:[], bc:''});
   const bc = $('#cfBc'); if(bc) bc.value = '';
   if(CF_OPEN) cfClose();
   render();
