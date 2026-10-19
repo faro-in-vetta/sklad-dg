@@ -3204,7 +3204,8 @@ const $ = s => document.querySelector(s);
 const isPhone = () => { try { return matchMedia('(max-width:560px)').matches; } catch(e){ return false; } };
 const uid = () => crypto.randomUUID();
 const now = () => new Date().toISOString();
-const fmtKg = n => (Math.round(n*10)/10).toLocaleString('uk-UA',{minimumFractionDigits:1,maximumFractionDigits:1});
+// кілограми скрізь показуємо до сотих: 17,65 кг
+const fmtKg = n => (Math.round(n*100)/100).toLocaleString('uk-UA',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtEur = n => (Math.round(n*100)/100).toLocaleString('uk-UA',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 const fmtEur0 = n => Math.round(n).toLocaleString('uk-UA')+' €';
 const todayStr = () => { const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
@@ -4760,7 +4761,7 @@ function drawOrderEditor(err){
           <div class="odl-h"><span class="lno">${i+1}</span>${skuRow(s)}<button type="button" class="rmc" data-lrm="${i}" aria-label="Прибрати позицію">×</button></div>
           <div class="odl-f ${li.sample?'two':''}">
             <label>Конусів<input data-lc="${i}" type="number" inputmode="numeric" min="0" max="${li.maxCn}" step="1" value="${esc(li.cones)}"></label>
-            <label>Кг<input data-lk="${i}" type="number" inputmode="decimal" min="0" max="${li.maxKg}" step="0.1" value="${esc(li.kg)}"></label>
+            <label>Кг<input data-lk="${i}" type="number" inputmode="decimal" min="0" max="${li.maxKg}" step="0.01" value="${esc(li.kg)}"></label>
             ${li.sample?'':`<label>€/кг<input data-lp="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(li.price)}" ${can('fin')?'':'readonly title="Ціна береться з картки товару"'}></label>
             <label>Сума<output data-ls="${i}" class="lsum num">${(parseFloat(li.kg)||0)*(parseFloat(li.price)||0)?fmtEur((parseFloat(li.kg)||0)*(parseFloat(li.price)||0)):'—'}</output></label>`}
           </div>
@@ -5155,7 +5156,7 @@ function openPicked(id){
         <div class="hint num" style="margin:4px 0">Замовлено ${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к · доступно ${fmtKg(l.fk+mine.kg)} кг / ${fmtN(l.fc+mine.cn)} к</div>
         <div class="odl-f two">
           <label>Фактично конусів<input data-pkc="${i}" type="number" inputmode="numeric" min="0" step="1" value="${li.cones}"></label>
-          <label>Фактично кг<input data-pkk="${i}" type="number" inputmode="decimal" min="0" step="0.1" value="${li.kg}"></label>
+          <label>Фактично кг<input data-pkk="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${li.kg}"></label>
         </div></div>`;}).join('')}
     <div class="pair">
       <label class="f">Коробок<input id="pkBoxes" type="number" inputmode="numeric" min="0" step="1" value="${o.boxes||1}"></label>
@@ -5239,7 +5240,7 @@ function openShip(id){
       <div class="hint num" style="margin:4px 0">Замовлено ${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к</div>
       <div class="odl-f two">
         <label>Фактично конусів<input data-sc="${i}" type="number" inputmode="numeric" min="0" step="1" value="${li.cones}"></label>
-        <label>Фактично кг<input data-sk="${i}" type="number" inputmode="decimal" min="0" step="0.1" value="${li.kg}"></label>
+        <label>Фактично кг<input data-sk="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${li.kg}"></label>
       </div></div>`).join('')}
     <label class="f" style="margin-top:10px">Дата відвантаження<input id="sDate" type="date" value="${todayStr()}" min="${o.at.slice(0,10)}"></label>
     <p class="hint num">Зі збірки: ${fmtN(oBoxes(o))} кор. · нетто ${fmtKg(oKg(o))} кг · брутто ${fmtKg2(oGross(o))} кг.</p>
@@ -5449,7 +5450,7 @@ function openReturn(id){
         <div class="hint num" style="margin:4px 0">Відвантажено ${fmtKg(lShip(li))} кг / ${fmtN(lShipC(li))} к${(+li.retKg||0)?` · вже повернено ${fmtKg(+li.retKg)} кг / ${fmtN(+li.retCones||0)} к`:''} · можна повернути ${fmtKg(lq(li))} кг / ${fmtN(lc(li))} к</div>
         <div class="odl-f two">
           <label>Повернути конусів<input data-rtc="${i}" type="number" inputmode="numeric" min="0" max="${lc(li)}" step="1" value="0"></label>
-          <label>Повернути кг<input data-rtk="${i}" type="number" inputmode="decimal" min="0" max="${lq(li)}" step="0.1" value="0"></label>
+          <label>Повернути кг<input data-rtk="${i}" type="number" inputmode="decimal" min="0" max="${lq(li)}" step="0.01" value="0"></label>
         </div></div>`;}).join('')}
     <div class="pair">
       <label class="f">Дата повернення<input id="rtDate" type="date" value="${todayStr()}" min="${o.shippedAt.slice(0,10)}"></label>
@@ -7241,7 +7242,7 @@ function openSkuForm(id, copyFrom){
       : `<label class="f">Штрихкод<input id="fCode" value="${esc(s?.code||nextCode)}" readonly tabindex="-1" style="background:var(--bg);color:var(--muted);cursor:default"></label>
     <p class="hint">Присвоюється автоматично, по наростаючій. Змінити не можна. Якщо цей код хтось займе раніше, картка отримає наступний вільний — застосунок скаже, який саме.</p>`}
     ${s?'':`<div class="pair">
-      <label class="f">Прихід, кг<input id="fKg" type="number" inputmode="decimal" step="0.1" min="0"></label>
+      <label class="f">Прихід, кг<input id="fKg" type="number" inputmode="decimal" step="0.01" min="0"></label>
       <label class="f">Прихід, конусів<input id="fCn" type="number" inputmode="numeric" step="1" min="0"></label>
     </div>
     <div class="pair">
@@ -7367,7 +7368,7 @@ function openMove(skuId){
     ${to.length>1?`<label class="f">Куди<select id="mvTo">${to.map(c=>`<option value="${c}">${esc(SITE_NAME[c])}</option>`).join('')}</select></label>`
                  :`<input type="hidden" id="mvTo" value="${to[0]}"><div class="f" style="font-size:14px;color:var(--muted);margin-bottom:6px">Куди: <b style="color:var(--ink)">${esc(siteTag(to[0]))}</b></div>`}
     <div class="pair">
-      <label class="f">Кг<input id="mvKg" type="number" inputmode="decimal" step="0.1" min="0" max="${l.fk}"></label>
+      <label class="f">Кг<input id="mvKg" type="number" inputmode="decimal" step="0.01" min="0" max="${l.fk}"></label>
       <label class="f">Конусів<input id="mvCn" type="number" inputmode="numeric" step="1" min="0" max="${l.fc}"></label>
     </div>
     <label class="f">Дата<input id="mvDate" type="date" value="${todayStr()}"></label>
@@ -7433,7 +7434,7 @@ function openOp(type, skuId, resId){
     ${avail?`<p class="hint num" style="margin:0 0 12px">${avail}</p>`:''}
     <div class="pair">
       <label class="f">${type==='adj'?'Фактично конусів':'Конусів'}<input id="oCn" type="number" inputmode="numeric" step="1" min="0" value="${type==='adj'?l.cn:(r?r.cones:'')}"></label>
-      <label class="f">${type==='adj'?'Фактично кг':'Кг'}<input id="oKg" type="number" inputmode="decimal" step="0.1" min="0" value="${type==='adj'?Math.round(l.kg*10)/10:(r?r.kg:'')}"></label>
+      <label class="f">${type==='adj'?'Фактично кг':'Кг'}<input id="oKg" type="number" inputmode="decimal" step="0.01" min="0" value="${type==='adj'?Math.round(l.kg*100)/100:(r?r.kg:'')}"></label>
     </div>
     <p class="hint num" id="oHint">${type==='adj'?'Різниці немає.':l.avg?`Середня вага конуса ${fmtKg(l.avg)} кг. Остаточну вагу беріть з ваг.`:''}</p>
     ${type==='adj'?`<div style="display:flex;gap:20px;margin:10px 0 4px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="adjType" value="inv" ${(Math.abs(l.kg)<0.001&&l.cn===0)?'':'checked'}> Інвентаризація</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="adjType" value="in" ${(Math.abs(l.kg)<0.001&&l.cn===0)?'checked':''}> Прихід товару</label></div>`:''}
@@ -7462,7 +7463,7 @@ function openOp(type, skuId, resId){
       const fk=parseFloat($('#oKg').value), fc=parseInt($('#oCn').value);
       const dk=(isNaN(fk)?l.kg:fk)-l.kg, dc=(isNaN(fc)?l.cn:fc)-l.cn;
       const sg=v=>v>0?'+':v<0?'−':'';
-      $('#oHint').innerHTML = Math.abs(dk)<0.05 && dc===0 ? 'Різниці немає.'
+      $('#oHint').innerHTML = Math.abs(dk)<0.005 && dc===0 ? 'Різниці немає.'
         : `Різниця: <b class="${dk<0||dc<0?'neg':'pos'}">${sg(dk)}${fmtKg(Math.abs(dk))} кг / ${sg(dc)}${fmtN(Math.abs(dc))} к</b>${dk<0||dc<0?' (нестача)':' (надлишок)'}`;
     };
     $('#oKg').addEventListener('input',du); $('#oCn').addEventListener('input',du);
