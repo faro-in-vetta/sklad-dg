@@ -4040,7 +4040,13 @@ async function boot() {
 
 /* Запит у supabase-js виконується лише тоді, коли промайс дочекалися.
    Тому тут потрібен await, інакше відмітка присутності нікуди не йде. */
+let PRESENCE_AT = 0;
+function presenceTick(){
+  if(document.hidden || Date.now() - PRESENCE_AT < 60000) return;   // у фоні — ні; частіше ніж раз на хвилину — ні
+  touchPresence();
+}
 async function touchPresence(){
+  PRESENCE_AT = Date.now();
   try { await db.rpc('touch_presence'); }
   catch (e) { console.warn('presence', e); }
 }
@@ -4058,7 +4064,10 @@ async function afterLogin() {
   render();
   await touchPresence();
   checkUsage();
-  setInterval(touchPresence, 60000);
+  /* «Я онлайн» — лише коли вкладка на екрані, раз на 2 хв (онлайн вважається 5 хв).
+     Фонові вкладки раніше слали відмітку щохвилини — це половина логів Supabase. */
+  setInterval(presenceTick, 120000);
+  document.addEventListener('visibilitychange', presenceTick);
   setInterval(reloadSoon, 45000);
   watchAppUpdates();
   window.addEventListener('focus', reloadSoon);
