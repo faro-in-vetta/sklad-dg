@@ -667,7 +667,11 @@ nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true
 .odl-f label{font-size:12px;color:var(--muted)}
 .odl-f input{display:block;width:100%;margin-top:2px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:9px 8px;color:var(--ink)}
 .pick{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px;color:var(--ink)}
-.pick:not(:disabled):hover{border-color:var(--gold)}
+.pick:not(:disabled):not(.off):hover{border-color:var(--gold)}
+.pick.off{opacity:.5;cursor:default}
+.pick.off .osw{opacity:1}
+/* у каталозі заявки фото більше й натискається — відкривається на весь екран */
+.pick .srow .osw.zoomable{width:46px;height:46px}
 .pick.added{border-color:var(--green);background:var(--green-soft)}
 .pick:disabled{opacity:.5}
 .pick-f{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin-top:4px}
@@ -1248,6 +1252,7 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Збільшити фото':'Ingrandisci la foto',
     'З фото':'Con foto',
     'Готую Excel…':'Preparo l\'Excel…',
     'Готую Word…':'Preparo il Word…',
@@ -2150,6 +2155,7 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Збільшити фото':'Enlarge photo',
     'З фото':'With photos',
     'Готую Excel…':'Preparing Excel…',
     'Готую Word…':'Preparing Word…',
@@ -4816,8 +4822,9 @@ function openSkuPicker(){
   openSheet(`<div class="panel-head"><button class="btn ghost small" data-pickback>← До заявки</button><h2 style="flex:1;margin-left:6px">Каталог</h2></div>
     <div class="qwrap" style="margin-bottom:10px"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="pickQ" type="search" placeholder="Артикул, бренд, колір, склад" value="${esc(pickQ)}" style="width:100%;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:11px 12px 11px 40px"></div>
     ${list.map(s=>{ const l=levels(s.id), mine=reservedIn(o,s.id), fk=l.fk+mine.kg, fc=l.fc+mine.cn; const added=OD.lines.some(li=>li.sku===s.id);
-      return `<button class="pick ${added?'added':''}" data-pick="${s.id}" ${fk<=0.001&&!added?'disabled':''}>
-        ${skuRow(s)}
+      const off = fk<=0.001&&!added;
+      return `<button class="pick ${added?'added':''} ${off?'off':''}" data-pick="${s.id}" ${off?'aria-disabled="true"':''}>
+        ${skuRow(s).replace('<img class="thumb osw"', `<img class="thumb osw zoomable" data-zoom="0" data-sku="${s.id}" title="Збільшити фото"`)}
         <div class="pick-f num"><span>вільно ${fmtKg(fk)} кг / ${fmtN(fc)} к</span>${seeSale()&&s.sale?`<span>${fmtEur(s.sale)}/кг</span>`:''}<span class="pick-a">${added?'✓ додано':fk<=0.001?'немає вільного':'+ додати'}</span></div>
       </button>`; }).join('')||'<div class="empty">Нічого не знайдено.</div>'}`);
   const inp=$('#pickQ'); inp.addEventListener('input',()=>{ pickQ=inp.value; const pos=inp.selectionStart; openSkuPicker(); const n=$('#pickQ'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} });
@@ -7821,7 +7828,7 @@ document.addEventListener('click', e=>{
   if(d.oedit){ openOrderEditor(d.oedit); return; }
   if('opicker' in d){ openSkuPicker(); return; }
   if('pickback' in d){ drawOrderEditor(); return; }
-  if(d.pick){ pickSku(d.pick); return; }
+  if(d.pick){ if(t.closest('.pick.off')) return; pickSku(d.pick); return; }
   if(d.lrm!==undefined){ syncOD(); OD.lines.splice(+d.lrm,1); drawOrderEditor(); return; }
   if('odsave' in d){ saveOrderDraft(); return; }
   if(d.of){ oFilter = (oFilter===d.of ? 'all' : d.of); viewReserves(); return; }
