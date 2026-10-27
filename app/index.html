@@ -1252,6 +1252,15 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Економ-режим':'Modalità risparmio',
+    'Увімкнути економ-режим':'Attiva la modalità risparmio',
+    'Вимкнути економ-режим':'Disattiva la modalità risparmio',
+    'Увімкнений для всіх. На початку нового місяця трафіку в Supabase вимкніть.':'Attiva per tutti. Disattivala all’inizio del nuovo mese di traffico su Supabase.',
+    'Вимкнений. Вмикайте, коли в Supabase трафік (Egress) підходить до 80% ліміту. Діє для всіх: у картках зменшені фото (повне — натисканням), зміни інших людей з’являються до 3 хв пізніше, історія змін оновлюється раз на годину. Заявки, залишки й пошук працюють як завжди.':'Disattiva. Attivala quando su Supabase il traffico (Egress) si avvicina all’80% del limite. Vale per tutti: nelle schede foto ridotte (quella intera con un tocco), le modifiche degli altri compaiono fino a 3 minuti dopo, la cronologia delle modifiche si aggiorna una volta all’ora. Ordini, giacenze e ricerca funzionano come sempre.',
+    'Адмін увімкнув економію трафіку: у картках зменшені фото (натисніть, щоб побачити повне), зміни інших людей з’являються до 3 хв пізніше.':'L’amministratore ha attivato il risparmio di traffico: nelle schede foto ridotte (tocca per vederla intera), le modifiche degli altri compaiono fino a 3 minuti dopo.',
+    'Економ-режим увімкнено для всіх':'Modalità risparmio attivata per tutti',
+    'Економ-режим вимкнено':'Modalità risparmio disattivata',
+    'Не вдалося зберегти налаштування.':'Impossibile salvare l’impostazione.',
     'Збільшити фото':'Ingrandisci la foto',
     'З фото':'Con foto',
     'Готую Excel…':'Preparo l\'Excel…',
@@ -2155,6 +2164,15 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Економ-режим':'Saving mode',
+    'Увімкнути економ-режим':'Turn on saving mode',
+    'Вимкнути економ-режим':'Turn off saving mode',
+    'Увімкнений для всіх. На початку нового місяця трафіку в Supabase вимкніть.':'On for everyone. Turn it off at the start of the new Supabase traffic month.',
+    'Вимкнений. Вмикайте, коли в Supabase трафік (Egress) підходить до 80% ліміту. Діє для всіх: у картках зменшені фото (повне — натисканням), зміни інших людей з’являються до 3 хв пізніше, історія змін оновлюється раз на годину. Заявки, залишки й пошук працюють як завжди.':'Off. Turn it on when Supabase traffic (Egress) gets close to 80% of the limit. It applies to everyone: cards show smaller photos (tap for the full one), other people’s changes appear up to 3 minutes later, the change history refreshes once an hour. Orders, stock and search work as usual.',
+    'Адмін увімкнув економію трафіку: у картках зменшені фото (натисніть, щоб побачити повне), зміни інших людей з’являються до 3 хв пізніше.':'The admin has turned on traffic saving: cards show smaller photos (tap to see the full one), other people’s changes appear up to 3 minutes later.',
+    'Економ-режим увімкнено для всіх':'Saving mode turned on for everyone',
+    'Економ-режим вимкнено':'Saving mode turned off',
+    'Не вдалося зберегти налаштування.':'Could not save the setting.',
     'Збільшити фото':'Enlarge photo',
     'З фото':'With photos',
     'Готую Excel…':'Preparing Excel…',
@@ -3292,6 +3310,13 @@ let SYNCING = false, DIRTY = false;
 let DATA_V = null;                 // версія бази, з якою зараз збігається пам'ять
 let FULL_AT = 0;                   // коли востаннє тягнули всю базу
 const FULL_EVERY = 15 * 60000;     // про всяк випадок — повне оновлення хоча б раз на 15 хв
+/* Економ-режим (вмикає адмін у налаштуваннях, діє для всіх): коли трафік Supabase
+   підходить до ліміту. Перевірка змін — не частіше ніж раз на 3 хв, страхувальне
+   повне оновлення — раз на годину, історія змін карток — раз на годину,
+   у картці SKU — мініатюри замість повних фото (повне — натисканням). */
+const ECO_CHECK_EVERY = 3 * 60000, ECO_FULL_EVERY = 60 * 60000, ECO_AUDIT_EVERY = 60 * 60000;
+let LAST_CHECK = 0, AUDIT_AT = 0;
+const eco = () => !!(S && S.eco);
 const PHOTO_URL = {};       // шлях у Storage → тимчасове посилання
 
 const snapKey = (t, id) => t + ':' + id;
@@ -3422,6 +3447,9 @@ async function hydrate(opts) {
   // версію беремо ДО даних: якщо хтось збереже під час завантаження,
   // наступна перевірка побачить новішу версію й дотягне його зміни
   const ver = await dataVersion();
+  const prevS = S, oldSnap = SNAP;
+  const skipAudit = !!(opts && opts.soft && prevS && prevS.eco && Array.isArray(prevS.audit)
+                       && AUDIT_AT && Date.now() - AUDIT_AT < ECO_AUDIT_EVERY);
   const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au, st] = await Promise.all([
     fetchAll('profiles'),
     fetchAll('invites', { filter: q => q.is('accepted_at', null) }),
@@ -3433,7 +3461,8 @@ async function hydrate(opts) {
     fetchAll('payments'),
     fetchAll('returns'),
     fetchAll('order_events'),
-    fetchAll('audit', { order: 'created_at', desc: true, max: 3000 }),  // історія — лише свіжа частина
+    skipAudit ? Promise.resolve({ data: null })                         // економ-режим: історія з пам'яті
+              : fetchAll('audit', { order: 'created_at', desc: true, max: 3000 }),  // історія — лише свіжа частина
     db.from('app_settings').select('*')
   ]);
   const err = [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au].find(r => r.error);
@@ -3453,8 +3482,10 @@ async function hydrate(opts) {
     skus: (sk.data || []).map(r => fromSku(r, (sc.data || []).filter(c => c.sku_id === r.id))),
     ops: (op.data || []).map(fromOp),
     reserves: (or_.data || []).map(r => fromOrder(r, ol.data || [], pa.data || [], rt.data || [], ev.data || [])),
-    audit: (au.data || []).map(a => ({ id: a.id, sku: a.sku_id, act: a.act, text: a.text, who: a.created_by, at: a.created_at })),
+    audit: skipAudit ? prevS.audit
+      : (au.data || []).map(a => ({ id: a.id, sku: a.sku_id, act: a.act, text: a.text, who: a.created_by, at: a.created_at })),
     debug: ((st && st.data) || []).some(r => r.key === 'debug_mode' && r.value === true),
+    eco: ((st && st.data) || []).some(r => r.key === 'eco_mode' && r.value === true),
     lastBackup: ((((st && st.data) || []).find(r => r.key === 'last_backup')) || {}).value || null,
     limits: Object.fromEntries(((st && st.data) || [])
       .filter(r => r.key === 'storage_limit_mb' || r.key === 'db_limit_mb')
@@ -3490,7 +3521,8 @@ async function hydrate(opts) {
   (pa.data || []).forEach(p => remember('pay', p.id, p));
   (rt.data || []).forEach(r => remember('ret', r.id, r));
   (ev.data || []).forEach(e => remember('ev', e.id, e));
-  (au.data || []).forEach(a => remember('audit', a.id, a));
+  if (skipAudit) S.audit.forEach(a => { const k = snapKey('audit', a.id); if (oldSnap[k]) SNAP[k] = oldSnap[k]; });  // збережене лишається збереженим
+  else { (au.data || []).forEach(a => remember('audit', a.id, a)); AUDIT_AT = Date.now(); }
   (pf.data || []).forEach(p => remember('profile', p.id, { id: p.id, name: p.name, role: p.role, client: p.client || null, sites: Array.isArray(p.sites) && p.sites.length ? p.sites : allSites(), removed: p.removed }));
   (iv.data || []).forEach(i => remember('invite', i.id, { id: i.id, email: i.email, name: i.name, role: i.role }));
   DATA_V = ver; FULL_AT = Date.now();
@@ -3964,6 +3996,8 @@ async function reloadSoon() {
   reloadTimer = setTimeout(async () => {
     if (SYNCING || DIRTY) return;
     if (document.hidden) return;          // вкладка у фоні — повернеться, тоді й оновимо (focus)
+    if (eco() && Date.now() - LAST_CHECK < ECO_CHECK_EVERY) return;   // економ-режим: не частіше ніж раз на 3 хв
+    LAST_CHECK = Date.now();
     try {
       if (!(await needFullReload())) return;
       if (await hydrate({ soft: true }) === false) return;
@@ -3977,7 +4011,7 @@ async function reloadSoon() {
 /* Дешева перевірка замість повного завантаження: одне число версії
    і відмітки «був у мережі» (вони міняються щохвилини й версію не чіпають). */
 async function needFullReload() {
-  if (DATA_V === null || Date.now() - FULL_AT > FULL_EVERY) return true;
+  if (DATA_V === null || Date.now() - FULL_AT > (eco() ? ECO_FULL_EVERY : FULL_EVERY)) return true;
   let v = null, pf = null;
   try { [v, pf] = await Promise.all([dataVersion(), db.from('profiles').select('id,last_seen')]); }
   catch (e) { return true; }
@@ -4284,6 +4318,7 @@ function render(){
 }
 
 const photoSrc = p => !p ? '' : (p.startsWith('data:') ? p : (PHOTO_URL[p]||''));
+const cardPhotoSrc = p => eco() ? thumbSrc(p) : photoSrc(p);   // економ-режим: мініатюра, повне — натисканням
 function thumbHtml(s, cls='thumb'){
   // loading="lazy": браузер тягне фото, лише коли картка доходить до екрана.
   // Без цього відкриття каталогу качало всі 126 фото одразу — десятки мегабайтів
@@ -5656,6 +5691,13 @@ function openSettings(){
         : 'Вимкнений. Видалити назавжди можна лише те, за чим не стоїть рух товару чи гроші. Решта — через анулювання, повернення й коригування.'}</p>
       <button class="btn ${S.debug?'out':'ghost'}" data-debug="${S.debug?'off':'on'}" style="width:100%">${S.debug?'Вимкнути режим налагодження':'Увімкнути режим налагодження'}</button>
     </div>`:''}
+    ${me().role==='admin'?`<div class="box"><h3>Економ-режим</h3>
+      <p class="hint" style="margin:0 0 8px">${S.eco
+        ? 'Увімкнений для всіх. На початку нового місяця трафіку в Supabase вимкніть.'
+        : 'Вимкнений. Вмикайте, коли в Supabase трафік (Egress) підходить до 80% ліміту. Діє для всіх: у картках зменшені фото (повне — натисканням), зміни інших людей з’являються до 3 хв пізніше, історія змін оновлюється раз на годину. Заявки, залишки й пошук працюють як завжди.'}</p>
+      <button class="btn ${S.eco?'out':'ghost'}" data-eco="${S.eco?'off':'on'}" style="width:100%">${S.eco?'Вимкнути економ-режим':'Увімкнути економ-режим'}</button>
+    </div>`:(S.eco?`<div class="box"><h3>Економ-режим</h3>
+      <p class="hint" style="margin:0">Адмін увімкнув економію трафіку: у картках зменшені фото (натисніть, щоб побачити повне), зміни інших людей з’являються до 3 хв пізніше.</p></div>`:'')}
     <div class="box"><h3>Ви в системі</h3>
       <div class="urow">${avatar(me(),'big')}<div style="flex:1;min-width:0"><b>${esc(me().name)}</b><div class="sub" style="color:var(--muted);font-size:13px">${esc(loginOf(ME?ME.email:''))} · <span>${ROLE[me().role]}</span></div></div></div>
       <button class="btn ghost" id="logoutBtn" style="width:100%;margin-top:8px">Вийти</button>
@@ -6376,6 +6418,13 @@ function armed(btn, key, label){
   return false;
 }
 
+async function setEco(on){
+  const { error } = await db.from('app_settings').upsert({ key:'eco_mode', value: on, updated_by: S.current });
+  if(error){ console.warn('eco', error); toast('Не вдалося зберегти налаштування.'); return; }
+  S.eco = on; LAST_CHECK = 0;
+  toast(on ? 'Економ-режим увімкнено для всіх' : 'Економ-режим вимкнено');
+  openSettings();
+}
 async function setDebug(on){
   const r = await callAccess({ mode:'debug', on });
   if(!r.ok){ toast(r.msg); return; }
@@ -6954,9 +7003,9 @@ function openSku(id){
         <b>Composition:</b>
         ${(s.comp||[]).length?compSorted(s.comp).map(x=>`<div class="cl num"><span class="cp">${fmtPctC(x.p)}%</span> ${esc(x.f)}</div>`).join('')+`<div class="ctypes">${compTypes(s.comp).map(t=>`<span>${esc(TYPE_UA[t]||t)}</span>`).join('')}</div>`:'<div class="cl" style="color:var(--muted);font-weight:400">не вказано</div>'}
       </div>
-      ${s.photos[0]?`<img class="sw-big zoomable" data-zoom="0" data-sku="${s.id}" src="${photoSrc(s.photos[0])}" alt="Фото пряжі">`:`<div class="sw-big" style="background:${esc(s.hex||'var(--indigo-soft)')}" role="img" aria-label="Відтінок ${esc(s.color||'')}"></div>`}
+      ${s.photos[0]?`<img class="sw-big zoomable" data-zoom="0" data-sku="${s.id}" src="${cardPhotoSrc(s.photos[0])}" alt="Фото пряжі">`:`<div class="sw-big" style="background:${esc(s.hex||'var(--indigo-soft)')}" role="img" aria-label="Відтінок ${esc(s.color||'')}"></div>`}
     </div>
-    ${s.photos.length>1?`<div class="gallery">${s.photos.slice(1).map((p,i)=>`<img class="zoomable" data-zoom="${i+1}" data-sku="${s.id}" src="${photoSrc(p)}" alt="Фото пряжі" loading="lazy" decoding="async">`).join('')}</div>`:''}
+    ${s.photos.length>1?`<div class="gallery">${s.photos.slice(1).map((p,i)=>`<img class="zoomable" data-zoom="${i+1}" data-sku="${s.id}" src="${cardPhotoSrc(p)}" alt="Фото пряжі" loading="lazy" decoding="async">`).join('')}</div>`:''}
     <div class="levels-big num${isClient()?' one':''}">
       ${isClient()?'':`
       <div class="lv stock"><b>${t('sku.stock')}</b><div class="kg">${fmtKg(l.kg)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.cn)} ${t('sku.cones')}</div></div>
@@ -7874,6 +7923,7 @@ document.addEventListener('click', e=>{
   if(d.lang){ setLang(d.lang); render(); openSettings(); return; }
   if(d.theme){ applyTheme(d.theme); openSettings(); return; }
   if(d.debug){ setDebug(d.debug==='on'); return; }
+  if(d.eco){ setEco(d.eco==='on'); return; }
   if(d.opurge){ purgeOrder(t, d.opurge); return; }
   if(d.purgeuser){ purgeUser(t, d.purgeuser); return; }
   if('setpass' in d){ setPass(); return; }
