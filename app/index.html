@@ -3767,18 +3767,30 @@ async function pushChanges() {
         } else remember('order', o.id, row);
       }
       const rows = o.lines.map((l, i) => { l.id = l.id || crypto.randomUUID(); return lineRowOf(o, l, i); });
-      for (const r of rows) {
-        if (changed('line', r.id, r)) {
-          const { error } = await db.from('order_lines').upsert(r);
-          if (error) throw error;          // мовчазна втрата позицій — саме так кг ставали нульовими
-          remember('line', r.id, r);
-        }
-      }
+      // спершу прибираємо позиції, яких у заявці більше немає, — щоб звільнити їхні номери
       const keep = new Set(rows.map(r => r.id));
       for (const k of Object.keys(SNAP)) {
         if (!k.startsWith('line:')) continue;
         const r = JSON.parse(SNAP[k]);
-        if (r.order_id === o.id && !keep.has(r.id)) { await db.from('order_lines').delete().eq('id', r.id); delete SNAP[k]; }
+        if (r.order_id === o.id && !keep.has(r.id)) {
+          const { error } = await db.from('order_lines').delete().eq('id', r.id);
+          if (error) throw error;
+          delete SNAP[k];
+        }
+      }
+      for (const r of rows) {
+        if (changed('line', r.id, r)) {
+          let { error } = await db.from('order_lines').upsert(r);
+          if (error && error.code === '23505') {
+            // номер позиції ще зайнятий (позиції помінялись місцями) — тимчасово відсуваємо
+            // номери всіх позицій цієї заявки й записуємо ще раз
+            for (const x of rows) await db.from('order_lines').update({ pos: x.pos + 1000 }).eq('id', x.id);
+            for (const x of rows) { const { error: e2 } = await db.from('order_lines').upsert(x); if (e2) throw e2; remember('line', x.id, x); }
+            error = null; break;
+          }
+          if (error) throw error;          // мовчазна втрата позицій — саме так кг ставали нульовими
+          remember('line', r.id, r);
+        }
       }
       for (const p of (o.payments || [])) {
         p.id = p.id || crypto.randomUUID();
@@ -4921,6 +4933,9 @@ function saveOrderDraft(){
   if(shipMode!==(o.shipMode||'us')) ch.push(`доставка: ${shipMode==='client'?'за рахунок клієнта':'за наш рахунок'}`);
   if(comment!==(o.comment||'')) ch.push('коментар змінено');
   if(!ch.length) return drawOrderEditor('Змін немає.');
+  /* позиція, що лишилась у заявці, зберігає свій id — інакше в базі з'являлась би
+     друга позиція з тим самим номером (order_lines_order_id_pos_key, помилка 23505) */
+  lines.forEach(n=>{ const old=o.lines.find(x=>x.sku===n.sku); if(old && old.id) n.id=old.id; });
   Object.assign(o,{client,sample:smp,terms,days,comment,shipMode,lines});
   oev(o,'Змінено: '+ch.join('; '));
   if(save()){ toast('Заявку № '+orderNo(o)+' змінено'); render(); openOrderView(o.id); }
