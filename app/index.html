@@ -222,10 +222,26 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 .catf .cfx.cfdl{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
 .catf .cfx.cfdl:hover{filter:brightness(1.12)}
 .catsum{margin:4px 0 0;font-size:12px;color:var(--muted);line-height:1.25}
+/* онлайн — лише значками; прайс Європа / Україна */
+.online{padding:3px 5px 3px 3px}
+.online .more{font-size:11.5px;font-weight:700;color:var(--muted);margin-left:2px}
+.plsw{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:3px;gap:2px;flex:none}
+.plsw[hidden]{display:none}
+.plsw button{border:0;background:none;padding:5px 11px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--muted);line-height:1.1}
+.plsw button.on{background:var(--primary);color:var(--on-primary)}
+.plsw button.on.ua{background:#2F5DA8;color:#fff}
+.plsw .s{display:none}
+@media (max-width:600px){.plsw .l{display:none}.plsw .s{display:inline}.plsw button{padding:5px 8px}}
+@media (max-width:440px){.online .avs .av:nth-child(n+3){display:none}.sitebtn .nm{max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+.chip.sale.ua{background:#2F5DA8;color:#fff}
+.plb{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11px;font-weight:700;line-height:1.5;background:var(--indigo-soft);color:var(--gold-deep)}
+.plb.ua{background:#E7EEF9;color:#2F5DA8}
 /* на ПК зсуваємо під текст пошуку, а не під лупу; на телефоні місця обмаль — лишаємо з краю */
 @media (min-width:900px){.catsum{margin-left:30px}
   .oncat .brand .dgtext{display:none}
-  .brand #catSum{display:none;margin:0;font-size:14px;line-height:1.35;min-width:0}
+  .brand #catSum{display:none;margin:0;font-size:12px;line-height:1.25;min-width:0}
+  .brand #catSum .cs3{display:block;white-space:nowrap}
+  .brand #catSum .csd2{display:none}
   .oncat .brand #catSum{display:block}
   .brand #catSum .cs1,.brand #catSum .cs2{display:block;white-space:nowrap}
   .brand #catSum .csd{display:none}
@@ -837,6 +853,7 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
         <div class="sitemenu" id="siteMenu" hidden></div>
       </div>
       <span class="tgap" aria-hidden="true"></span>
+      <div class="plsw" id="plSw" hidden role="group" aria-label="Прайс"></div>
       <button class="online" id="onlineBtn" aria-label="Хто зараз у базі"></button>
       <span id="syncDot" class="syncdot ok" title="Усі зміни збережено"></span>
       <button class="gear" id="settingsBtn" aria-label="Доступ і експорт"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -1252,6 +1269,12 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Прайс':'Listino',
+    'Європа':'Europa',
+    'Україна':'Ucraina',
+    'прайс Україна':'listino Ucraina',
+    'Ціна продажу (Україна), €/кг':'Prezzo di vendita (Ucraina), €/kg',
+    'прайс:':'listino:',
     'Економ-режим':'Modalità risparmio',
     'Увімкнути економ-режим':'Attiva la modalità risparmio',
     'Вимкнути економ-режим':'Disattiva la modalità risparmio',
@@ -2164,6 +2187,12 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Прайс':'Price list',
+    'Європа':'Europe',
+    'Україна':'Ukraine',
+    'прайс Україна':'Ukraine price list',
+    'Ціна продажу (Україна), €/кг':'Sale price (Ukraine), €/kg',
+    'прайс:':'price list:',
     'Економ-режим':'Saving mode',
     'Увімкнути економ-режим':'Turn on saving mode',
     'Вимкнути економ-режим':'Turn off saving mode',
@@ -3301,6 +3330,7 @@ const SB_KEY = 'sb_publishable_hOxUT36SMVhShYKrycBLGQ_DVjU9WSk';
 const db = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 
 let ME = null;              // профіль поточного користувача
+let PL_COL = false;          // чи є в базі стовпець orders.price_list (SQL 25)
 let SNAP = {};              // знімок останнього стану з бази (для diff)
 let SYNCING = false, DIRTY = false;
 /* Лічильник змін бази (таблиця data_version, SQL 24). Раз на 45 с застосунок
@@ -3371,7 +3401,7 @@ function fromOrder(r, lines, pays, rets, evs) {
   }));
   return {
     id: r.id, yy: r.yy, no: r.no, client: r.client, sample: r.sample,
-    site: r.site || 'sg',
+    site: r.site || 'sg', pl: r.price_list === 'ua' ? 'ua' : 'eu',
     terms: r.terms, days: r.days, comment: r.comment || '',
     shipMode: r.ship_mode, delivery: +r.delivery || 0, carrierName: r.carrier_name || '',
     boxes: r.boxes || 0, boxKg: +r.box_kg || 0,
@@ -3390,7 +3420,7 @@ function fromOrder(r, lines, pays, rets, evs) {
 }
 const orderRowOf = o => ({
   id: o.id, yy: o.yy, no: o.no, client: o.client, sample: !!o.sample,
-  site: siteOf(o),
+  site: siteOf(o), ...(PL_COL ? { price_list: o.pl === 'ua' ? 'ua' : 'eu' } : {}),
   terms: o.terms === 'sample' ? 'sample' : o.terms, days: +o.days || 0,
   comment: o.comment || null, ship_mode: o.shipMode || 'us', delivery: +o.delivery || 0,
   carrier_name: o.carrierName || null, boxes: +o.boxes || 0, box_kg: +o.boxKg || 0,
@@ -3472,6 +3502,8 @@ async function hydrate(opts) {
      (на телефоні — якраз після повернення з камери, коли спрацьовує focus).
      Тоді ці дані вже застарілі — не чіпаємо пам'ять, оновимося наступного разу. */
   if (opts && opts.soft && (DIRTY || SYNCING || WGEN !== gen)) return false;
+  // стовпець прайсу з'являється після SQL 25 — до того його не надсилаємо, щоб не зламати збереження
+  if ((or_.data || []).length) PL_COL = 'price_list' in or_.data[0];
 
   SNAP = {};
   S = {
@@ -4158,6 +4190,40 @@ const me = () => S.users.find(u=>u.id===S.current) || S.users[0];
 const can = k => !!(CAN[me().role]||{})[k];
 const seeSale = () => can('fin')||can('order');
 const seeCost = () => can('fin');
+/* Прайс. Ціна в картці SKU — європейська (її ж бере канал). Україна = Європа ÷ 1,25,
+   тобто Європа = Україна × 1,25 — як у каналах. Перемикач у шапці діє на каталог,
+   вивантаження і нові заявки; заявка пам'ятає свій прайс. */
+const UA_K = 1.25, PL_KEY = 'sklad-price';
+/* Розбивку сум Європа / Україна (аналітика, дебіторка) поки сховано — рахуємо разом. */
+const SHOW_PL_SPLIT = false;
+let PRICE_LIST = (() => { try { return localStorage.getItem(PL_KEY) === 'ua' ? 'ua' : 'eu'; } catch (e) { return 'eu'; } })();
+const plPrice = (eur, pl) => { eur = +eur || 0; return (pl || PRICE_LIST) === 'ua' ? Math.round(eur / UA_K * 100) / 100 : eur; };
+const plName = pl => pl === 'ua' ? 'Україна' : 'Європа';
+const plBadge = pl => `<span class="plb ${pl === 'ua' ? 'ua' : 'eu'}">${pl === 'ua' ? 'UA' : 'EU'}</span>`;
+/* ціна з прайсу перераховується; середня фактична (коли прайсу немає) лишається як є */
+const plView = pr => { if (!pr || PRICE_LIST !== 'ua' || pr.src !== 'прайс') return pr;
+  const sale = plPrice(pr.sale);
+  return Object.assign({}, pr, { sale, src: 'прайс Україна', markup: pr.cost && sale ? (sale - pr.cost) / pr.cost * 100 : null }); };
+const plSwHtml = (cur, attr) => ['eu', 'ua'].map(v => `<button type="button" ${attr}="${v}" class="${cur === v ? 'on' : ''} ${v}" aria-pressed="${cur === v}"><span class="l">${plName(v)}</span><span class="s">${v === 'ua' ? 'UA' : 'EU'}</span></button>`).join('');
+function drawPlSwitch(){
+  const el = $('#plSw'); if (!el) return;
+  const show = !!S.current && seeSale() && !isClient();
+  el.hidden = !show; if (show) el.innerHTML = plSwHtml(PRICE_LIST, 'data-plsw');
+}
+function setPriceList(pl){
+  PRICE_LIST = pl === 'ua' ? 'ua' : 'eu';
+  try { localStorage.setItem(PL_KEY, PRICE_LIST); } catch (e) {}
+  catF.sale = []; catF.mk = []; CF_SIG = '';     // значення цих фільтрів залежать від прайсу
+  render();
+}
+function setOdPl(pl){
+  if (!OD) return; syncOD();
+  const old = OD.pl || 'eu'; OD.pl = pl === 'ua' ? 'ua' : 'eu'; if (old === OD.pl) return;
+  OD.lines.forEach(li => { if (li.sample) return; const sx = skuById(li.sku) || {}; if (!+sx.sale) return;
+    const was = plPrice(sx.sale, old), cur = parseFloat(li.price) || 0;
+    if (!can('fin') || !cur || Math.abs(cur - was) < 0.005) li.price = plPrice(sx.sale, OD.pl); });   // ціну, змінену вручну, не чіпаємо
+  drawOrderEditor();
+}
 const activeUsers = () => S.users.filter(u=>!u.removed);
 const uname = id => (S.users.find(u=>u.id===id)||{}).name || '—';
 function audit(sku, act, text){ S.audit=S.audit||[]; S.audit.push({id:uid(), sku, act, text, who:S.current, at:now()}); }
@@ -4302,6 +4368,7 @@ function levels(skuId, idx){
 /* ---------- views ---------- */
 let tab='catalog';
 function render(){
+  drawPlSwitch();
   document.querySelectorAll('nav.tabs [data-tab]').forEach(b=>b.setAttribute('aria-current', b.dataset.tab===tab));
   const FIN_TABS=['journal','stats','export'];
   const hidden = el => { const t=el.dataset.tab||el.id;
@@ -4412,14 +4479,14 @@ function mkAvgSale(id){
   return MK_AVG[id] || 0;
 }
 function mkVal(s){
-  const cost = +costInfo(s).price || 0, sale = +s.sale || mkAvgSale(s.id);
+  const cost = +costInfo(s).price || 0, sale = +s.sale ? plPrice(s.sale) : mkAvgSale(s.id);
   if(!(cost > 0) || !(sale > 0)) return '';
   return String(Math.round((sale - cost) / cost * 1000) / 10);   // як у картці: до десятої відсотка
 }
 /* колір групуємо за назвою без номера: «Rosso 111» і «Rosso 403» — один «Rosso» */
 const colorName = c => { const t = String(c||'').replace(/\d+/g,' ').replace(/[\/\\_.,#–-]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
   return t ? t[0].toUpperCase() + t.slice(1) : ''; };
-const cfVal = (key, s) => key==='mk' ? mkVal(s) : key==='color' ? colorName(s.color) : key==='cost' ? (+costInfo(s).price ? String(+costInfo(s).price) : '') : key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? (+s.sale ? String(+s.sale) : '') : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
+const cfVal = (key, s) => key==='mk' ? mkVal(s) : key==='color' ? colorName(s.color) : key==='cost' ? (+costInfo(s).price ? String(+costInfo(s).price) : '') : key==='brand' ? (s.maker||'') : key==='art' ? (s.art||'') : key==='sale' ? (+s.sale ? String(plPrice(s.sale)) : '') : key==='nm' ? String(s.meter||'').trim().replace(/\s+/g,'') : compText(s.comp);
 /* порожнє значення (немає ціни, кольору, Nm…) — окремий пункт «Пусто» */
 const cfShow = (key, v) => v === '' ? 'Пусто' : key==='mk' ? fmtPct(+v) : (key==='sale' || key==='cost') ? fmtEur(+v)+'/кг' : key==='nm' ? 'Nm '+v : v;
 let CF_OPEN = '';
@@ -4561,13 +4628,13 @@ function viewCatalog(){
     /* на ПК кількість SKU — першим рядком, кілограми — другим, одним рядком */
     const cut = sumTxt.indexOf(' · ');
     const html = cut < 0 ? esc(sumTxt)
-      : `<span class="cs1">${esc(sumTxt.slice(0,cut))}</span><span class="csd"> · </span><span class="cs2">${esc(sumTxt.slice(cut+3))}</span>`;
+      : `<span class="cs1">${esc(sumTxt.slice(0,cut))}</span><span class="csd"> · </span><span class="cs2">${sumTxt.slice(cut+3).split(' · ').map(x=>`<span class="cs3">${esc(x)}</span>`).join('<span class="csd2"> · </span>')}</span>`;
     if(sumEl.dataset.sig !== html){ sumEl.dataset.sig = html; sumEl.innerHTML = html; }
   }
   $('#view').innerHTML = `
     ${list.length ? list.map(s=>{
       const l=levels(s.id, LIDX);
-      const pr=pricing(s,l);
+      const pr=plView(pricing(s,l));
       return `<button class="sku" data-open="${s.id}">
         <div class="body">
           <div class="sinfo">
@@ -4580,7 +4647,7 @@ function viewCatalog(){
         </div>
         <div class="scol">${thumbHtml(s,'thumb sthumb')}${can('delsku')?`<span class="delsku ${Math.abs(l.kg)<0.001&&l.cn===0&&l.rk<0.001?'':'off'}" role="button" tabindex="0" data-delsku="${s.id}" aria-label="${t('cat.del')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>`:''}</div>
           <div class="levels num slevels">
-            ${seeSale()?`<span class="chip sale">${t('cat.sale')} ${pr.sale?fmtEur(pr.sale)+'/'+t('unit.kg'):'—'}</span>`:''}
+            ${seeSale()?`<span class="chip sale${PRICE_LIST==='ua'&&pr.src==='прайс Україна'?' ua':''}">${t('cat.sale')} ${pr.sale?fmtEur(pr.sale)+'/'+t('unit.kg'):'—'}</span>`:''}
             <span class="chip free">${t('cat.free')} ${fmtKg(l.fk)} ${t('unit.kg')} / ${fmtN(l.fc)} ${t('unit.cn')}</span>
             ${viewSites().length>1?`<span class="chip site">${esc(siteTag(siteOf(s)))}</span>`:''}
             ${l.rk>0&&!isClient()?`<span class="chip resv">${t('cat.resv')} ${fmtKg(l.rk)} ${t('unit.kg')}</span>`:''}
@@ -4719,7 +4786,7 @@ function orderCard(o){
   const overdue = st==='unpaid' && o.due && o.due.slice(0,10)<todayStr();
   const b=orderActions(o);
   return `<div class="ocard" data-oview="${o.id}" role="button" tabindex="0" aria-label="Відкрити заявку № ${orderNo(o)}">
-    <div class="ohead"><b class="num">№ ${orderNo(o)}</b><span class="stg ${STAGE_CLS[st]}">${stageLabel(o)}</span>${o.sample&&st!=='sample'?'<span class="stg st-sample">пробники</span>':''}${hasRet(o)?'<span class="stg st-cancel" style="text-decoration:none">повернення</span>':''}</div>
+    <div class="ohead"><b class="num">№ ${orderNo(o)}</b>${seeSale()&&!isClient()&&!allSmp(o)?plBadge(o.pl):''}<span class="stg ${STAGE_CLS[st]}">${stageLabel(o)}</span>${o.sample&&st!=='sample'?'<span class="stg st-sample">пробники</span>':''}${hasRet(o)?'<span class="stg st-cancel" style="text-decoration:none">повернення</span>':''}</div>
     <div class="oline"><b>${esc(o.client)}</b>${viewSites().length>1?`<span class="stg" style="background:var(--indigo-soft);color:var(--gold-deep)">${esc(siteTag(siteOf(o)))}</span>`:''}</div>
     <div class="sub num" style="color:var(--muted);font-size:13px;margin-bottom:6px">${n} ${pos(n)} · ${fmtKg(oKg(o))} кг / ${fmtN(oCn(o))} к${!seeSale()?'':allSmp(o)&&!oShip(o)?' · без оплати':` · <b style="color:var(--ink)">${fmtEur(oTotal(o))}</b>${oShip(o)?` <span style="font-size:12px">(з доставкою)</span>`:''}`}</div>
     ${o.lines.slice(0,2).map((li,i)=>lineHtml(o,li,i)).join('')}
@@ -4742,7 +4809,7 @@ function openOrderView(id){
   const o=oById(id); if(!o) return;
   const st=oStage(o);
   openSheet(`${head('Заявка № '+orderNo(o)+' від '+fmtDate(o.at))}
-    <div class="ohead"><span class="stg ${STAGE_CLS[st]}">${stageLabel(o)}</span>${o.sample&&st!=='sample'?'<span class="stg st-sample">пробники</span>':''}${hasRet(o)?'<span class="stg st-cancel" style="text-decoration:none">повернення</span>':''}</div>
+    <div class="ohead">${seeSale()&&!isClient()&&!allSmp(o)?plBadge(o.pl):''}<span class="stg ${STAGE_CLS[st]}">${stageLabel(o)}</span>${o.sample&&st!=='sample'?'<span class="stg st-sample">пробники</span>':''}${hasRet(o)?'<span class="stg st-cancel" style="text-decoration:none">повернення</span>':''}</div>
     <div class="box">
       <div class="oline" style="font-size:18px"><b>${esc(o.client)}</b></div>
       <div class="sub" style="color:var(--muted)">${!seeSale()?'':termsText(o)}${o.paid&&!allSmp(o)?` · оплачено ${fmtDate(o.paidAt)}`:''}${!o.paid&&oPaid(o)>0?` · оплачено ${fmtEur(oPaid(o))}, залишок ${fmtEur(oOwed(o))}`:''}${o.due&&!o.paid?` · <span class="${o.due.slice(0,10)<todayStr()?'neg':''}">оплатити до ${fmtDate(o.due)}${o.due.slice(0,10)<todayStr()?` (прострочено ${daysOver(o)} ${dayWord(daysOver(o))})`:''}</span>`:''}</div>
@@ -4785,6 +4852,7 @@ function openOrderEditor(id){
   const nx=nextOrderNo();
   OD = o ? {id:o.id, site:siteOf(o), title:orderNo(o), client:o.client, terms:o.terms==='deferred'?'def':'prepay', days:o.days||30, shipMode:o.shipMode||(+o.shipping>0?'client':'us'), comment:o.comment||'', lines:o.lines.map(li=>({sku:li.sku,kg:li.kg,cones:li.cones,price:li.price,sample:!!li.sample}))}
          : {id:null, site:defSite(null), title:fmtNo(nx.yy,nx.no), client:isClient()?myClient():'', terms:'prepay', days:30, shipMode:'us', comment:'', lines:[]};
+  OD.pl = o ? (o.pl==='ua'?'ua':'eu') : (isClient()?'eu':PRICE_LIST);
   drawOrderEditor();
 }
 function syncOD(){
@@ -4801,7 +4869,7 @@ function syncOD(){
        Менеджер і клієнт беруть її з картки товару — інакше знижку можна
        було б поставити собі самому, і те саме правило стоїть у базі. */
     if(can('fin')){ if(p) li.price=p.value; }
-    else { const sx=skuById(li.sku)||{}; li.price = sx.sale || li.price || 0; } });
+    else { const sx=skuById(li.sku)||{}; li.price = (+sx.sale ? plPrice(sx.sale, OD.pl) : 0) || li.price || 0; } });
 }
 function drawOrderEditor(err){
   const o=OD.id?oById(OD.id):null;
@@ -4810,6 +4878,7 @@ function drawOrderEditor(err){
   openSheet(`${head('Заявка № '+OD.title)}
     ${o && oStage(o)!=='res' ? '<p class="hint" style="color:var(--red);margin:0 0 10px">Заявка вже в роботі. Зміни перерахують суму й резерв. Якщо оплату вже прийнято або відвантаження дозволено — перевірте дебіторку.</p>' : ''}
     <label class="f">Клієнт<input id="odClient" list="odClients" autocomplete="off" placeholder="Назва клієнта" value="${esc(OD.client)}" ${isClient()?'readonly title="Заявки оформлюються на вашу компанію"':''}></label>
+    ${seeSale()&&!isClient()?`<div class="f" style="margin-bottom:6px">Прайс</div><div class="plsw" style="margin-bottom:12px">${plSwHtml(OD.pl||'eu','data-odpl')}</div>`:''}
     ${isClient()?'':`<datalist id="odClients">${clients.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>`}
     ${mySites().length>1
       ? `<label class="f">Склад<select id="odSite" ${OD.lines.length?'disabled title="Склад заявки змінюється, поки в ній немає позицій"':''}>${mySites().map(c=>`<option value="${c}" ${c===OD.site?'selected':''}>${esc(SITE_NAME[c])}</option>`).join('')}</select></label>
@@ -4872,13 +4941,13 @@ function openSkuPicker(){
       const off = fk<=0.001&&!added;
       return `<button class="pick ${added?'added':''} ${off?'off':''}" data-pick="${s.id}" ${off?'aria-disabled="true"':''}>
         ${skuRow(s).replace('<img class="thumb osw"', `<img class="thumb osw zoomable" data-zoom="0" data-sku="${s.id}" title="Збільшити фото"`)}
-        <div class="pick-f num"><span>вільно ${fmtKg(fk)} кг / ${fmtN(fc)} к</span>${seeSale()&&s.sale?`<span>${fmtEur(s.sale)}/кг</span>`:''}<span class="pick-a">${added?'✓ додано':fk<=0.001?'немає вільного':'+ додати'}</span></div>
+        <div class="pick-f num"><span>вільно ${fmtKg(fk)} кг / ${fmtN(fc)} к</span>${seeSale()&&s.sale?`<span>${fmtEur(plPrice(s.sale, OD.pl))}/кг</span>`:''}<span class="pick-a">${added?'✓ додано':fk<=0.001?'немає вільного':'+ додати'}</span></div>
       </button>`; }).join('')||'<div class="empty">Нічого не знайдено.</div>'}`);
   const inp=$('#pickQ'); inp.addEventListener('input',()=>{ pickQ=inp.value; const pos=inp.selectionStart; openSkuPicker(); const n=$('#pickQ'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} });
 }
 function pickSku(id){
   if(!OD) return;
-  if(!OD.lines.some(li=>li.sku===id)){ const s=skuById(id); OD.lines.push({sku:id,kg:'',cones:'',price:s.sale||'',sample:!can('order')}); }
+  if(!OD.lines.some(li=>li.sku===id)){ const s=skuById(id); OD.lines.push({sku:id,kg:'',cones:'',price:(+s.sale?plPrice(s.sale, OD.pl):'')||'',sample:!can('order')}); }
   drawOrderEditor();
 }
 function saveOrderDraft(){
@@ -4914,7 +4983,7 @@ function saveOrderDraft(){
   const sumTxt = ls => `${ls.length} ${pos(ls.length)}, ${fmtKg(ls.reduce((t,x)=>t+x.kg,0))} кг / ${fmtN(ls.reduce((t,x)=>t+x.cones,0))} к`;
   if(!o){
     const nx=nextOrderNo(); S.orderSeqByYear[nx.yy]=nx.no;
-    const no={id:uid(),yy:nx.yy,no:nx.no,site:OD.site||defSite(null),client,sample:smp,terms,days,comment,shipMode,shipping:0,lines,who:S.current,at:now(),status:'active',events:[]};
+    const no={id:uid(),yy:nx.yy,no:nx.no,site:OD.site||defSite(null),client,sample:smp,terms,days,comment,shipMode,shipping:0,pl:OD.pl==='ua'?'ua':'eu',lines,who:S.current,at:now(),status:'active',events:[]};
     oev(no,`${smp?'Заявку на пробники':'Заявку'} створено: ${sumTxt(lines)}, доставка ${shipMode==='client'?'за рахунок клієнта':'за наш рахунок'}, товар у резерві`);
     S.reserves.push(no);
     if(save()){ toast(`Заявку № ${orderNo(no)} створено`); OD=null; closeSheet(); tab='reserves'; oFilter='all'; render(); }
@@ -4932,11 +5001,12 @@ function saveOrderDraft(){
   o.lines.forEach(x=>{ if(!lines.some(n=>n.sku===x.sku)) ch.push(`прибрано ${art(x.sku)}`); });
   if(shipMode!==(o.shipMode||'us')) ch.push(`доставка: ${shipMode==='client'?'за рахунок клієнта':'за наш рахунок'}`);
   if(comment!==(o.comment||'')) ch.push('коментар змінено');
+  if((OD.pl||'eu')!==(o.pl||'eu')) ch.push(`прайс: ${plName(o.pl)} → ${plName(OD.pl)}`);
   if(!ch.length) return drawOrderEditor('Змін немає.');
   /* позиція, що лишилась у заявці, зберігає свій id — інакше в базі з'являлась би
      друга позиція з тим самим номером (order_lines_order_id_pos_key, помилка 23505) */
   lines.forEach(n=>{ const old=o.lines.find(x=>x.sku===n.sku); if(old && old.id) n.id=old.id; });
-  Object.assign(o,{client,sample:smp,terms,days,comment,shipMode,lines});
+  Object.assign(o,{client,sample:smp,terms,days,comment,shipMode,pl:OD.pl==='ua'?'ua':'eu',lines});
   oev(o,'Змінено: '+ch.join('; '));
   if(save()){ toast('Заявку № '+orderNo(o)+' змінено'); render(); openOrderView(o.id); }
 }
@@ -5180,11 +5250,11 @@ function viewDebt(){
   const mgrKeys=Object.keys(byMgr).sort((a,b)=>byMgr[b].reduce((t,o)=>t+oOwed(o),0)-byMgr[a].reduce((t,o)=>t+oOwed(o),0));
   const orderRow = o => { const od=o.due&&o.due.slice(0,10)<todayStr(); const dn=daysOver(o);
     return `<div class="drow ${od?'over':''}" data-oview="${o.id}" role="button" tabindex="0">
-      <div class="drow-t"><b class="num">№ ${orderNo(o)}</b>${od?`<span class="odbadge num">прострочено ${dn} ${dayWord(dn)}</span>`:''}<span class="num dsum ${od?'neg':''}">${fmtEur(oOwed(o))}</span></div>
+      <div class="drow-t"><b class="num">№ ${orderNo(o)}</b>${plBadge(o.pl)}${od?`<span class="odbadge num">прострочено ${dn} ${dayWord(dn)}</span>`:''}<span class="num dsum ${od?'neg':''}">${fmtEur(oOwed(o))}</span></div>
       <div class="sub num" style="color:var(--muted);font-size:12.5px">${oPaid(o)>0?`оплачено ${fmtEur(oPaid(o))} з ${fmtEur(oTotal(o))} · `:`сума ${fmtEur(oTotal(o))} · `}відвантажено ${o.shippedAt?fmtDate(o.shippedAt):'—'} + ${o.days} дн. · оплатити до <span class="${od?'neg':''}">${o.due?fmtDate(o.due):'—'}</span></div>
     </div>`; };
   $('#view').innerHTML = `
-    <div class="obar num"><span>Разом не оплачено <b>${fmtEur0(total)}</b></span><span>Прострочено <b class="${over.length?'neg':''}">${fmtEur0(overSum)}</b></span></div>
+    <div class="obar num"><span>Разом не оплачено <b>${fmtEur0(total)}</b>${SHOW_PL_SPLIT?` <small>(Європа ${fmtEur0(list.filter(o=>o.pl!=='ua').reduce((t,o)=>t+oOwed(o),0))} · Україна ${fmtEur0(list.filter(o=>o.pl==='ua').reduce((t,o)=>t+oOwed(o),0))})</small>`:''}</span><span>Прострочено <b class="${over.length?'neg':''}">${fmtEur0(overSum)}</b></span></div>
     <div class="drow-top">
       <select id="dMgr" aria-label="Менеджер">
         <option value="all" ${dMgr==='all'?'selected':''}>Усі менеджери (${all.length})</option>
@@ -5619,7 +5689,8 @@ function drawOnlineBtn(){
   if(isClient()){ onBtn.style.display='none'; return; }
   onBtn.style.display='';
   const on = activeUsers().filter(isOnline);
-  onBtn.innerHTML = `<span class="avs">${on.slice(0,2).map(u=>avatar(u,'',false)).join('')}</span><span class="num">${on.length} онлайн</span>`;
+  onBtn.innerHTML = `<span class="avs">${on.slice(0,4).map(u=>avatar(u,'',false)).join('')}</span>${on.length>4?`<span class="more num">+${on.length-4}</span>`:''}`;
+  onBtn.title = on.map(u=>u.name).join(', ');
 }
 function seenAt(u){ if(u.id===S.current) return Date.now(); return (S.seen && S.seen[u.id]) || 0; }
 function isOnline(u){ return Date.now()-seenAt(u) < 5*60000; }
@@ -6673,7 +6744,8 @@ function viewStats(){
       <div class="pt"><b>${t('sku.markup')}</b><div class="v ${avgMk!==null&&avgMk<0?'neg':'pos'}">${fmtPct(avgMk)}</div><b>середня по залишку</b></div>
     </div>
     <div class="kpis num">
-      <div class="kpi"><b>Виручка цього місяця</b><div>${fmtEur0(cur.rev)}</div>${cur.shipExp?`<span class="ksub">витрати на доставку ${fmtEur0(cur.shipExp)}</span>`:''}</div>
+      <div class="kpi"><b>Виручка цього місяця</b><div>${fmtEur0(cur.rev)}</div>${SHOW_PL_SPLIT?(()=>{ const m=todayStr().slice(0,7), sh=S.reserves.filter(o=>o.status==='shipped'&&!allSmp(o)&&(o.shippedAt||'').slice(0,7)===m);
+        return `<span class="ksub">Європа ${fmtEur0(sh.filter(o=>o.pl!=='ua').reduce((t,o)=>t+oTotal(o),0))} · Україна ${fmtEur0(sh.filter(o=>o.pl==='ua').reduce((t,o)=>t+oTotal(o),0))}</span>`; })():''}${cur.shipExp?`<span class="ksub">витрати на доставку ${fmtEur0(cur.shipExp)}</span>`:''}</div>
       <div class="kpi"><b>Маржа цього місяця</b><div class="${cur.margin<0?'neg':''}">${fmtEur0(cur.margin)}</div></div>
       <div class="kpi"><b>Не оплачено накладних</b><div class="${unp.length?'neg':''}">${pc(unp.length,inv.length)}%</div><span class="ksub">${unp.length} з ${inv.length} · ${fmtEur0(unpSum)} (${pc(unpSum,invSum)}% суми)</span></div>
       <div class="kpi"><b>Прострочено</b><div class="${ovd.length?'neg':''}">${pc(ovd.length,inv.length)}%</div><span class="ksub">${ovd.length} з ${inv.length} · ${fmtEur0(ovdSum)} (${pc(ovdSum,invSum)}% суми)</span></div>
@@ -6712,7 +6784,8 @@ const XSHEETS = [
 function catExportRows(){
   const LIDX = levelIndex(), cl = !can('fin'), sale = seeSale(), cost = can('fin') && seeCost();
   return CAT_LIST.map(x => { const l = levels(x.id, LIDX), pr = sale ? pricing(x, l) : null;
-    return {x, l, sale: pr && pr.sale ? pr.sale : 0, cost: cost ? (l.cost||0) : 0, cl}; });
+    const pv = plView(pr);
+    return {x, l, sale: pv && pv.sale ? pv.sale : 0, cost: cost ? (l.cost||0) : 0, cl}; });
 }
 function catFilterText(){
   const parts = CF_KEYS.filter(k => catF[k].length).map(k => CF_LABEL[k] + ': ' + catF[k].map(v => cfShow(k, v)).join(', '));
@@ -6728,7 +6801,7 @@ function openCatExport(){
   if(!n){ toast('Список порожній — нема чого вивантажувати'); return; }
   const f = catFilterText();
   openSheet(`${head('Вивантажити список')}
-    <p style="margin:0 0 6px"><b>${fmtN(n)} SKU</b></p>
+    <p style="margin:0 0 6px"><b>${fmtN(n)} SKU</b>${seeSale()?` · прайс <b>${plName(PRICE_LIST)}</b>`:''}</p>
     ${f?`<p class="hint" style="margin:0 0 12px">${f.split(' · ').map(x=>`<span>${esc(x)}</span>`).join(' · ')}</p>`:'<p class="hint" style="margin:0 0 12px">Без фільтрів — увесь каталог вибраних складів.</p>'}
     <label class="check" style="margin:0 0 12px"><input type="checkbox" id="catPh" ${catPhPref()?'checked':''}> З фото</label>
     <div class="pair">
@@ -6795,7 +6868,7 @@ async function exportCatXlsx(){
     if(!cl){ r['На складі, кг'] = +l.kg.toFixed(2); r['Резерв, кг'] = +l.rk.toFixed(2); }
     r['Вільно, кг'] = +l.fk.toFixed(2); r['Вільно, конусів'] = l.fc;
     if(!cl && seeCost()) r['Ціна закупівлі, €/кг'] = cost ? +cost.toFixed(2) : '';
-    if(seeSale()) r['Ціна продажу, €/кг'] = sale ? +sale.toFixed(2) : '';
+    if(seeSale()) r[PRICE_LIST==='ua'?'Ціна продажу (Україна), €/кг':'Ціна продажу, €/кг'] = sale ? +sale.toFixed(2) : '';
     if(!cl) r['Склад'] = SITE_NAME[siteOf(x)] || '';
     return r; });
   const keys = rows[0] ? Object.keys(rows[0]) : [];
@@ -6815,7 +6888,7 @@ async function exportCatXlsx(){
       ws.addImage(id, {tl:{col: 1 + k + 0.08, row: i + 1 + 0.08}, ext:{width: PH, height: PH}, editAs:'oneCell'}); });
   });
   const buf = await wb.xlsx.writeBuffer();
-  await deliverFile(buf, `DG Filati SKU ${rows.length} (${todayStr()}).xlsx`);
+  await deliverFile(buf, `DG Filati SKU ${rows.length}${PRICE_LIST==='ua'?' UA':''} (${todayStr()}).xlsx`);
 }
 function catDocx(pics){
   const data = catExportRows(), cl = !can('fin'), sale = seeSale();
@@ -6865,7 +6938,7 @@ async function exportCatDocx(){
   const pics = withPh ? await exportPhotos(CAT_LIST) : null;
   let bytes;
   try{ bytes = catDocx(pics); }catch(e){ console.error(e); toast('Не вдалося сформувати документ'); return; }
-  await deliverFile(bytes, `DG Filati SKU ${CAT_LIST.length} (${todayStr()}).docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  await deliverFile(bytes, `DG Filati SKU ${CAT_LIST.length}${PRICE_LIST==='ua'?' UA':''} (${todayStr()}).docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 }
 function openExport(){
   openSheet(`${head('Експорт в Excel')}
@@ -7027,7 +7100,7 @@ function openSku(id){
       <div class="lv resv"><b>${t('sku.resv')}</b><div class="kg">${fmtKg(l.rk)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.rc)} ${t('sku.cones')}</div></div>`}
       <div class="lv free"><b>${t('sku.free')}</b><div class="kg">${fmtKg(l.fk)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.fc)} ${t('sku.cones')}</div></div>
     </div>
-    ${!seeSale()?'':(()=>{const pr=pricing(s,l);return `<div class="pricebox num">
+    ${!seeSale()?'':(()=>{const pr=plView(pricing(s,l));return `<div class="pricebox num">
       ${!seeCost()?'':`<button class="pt" data-editcost="${id}" ${can('fin')?'':'disabled'} aria-label="${t('sku.editcost')}"><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><b>${t('sku.buy')}</b><div class="v">${pr.cost?fmtEur(pr.cost)+'<small>/'+t('unit.kg')+'</small>':'—'}</div><b>${(c=>c?t('sku.from')+' '+fmtDate(c.date):'')(costInfo(s).act)}</b></button>`}
       <button class="pt" data-editsale="${id}" ${can('fin')?'':'disabled'} aria-label="${t('sku.editsale')}"><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><b>${t('sku.sell')}</b><div class="v">${pr.sale?fmtEur(pr.sale)+'<small>/'+t('unit.kg')+'</small>':'—'}</div>${pr.sale?`<b>${pr.src}</b>`:''}</button>
       ${!seeCost()?'':`<div class="pt"><b>${t('sku.markup')}</b><div class="v ${pr.markup!==null&&pr.markup<0?'neg':'pos'}">${fmtPct(pr.markup)}</div></div>`}
@@ -7520,7 +7593,7 @@ function openOp(type, skuId, resId){
     ${type==='adj'?`<div style="display:flex;gap:20px;margin:10px 0 4px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="adjType" value="inv" ${(Math.abs(l.kg)<0.001&&l.cn===0)?'':'checked'}> Інвентаризація</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="adjType" value="in" ${(Math.abs(l.kg)<0.001&&l.cn===0)?'checked':''}> Прихід товару</label></div>`:''}
     ${type==='out'&&!r?`<label class="check"><input type="checkbox" id="oPart"> Частина конуса (кг без зміни кількості конусів)</label>`:''}
     ${type==='smp'?`<label class="f">Дата видачі<input id="oDate" type="date" value="${todayStr()}" max="${todayStr()}"></label><p class="hint num" id="oSum"></p>`:type!=='adj'?`<div class="pair">
-      ${can('fin')?`<label class="f">${priceLabel}<input id="oPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="${pricePh}" value="${r&&r.price?r.price:(type!=='in'&&s.sale?s.sale:'')}"></label>`:`<div class="f"><span class="hint">Ціну внесе бухгалтер</span></div>`}
+      ${can('fin')?`<label class="f">${priceLabel}<input id="oPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="${pricePh}" value="${r&&r.price?r.price:(type!=='in'&&s.sale?plPrice(s.sale):'')}"></label>`:`<div class="f"><span class="hint">Ціну внесе бухгалтер</span></div>`}
       <label class="f">${type==='res'?'Дата резерву':'Дата операції'}<input id="oDate" type="date" value="${todayStr()}" max="${todayStr()}"></label>
     </div>
     <p class="hint num" id="oSum"></p>`:`<label class="f">Дата операції<input id="oDate" type="date" value="${todayStr()}" max="${todayStr()}"></label>`}
@@ -7938,6 +8011,8 @@ document.addEventListener('click', e=>{
   if(d.lang){ setLang(d.lang); render(); openSettings(); return; }
   if(d.theme){ applyTheme(d.theme); openSettings(); return; }
   if(d.debug){ setDebug(d.debug==='on'); return; }
+  if(d.plsw){ setPriceList(d.plsw); return; }
+  if(d.odpl){ setOdPl(d.odpl); return; }
   if(d.eco){ setEco(d.eco==='on'); return; }
   if(d.opurge){ purgeOrder(t, d.opurge); return; }
   if(d.purgeuser){ purgeUser(t, d.purgeuser); return; }

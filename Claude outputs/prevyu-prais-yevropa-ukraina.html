@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Прев'ю: шапка й прайс Європа / Україна</title>
+<style>
+:root{--bg:#F7F2EA;--surface:#FFFDF9;--ink:#1E1712;--muted:#8B7B6B;--line:#E6DCCD;--gold:#B68C5A;--gold-deep:#8A6030;--choc:#4A2C1D;--green:#3E7B57;--green-soft:#E6F1EA;--blue:#2F5DA8;--blue-soft:#E7EEF9;--note:#FFF6DA}
+*{box-sizing:border-box}body{margin:0;background:#EDE6DA;font:15px/1.4 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);padding:20px 16px 60px}
+h1{font:600 22px Georgia,serif;margin:0 0 4px}h2{font:600 18px Georgia,serif;margin:34px 0 8px}
+.lead{color:var(--muted);margin:0 0 18px;max-width:900px}
+.frame{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;max-width:1000px;box-shadow:0 4px 18px rgba(30,23,18,.06)}
+.cap{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-deep);margin:0 0 8px;font-weight:700}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:1000px}
+@media (max-width:760px){.cmp{grid-template-columns:1fr}}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logo{width:46px;height:46px;border-radius:6px;background:#111;color:#c9a46a;display:grid;place-items:center;font:600 10px Georgia,serif;flex:none}
+.sum{flex:1;min-width:0;color:var(--muted);line-height:1.25}
+.sum.old{font-size:17px}.sum.new{font-size:13px}
+.sum.new b{color:var(--ink);font-weight:600}
+.sum .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sites{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:14px;white-space:nowrap}
+.onl{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px 5px 6px;font-size:14px}
+.avs{display:flex}.av{width:28px;height:28px;border-radius:50%;color:#fff;font:700 11px/28px Inter,sans-serif;text-align:center;border:2px solid var(--surface);position:relative}
+.av+.av{margin-left:-8px}.av i{position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:#3fb26f;border:2px solid var(--surface)}
+.gear{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:18px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:3px;gap:2px}
+.seg span{padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.seg span.on{background:var(--choc);color:#fff}
+.seg span.on.ua{background:var(--blue)}
+.cross{position:relative}.cross:after{content:"";position:absolute;left:8px;right:8px;top:50%;border-top:2px solid #c0392b}
+.mark{outline:3px solid #2F5DA8;outline-offset:3px;border-radius:999px}
+.mark2{outline:3px dashed #c0392b;outline-offset:3px;border-radius:999px}
+.sku{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+.sku .r{display:flex;justify-content:space-between;gap:10px;font-weight:600;font-size:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chip{border-radius:8px;padding:3px 9px;font-size:13px;font-weight:600}
+.chip.price{background:var(--choc);color:#fff}.chip.price.ua{background:var(--blue)}
+.chip.free{background:var(--green-soft);color:var(--green)}.chip.site{background:#F3E6D3;color:var(--gold-deep)}
+.note{background:var(--note);border:1px solid #F0DFA6;border-radius:10px;padding:10px 12px;font-size:14px;max-width:1000px;margin-top:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;max-width:520px}
+.f{font-size:13px;color:var(--muted);margin:10px 0 4px}
+.inp{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#fff;font-size:14px}
+.line{border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px}
+.line .g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.line .g div{font-size:12px;color:var(--muted)}.line .g .inp{margin-top:3px;color:var(--ink)}
+.hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+.badge{display:inline-block;border-radius:6px;padding:1px 7px;font-size:11.5px;font-weight:700;vertical-align:1px}
+.badge.ua{background:var(--blue-soft);color:var(--blue)}.badge.eu{background:#F3E6D3;color:var(--gold-deep)}
+.ocard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;max-width:520px}
+.ocard .t{display:flex;justify-content:space-between;font-weight:600}.ocard .s{font-size:13px;color:var(--muted);margin-top:2px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:760px}
+@media (max-width:600px){.kpis{grid-template-columns:1fr}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kpi b{display:block;font-size:12.5px;color:var(--muted);font-weight:600}.kpi .v{font-size:22px;font-weight:700;margin:2px 0}
+.kpi .sp{font-size:12.5px;color:var(--muted)}.kpi .sp span{display:block}
+table{border-collapse:collapse;font-size:13.5px;max-width:760px;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}th{background:#F3EADC;font-weight:600}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+.phone{width:380px;max-width:100%}
+.phone .top{gap:8px}.phone .sum.new{font-size:12px}
+</style></head><body>
+
+<h1>Прев'ю змін</h1>
+<p class="lead">Це лише макет для узгодження: цифри умовні, у застосунку нічого не змінено. Синя рамка — новий перемикач, червона пунктирна — що прибираємо.</p>
+
+<h2>1. Шапка: менший шрифт підсумку, онлайн — лише значками, перемикач прайсу</h2>
+<div class="cmp">
+  <div class="frame">
+    <p class="cap">Зараз</p>
+    <div class="top">
+      <div class="logo">DG FILATI</div>
+      <div class="sum old"><div>984 SKU</div><div class="l">на складі 11 501,85 кг · вільно 11 408,78 кг</div></div>
+      <div class="sites">⌂ Усі склади ⌄</div>
+      <div class="onl mark2"><div class="avs"><div class="av" style="background:#7b5a8a">О</div><div class="av" style="background:#8a5e2e">ХМ</div></div>2 онлайн</div>
+      <div class="dot"></div><div class="gear">⚙</div>
+    </div>
+  </div>
+  <div class="frame">
+    <p class="cap">Буде (ПК)</p>
+    <div class="top">
+      <div class="logo">DG FILATI</div>
+      <div class="sum new"><div><b>984 SKU</b></div><div class="l">на складі 11 501,85 кг · вільно 11 408,78 кг</div></div>
+      <div class="seg mark" title="Прайс"><span class="on">Європа</span><span>Україна</span></div>
+      <div class="sites">⌂ Усі склади ⌄</div>
+      <div class="avs" title="Онлайн: імена при наведенні"><div class="av" style="background:#7b5a8a">О<i></i></div><div class="av" style="background:#8a5e2e">ХМ<i></i></div></div>
+      <div class="dot"></div><div class="gear">⚙</div>
+    </div>
+  </div>
+</div>
+
+<div class="frame phone" style="margin-top:14px">
+  <p class="cap">Буде (телефон)</p>
+  <div class="top">
+    <div class="logo">DG</div>
+    <div class="seg mark"><span>Європа</span><span class="on ua">Україна</span></div>
+    <div class="avs"><div class="av" style="background:#7b5a8a">О<i></i></div><div class="av" style="background:#8a5e2e">ХМ<i></i></div></div>
+    <div class="gear" style="margin-left:auto">⚙</div>
+  </div>
+  <div class="sum new" style="margin-top:8px"><b>984 SKU</b> · на складі 11 501,85 кг · вільно 11 408,78 кг</div>
+</div>
+<div class="note">Значки онлайн-людей лишаються клікабельними — натиснули, і відкривається список «хто зараз у базі», як і зараз. Підказка при наведенні показує імена.</div>
+
+<h2>2. Каталог: ціна за обраним прайсом</h2>
+<div class="cmp">
+  <div class="frame">
+    <p class="cap">Прайс «Європа» (як зараз)</p>
+    <div class="sku"><div class="r"><span>Brand: Filati power · Art.: Fragrance</span><span>DG0000001</span></div>
+      <div class="chips"><span class="chip price">Ціна прод. 16,88 €/кг</span><span class="chip free">вільно 66,70 кг / 65 к</span><span class="chip site">San Giovanni</span></div></div>
+  </div>
+  <div class="frame">
+    <p class="cap">Прайс «Україна» (Європа = Україна × 1,25)</p>
+    <div class="sku"><div class="r"><span>Brand: Filati power · Art.: Fragrance</span><span>DG0000001</span></div>
+      <div class="chips"><span class="chip price ua">Ціна UA 13,50 €/кг</span><span class="chip free">вільно 66,70 кг / 65 к</span><span class="chip site">San Giovanni</span></div></div>
+  </div>
+</div>
+<div class="note">Окремо нічого вводити не треба: у картці лишається ціна продажу (Європа), а ціна України = Європа ÷ 1,25 (16,88 → 13,50) — та сама логіка, що й у каналах: Європа = Україна × 1,25. Те саме — у фільтрі «Ціна продажу» і у вивантаженні в Excel/Word: ціни йдуть за обраним прайсом, у шапці файлу пишеться «Прайс: Україна».</div>
+
+<h2>3. Заявка: прайс обирається в самій заявці і запам'ятовується</h2>
+<div class="cmp">
+  <div class="panel">
+    <p class="cap">Нова заявка</p>
+    <div class="f">Клієнт</div><div class="inp">ТОВ «Пряжа-Київ»</div>
+    <div class="f">Прайс</div>
+    <div class="seg mark"><span>Європа</span><span class="on ua">Україна</span></div>
+    <div class="hint">За замовчуванням — той, що зараз увімкнений угорі. Перемкнули в заявці — ціни всіх позицій перераховуються, якщо ви не змінювали їх вручну.</div>
+    <div class="line"><b style="font-size:14px">Filati power · Fragrance · Giallo inquinato</b>
+      <div class="g"><div>Кг<div class="inp">20,00</div></div><div>Конусів<div class="inp">19</div></div><div>Ціна, €/кг<div class="inp">13,50</div></div></div>
+      <div class="hint">прайс Україна 13,50 (Європа 16,88 = 13,50 × 1,25)</div></div>
+  </div>
+  <div>
+    <p class="cap">Список заявок і картка заявки</p>
+    <div class="ocard"><div class="t"><span>№ 26/0000037 <span class="badge ua">UA</span></span><span>270,00 €</span></div><div class="s">ТОВ «Пряжа-Київ» · 1 позиція · 20,00 кг · відтермінування 30 дн.</div></div>
+    <div class="ocard"><div class="t"><span>№ 26/0000036 <span class="badge eu">EU</span></span><span>287,80 €</span></div><div class="s">Tricot Lyon · 2 позиції · 20,89 кг · передоплата</div></div>
+    <div class="note" style="max-width:520px">У картці заявки, інвойсі й «На друк» — рядок «Прайс: Україна». Ціни позицій, як і зараз, зберігаються в самій заявці, тому пізніша зміна ціни продажу на старі заявки не впливає. Усі вже створені заявки вважаються «Європа».</div>
+  </div>
+</div>
+
+<h2>4. Аналітика: виручка й маржа з розбивкою Європа / Україна</h2>
+<div class="kpis">
+  <div class="kpi"><b>Виручка</b><div class="v">12 480 €</div><div class="sp"><span>Європа 9 920 €</span><span>Україна 2 560 €</span></div></div>
+  <div class="kpi"><b>Маржа</b><div class="v">3 140 €</div><div class="sp"><span>Європа 2 870 €</span><span>Україна 270 €</span></div></div>
+  <div class="kpi"><b>Продано</b><div class="v">812 кг</div><div class="sp"><span>Європа 590 кг</span><span>Україна 222 кг</span></div></div>
+</div>
+<div class="note">Виручка вже зараз рахується за фактичними цінами в заявках, тож продажі в Україну автоматично підуть дешевше. Додається лише розбивка, щоб бачити, скільки дає кожен ринок, і фільтр «Прайс: усі / Європа / Україна» над графіками.</div>
+
+<h2>5. Дебіторка: суми за цінами заявки + позначка прайсу</h2>
+<table>
+  <tr><th>Заявка</th><th>Клієнт</th><th>Прайс</th><th class="n">Сума</th><th class="n">Оплатити до</th></tr>
+  <tr><td>26/0000037</td><td>ТОВ «Пряжа-Київ»</td><td><span class="badge ua">UA</span></td><td class="n">270,00 €</td><td class="n">01.12.26</td></tr>
+  <tr><td>26/0000031</td><td>Maglificio Rossi</td><td><span class="badge eu">EU</span></td><td class="n">1 120,00 €</td><td class="n">15.11.26</td></tr>
+  <tr><td colspan="3"><b>Разом</b> · Європа 1 120,00 € · Україна 270,00 €</td><td class="n"><b>1 390,00 €</b></td><td></td></tr>
+</table>
+
+<h2>Що потрібно буде зробити вам</h2>
+<div class="note">Один SQL-файл у Supabase (новий стовпець «прайс» у заявках, усі наявні заявки = Європа) — я підготую його в sklad-dg-db, і пуш застосунку.</div>
+</body></html>
