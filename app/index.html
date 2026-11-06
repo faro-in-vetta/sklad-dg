@@ -1269,6 +1269,7 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Економ-режим: вивантаження даних тимчасово вимкнене':'Modalità risparmio: l’esportazione dei dati è temporaneamente disattivata',
     'Прайс':'Listino',
     'Європа':'Europa',
     'Україна':'Ucraina',
@@ -2187,6 +2188,7 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Економ-режим: вивантаження даних тимчасово вимкнене':'Eco mode: data export is temporarily disabled',
     'Прайс':'Price list',
     'Європа':'Europe',
     'Україна':'Ukraine',
@@ -3347,6 +3349,9 @@ const FULL_EVERY = 15 * 60000;     // про всяк випадок — пов�
 const ECO_CHECK_EVERY = 3 * 60000, ECO_FULL_EVERY = 60 * 60000, ECO_AUDIT_EVERY = 60 * 60000;
 let LAST_CHECK = 0, AUDIT_AT = 0;
 const eco = () => !!(S && S.eco);
+// В економ-режимі вивантажувати дані може лише адмін (бланки замовлень і етикетки — можна всім)
+const ecoLock = () => { try{ return eco() && !!me() && me().role !== 'admin'; }catch(e){ return false; } };
+function ecoNoDl(){ if(!ecoLock()) return false; toast('Економ-режим: вивантаження даних тимчасово вимкнене', 2500, true); return true; }
 const PHOTO_URL = {};       // шлях у Storage → тимчасове посилання
 
 const snapKey = (t, id) => t + ':' + id;
@@ -3465,6 +3470,20 @@ async function fetchAll(table, opt = {}) {
   return { data: opt.max ? out.slice(0, opt.max) : out, error: null };
 }
 
+/* Рухи товару читаємо з подання ops_view (SQL 26): у ньому ціна закупівлі
+   видна лише адміну й головбуху, навіть якщо питати базу напряму.
+   Немає подання (SQL 26 ще не виконано) — читаємо таблицю ops, як раніше. */
+let OPS_SRC = null;
+async function fetchOps(opt) {
+  if (OPS_SRC !== 'ops') {
+    const r = await fetchAll('ops_view', opt);
+    if (!r.error) { OPS_SRC = 'ops_view'; return r; }
+    if (!(r.error.code === 'PGRST205' || r.error.code === '42P01')) return r;
+    OPS_SRC = 'ops';
+  }
+  return fetchAll('ops', opt);
+}
+
 async function dataVersion() {
   try {
     const { data, error } = await db.from('data_version').select('v').eq('id', 1).maybeSingle();
@@ -3485,7 +3504,7 @@ async function hydrate(opts) {
     fetchAll('invites', { filter: q => q.is('accepted_at', null) }),
     fetchAll('skus'),
     fetchAll('sku_costs'),
-    fetchAll('ops', { order: 'happened_on', desc: true }),        // увесь журнал: з нього рахуються залишки
+    fetchOps({ order: 'happened_on', desc: true }),        // увесь журнал: з нього рахуються залишки
     fetchAll('orders'),
     fetchAll('order_lines'),
     fetchAll('payments'),
@@ -4372,7 +4391,8 @@ function render(){
   document.querySelectorAll('nav.tabs [data-tab]').forEach(b=>b.setAttribute('aria-current', b.dataset.tab===tab));
   const FIN_TABS=['journal','stats','export'];
   const hidden = el => { const t=el.dataset.tab||el.id;
-    if(FIN_TABS.includes(t)||t==='exportBtn') return !can('fin');
+    if(t==='exportBtn') return !can('fin') || ecoLock();
+    if(FIN_TABS.includes(t)) return !can('fin');
     if(t==='debt') return !seeSale();
     if(t==='scanBtn') return isClient();     // сканер — інструмент складу, не клієнта
     return false; };
@@ -4380,7 +4400,7 @@ function render(){
   if((FIN_TABS.includes(tab)&&!can('fin')) || (tab==='debt'&&!seeSale())) tab='catalog';
   $('#searchBar').style.display = tab==='catalog' ? 'flex' : 'none';
   $('#catFilters').style.display = tab==='catalog' ? 'flex' : 'none';
-  { const ex = $('#cfExport'); if(ex) ex.style.display = isClient() ? 'none' : ''; }
+  { const ex = $('#cfExport'); if(ex) ex.style.display = (isClient() || ecoLock()) ? 'none' : ''; }
   document.body.classList.toggle('oncat', tab==='catalog');
   $('#orderBar').style.display = tab==='reserves' ? 'flex' : 'none';
   $('#newOrderBtn').disabled = !(can('order')||can('smp'));
@@ -5260,7 +5280,7 @@ function viewDebt(){
         <option value="all" ${dMgr==='all'?'selected':''}>Усі менеджери (${all.length})</option>
         ${mgrs.map(m=>`<option value="${m}" ${dMgr===m?'selected':''}>${esc(uname(m))} (${all.filter(o=>o.who===m).length})</option>`).join('')}
       </select>
-      ${list.length?`<button class="btn ghost small" data-dexport title="Вивантажити в Excel" aria-label="Вивантажити в Excel"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;vertical-align:-2px"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Excel</button>`:''}
+      ${list.length&&!ecoLock()?`<button class="btn ghost small" data-dexport title="Вивантажити в Excel" aria-label="Вивантажити в Excel"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;vertical-align:-2px"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Excel</button>`:''}
     </div>
     ${mgrKeys.length?mgrKeys.map(m=>{
       const os=byMgr[m], mSum=os.reduce((t,o)=>t+oOwed(o),0), mOver=os.some(o=>o.due&&o.due.slice(0,10)<todayStr());
@@ -6156,7 +6176,7 @@ async function makeBackup(){
     for(let ti = 0; ti < BK_TABLES.length; ti++){
       const [t, col] = BK_TABLES[ti];
       say('Копіюю дані', 2 + 10 * (ti / BK_TABLES.length));
-      const r = await bkFetchAll(t, col);
+      const r = await bkFetchAll(t === 'ops' && OPS_SRC === 'ops_view' ? 'ops_view' : t, col);
       if(r.missing){ missing.push(t); continue; }
       tables[t] = r.rows; counts[t] = r.rows.length;
     }
@@ -6796,7 +6816,8 @@ function catFilterText(){
   return parts.join(' · ');
 }
 function openCatExport(){
-  if(isClient()) return;             // клієнтові вивантаження недоступне
+  if(isClient()) return;
+  if(ecoNoDl()) return;             // клієнтові вивантаження недоступне
   const n = CAT_LIST.length;
   if(!n){ toast('Список порожній — нема чого вивантажувати'); return; }
   const f = catFilterText();
@@ -6941,6 +6962,7 @@ async function exportCatDocx(){
   await deliverFile(bytes, `DG Filati SKU ${CAT_LIST.length}${PRICE_LIST==='ua'?' UA':''} (${todayStr()}).docx`, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 }
 function openExport(){
+  if(ecoNoDl()) return;
   openSheet(`${head('Експорт в Excel')}
     <div id="xerr"></div>
     <div class="box">
@@ -6978,6 +7000,7 @@ function xPeriod(k){
   [$('#xFrom').value,$('#xTo').value]=map[k];
 }
 async function exportXlsx(opt){
+  if(!(opt && opt.returnBuf) && ecoNoDl()) return;
   opt = opt || {sheets:XSHEETS.map(x=>x[0]), from:'', to:''};
   const inPer = iso => { const d=iso.slice(0,10); return (!opt.from||d>=opt.from) && (!opt.to||d<=opt.to); };
   if(!window.XLSX){ toast('Бібліотека Excel не завантажилась'); return; }
@@ -7044,6 +7067,7 @@ async function deliverFile(buf, filename, mime){
   }catch(e){ toast('Експорт тут недоступний'); }
 }
 async function exportDebt(){
+  if(ecoNoDl()) return;
   if(!window.XLSX){ toast('Бібліотека Excel не завантажилась'); return; }
   const all=S.reserves.filter(o=>oStage(o)==='unpaid').filter(o=>dMgr==='all'||o.who===dMgr)
     .sort((a,b)=>uname(a.who).localeCompare(uname(b.who),'uk')||a.client.localeCompare(b.client,'uk')||(a.due||'').localeCompare(b.due||''));
