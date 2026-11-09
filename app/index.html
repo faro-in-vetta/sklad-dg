@@ -4099,7 +4099,13 @@ let APP_TAG = null, APP_NOTE_AT = 0;
 async function appTag(){
   try{
     const r = await fetch(location.pathname, {method:'HEAD', cache:'no-store'});
-    return r.ok ? (r.headers.get('etag') || r.headers.get('last-modified') || null) : null;
+    if(!r.ok) return null;
+    // ETag у стиснутої й нестиснутої відповіді різний (W/"…" і "…") — через це
+    // плашка вискакувала без жодних змін. Беремо дату файлу, а ETag — без W/ і лапок.
+    const lm = r.headers.get('last-modified');
+    if(lm) return lm;
+    const et = r.headers.get('etag');
+    return et ? et.replace(/^W\//i,'').replace(/"/g,'') : null;
   }catch(e){ return null; }
 }
 function showUpdateNote(){
