@@ -283,9 +283,9 @@ main{padding-top:14px}
 .sku:has(.slevels){flex-wrap:wrap}
 .sku .scol{display:flex;flex-direction:column;gap:6px;align-items:center;flex:none}
 /* штрихкод стоїть у рядку Nm праворуч і пишеться тим самим шрифтом, що й Nm */
-.sku .snm{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:6px}
-.sku .snm > span{white-space:nowrap}
-.sku .sbc{font:inherit;color:inherit;white-space:nowrap;flex:none}
+.sku .snm,.sid .snm{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:6px}
+.sku .snm > span,.sid .snm > span{white-space:nowrap}
+.sku .sbc,.sid .sbc{font:inherit;color:inherit;white-space:nowrap;flex:none}
 .delsku{width:34px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;color:var(--red);background:var(--surface)}
 .delsku svg{width:17px;height:17px}
 .delsku.off{color:var(--muted);opacity:.45}
@@ -4282,7 +4282,7 @@ const compSorted = c => (c||[]).slice().sort((a,b)=>b.p-a.p);
 const fmtPctC = v => String(Math.round(v*10)/10).replace('.',',');
 const compText = c => compSorted(c).map(x=>`${fmtPctC(x.p)}% ${x.f}`).join(' + ');
 const compTypes = c => [...new Set(compSorted(c).map(x=>FIBER_TYPE[x.f]||x.f))];
-const skuRow = x => `<div class="srow"><div class="srow-l">${skuIdHtml(x)}</div>${thumbHtml(x,'thumb osw')}</div>`;
+const skuRow = (x, bc) => `<div class="srow"><div class="srow-l">${skuIdHtml(x, '', bc)}</div>${thumbHtml(x,'thumb osw')}</div>`;
 const compCol = x => `<div class="ccol many">${(x.comp||[]).length?compSorted(x.comp).map(c=>`<span><b>${fmtPctC(c.p)}%</b> ${esc(c.f)}</span>`).join(''):'<span class="cna">склад —</span>'}</div>`;
 /* ---------- склади (локації) ----------
    Картка SKU і заявка належать одному складу. Товар «переїжджає» окремою
@@ -4702,12 +4702,13 @@ function viewCatalog(){
 }
 
 /* ---------- заявки (кілька позицій) ---------- */
-function skuIdHtml(x, extra){
+function skuIdHtml(x, extra, bc){
   return `<div class="sid">
     <div>${x.maker?`Brand: ${esc(x.maker)}`:''}</div>
     <div>${x.color?`Color: ${esc(x.color)}`:''}</div>
     <div>Art.: ${esc(x.art||'')}</div>
-    <div>${x.meter?esc(nmText(x.meter)):''}</div>
+    ${bc ? `<div class="snm"><span>${x.meter?esc(nmText(x.meter)):''}</span>${x.code?`<span class="sbc">${esc(x.code)}</span>`:''}</div>`   // штрихкод праворуч у рядку Nm, як у каталозі
+         : `<div>${x.meter?esc(nmText(x.meter)):''}</div>`}
     ${compCol(x)}
   </div>${extra||''}`;
 }
@@ -4985,7 +4986,7 @@ function openSkuPicker(){
     ${list.map(s=>{ const l=levels(s.id), mine=reservedIn(o,s.id), fk=l.fk+mine.kg, fc=l.fc+mine.cn; const added=OD.lines.some(li=>li.sku===s.id);
       const off = fk<=0.001&&!added;
       return `<button class="pick ${added?'added':''} ${off?'off':''}" data-pick="${s.id}" ${off?'aria-disabled="true"':''}>
-        ${skuRow(s).replace('<img class="thumb osw"', `<img class="thumb osw zoomable" data-zoom="0" data-sku="${s.id}" title="Збільшити фото"`)}
+        ${skuRow(s, true).replace('<img class="thumb osw"', `<img class="thumb osw zoomable" data-zoom="0" data-sku="${s.id}" title="Збільшити фото"`)}
         <div class="pick-f num"><span>вільно ${fmtKg(fk)} кг / ${fmtN(fc)} к</span>${seeSale()&&s.sale?`<span>${fmtEur(plPrice(s.sale, OD.pl))}/кг</span>`:''}<span class="pick-a">${added?'✓ додано':fk<=0.001?'немає вільного':'+ додати'}</span></div>
       </button>`; }).join('')||'<div class="empty">Нічого не знайдено.</div>'}`);
   const inp=$('#pickQ'); inp.addEventListener('input',()=>{ pickQ=inp.value; const pos=inp.selectionStart; openSkuPicker(); const n=$('#pickQ'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} });
