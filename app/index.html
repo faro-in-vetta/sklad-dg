@@ -170,15 +170,16 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
   .fscroll.drag i{background:var(--primary)}
 }
 /* фільтри гортаються вбік у своїй смузі, а штрихкод і кнопка вивантаження стоять на місці */
-#cfSel{display:flex;gap:6px;align-items:center;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
-#cfSel::-webkit-scrollbar{display:none}
+#cfSel,#pfSel{display:flex;gap:6px;align-items:center;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+#cfSel::-webkit-scrollbar,#pfSel::-webkit-scrollbar{display:none}
+.pkf{margin:0 0 10px}
 /* телефон — як було: увесь ряд разом зі штрихкодом гортається пальцем, кнопки вивантаження немає (вона лише для ПК) */
 @media (max-width:899px){
   .catf{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .catf::-webkit-scrollbar{display:none}
-  #cfSel{display:contents}
+  #cfSel,#pfSel{display:contents}
   .catf #cfExport{display:none !important}
-  .catf #cfBc{width:120px;flex:none}
+  .catf #cfBc,.catf #pfBc{width:120px;flex:none}
 }
 .catf input{height:30px;font-size:12.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:0 8px}
 .cff{display:flex;flex:1 0 auto;min-width:0;height:30px;border:1px solid var(--line);background:var(--surface);border-radius:8px;overflow:hidden}
@@ -188,11 +189,11 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 @media (min-width:900px){
   /* під фільтрами є смуга прокрутки — тож вирівнюємо по верху, щоб штрихкод і кнопка стояли в рівень із фільтрами */
   .catf{gap:6px;align-items:flex-start}
-  #cfSel{gap:5px;scrollbar-width:thin;scrollbar-color:#B9A58D transparent;padding-bottom:3px;margin-bottom:-3px}
-  #cfSel::-webkit-scrollbar{display:block;height:6px}
-  #cfSel::-webkit-scrollbar-thumb{background:#B9A58D;border-radius:3px}
+  #cfSel,#pfSel{gap:5px;scrollbar-width:thin;scrollbar-color:#B9A58D transparent;padding-bottom:3px;margin-bottom:-3px}
+  #cfSel::-webkit-scrollbar,#pfSel::-webkit-scrollbar{display:block;height:6px}
+  #cfSel::-webkit-scrollbar-thumb,#pfSel::-webkit-scrollbar-thumb{background:#B9A58D;border-radius:3px}
   .cfb{padding:0 6px;gap:4px}.cff{flex:0 0 auto}.cff.on .cfb svg{display:none}.cff .cfc{width:22px}
-  .catf #cfBc{flex:0 0 110px;width:110px}
+  .catf #cfBc,.catf #pfBc{flex:0 0 110px;width:110px}
 }
 .cfb{flex:1;min-width:0;display:flex;align-items:center;gap:6px;border:0;background:none;padding:0 8px;font-size:12.5px;color:var(--ink);text-align:left;white-space:nowrap}
 .cfb .l,.cfb .v{overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
@@ -4523,46 +4524,55 @@ let CF_OPEN = '';
 /* ціну закупівлі бачать лише адмін і головний бухгалтер, ціну продажу — хто її бачить у каталозі */
 const cfAllowed = k => (k==='cost' || k==='mk') ? seeCost() : k==='sale' ? seeSale() : true;
 let CF_BASE = null;   // каталог після пошуку й «Без ціни», до фільтрів під баром
+/* Ті самі фільтри є й у каталозі підбору в заявку — зі своїм набором галочок.
+   CF_CTX каже, з яким набором зараз працює список-попап. */
+let CF_CTX = 'cat', PICK_BASE = null;
+const pickF = {brand:[], art:[], color:[], cost:[], sale:[], mk:[], comp:[], nm:[], bc:''};
+const cfF = () => CF_CTX === 'pick' ? pickF : catF;
+const cfRender = () => CF_CTX === 'pick' ? openSkuPicker() : render();
+function cfRedrawBar(){ if(CF_CTX === 'pick'){ const b = $('#pfSel'); if(b) drawCatFilters(pickF, b, 'pfreset'); } else drawCatFilters(); }
 function cfOptions(key){
-  let all = CF_BASE || liveSkus();
+  const F = cfF();
+  let all = (CF_CTX === 'pick' ? PICK_BASE : CF_BASE) || liveSkus();
   CF_KEYS.forEach(k => {
-    if(k === key || !catF[k].length || !cfAllowed(k)) return;
-    const set = new Set(catF[k]);
+    if(k === key || !F[k].length || !cfAllowed(k)) return;
+    const set = new Set(F[k]);
     all = all.filter(x => set.has(cfVal(k, x)));
   });
   const cnt = new Map();
   all.forEach(x => { const v = cfVal(key, x); cnt.set(v, (cnt.get(v)||0) + 1); });
-  catF[key].forEach(v => { if(!cnt.has(v)) cnt.set(v, 0); });
+  F[key].forEach(v => { if(!cnt.has(v)) cnt.set(v, 0); });
   const vals = [...cnt.keys()].sort((a,b) => (a==='') !== (b==='') ? (a==='' ? 1 : -1)
     : (key==='sale' || key==='cost' || key==='mk') ? a-b : a.localeCompare(b, undefined, {numeric:true}));   // «Пусто» — у кінці
   return vals.map(v => [v, cnt.get(v)]);
 }
-function drawCatFilters(){
-  const box = $('#cfSel'); if(!box) return;
-  if(!seeSale()) catF.sale = [];
-  if(!seeCost()){ catF.cost = []; catF.mk = []; }
+function drawCatFilters(F, box, rst){
+  F = F || catF; box = box || $('#cfSel'); rst = rst || 'catfreset'; if(!box) return;
+  const main = box.id === 'cfSel';
+  if(!seeSale()) F.sale = [];
+  if(!seeCost()){ F.cost = []; F.mk = []; }
   const btn = key => {
-    const v = catF[key], n = v.length;
+    const v = F[key], n = v.length;
     const txt = n === 1 ? `<span class="v" translate="no">${esc(cfShow(key, v[0]))}</span>`
               : `<span class="l">${CF_LABEL[key]}</span>${n ? `<b class="n">${n}</b>` : ''}`;
     return `<span class="cff${n?' on':''}"><button type="button" class="cfb" data-cfopen="${key}" aria-haspopup="true" aria-expanded="${CF_OPEN===key}" title="${CF_LABEL[key]}">${txt}<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>`
       + (n ? `<button type="button" class="cfc" data-cfclr="${key}" aria-label="Очистити фільтр" title="Очистити фільтр">×</button>` : '') + '</span>';
   };
-  const active = CF_KEYS.filter(k => catF[k].length).length + (String(catF.bc||'').trim() ? 1 : 0);
+  const active = CF_KEYS.filter(k => F[k].length).length + (String(F.bc||'').trim() ? 1 : 0);
   const html = btn('brand') + btn('art') + btn('color') + (seeCost() ? btn('cost') : '') + (seeSale() ? btn('sale') : '') + (seeCost() ? btn('mk') : '') + btn('comp') + btn('nm')
-    + (active > 1 ? '<button type="button" class="cfx" data-catfreset title="Скинути фільтри" aria-label="Скинути фільтри"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>' : '');
-  if(html !== CF_SIG){ const sl = box.scrollLeft; CF_SIG = html; box.innerHTML = html; box.scrollLeft = sl; }   // смуга не відскакує на початок
+    + (active > 1 ? '<button type="button" class="cfx" data-${rst} title="Скинути фільтри" aria-label="Скинути фільтри"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>' : '');
+  if(!main || html !== CF_SIG){ const sl = box.scrollLeft; if(main) CF_SIG = html; box.innerHTML = html; box.scrollLeft = sl; }   // смуга не відскакує на початок
 }
 function cfPop(){
   let p = $('#cfPop');
   if(!p){ p = document.createElement('div'); p.id = 'cfPop'; p.className = 'cfpop'; p.hidden = true; document.body.appendChild(p); }
   return p;
 }
-function cfClose(){ CF_OPEN = ''; const p = $('#cfPop'); if(p) p.hidden = true; CF_SIG = ''; drawCatFilters(); }
+function cfClose(){ CF_OPEN = ''; const p = $('#cfPop'); if(p) p.hidden = true; CF_SIG = ''; cfRedrawBar(); }
 function cfOpen(key){
   if(CF_OPEN === key){ cfClose(); return; }
-  CF_OPEN = key; CF_SIG = ''; drawCatFilters();
-  const p = cfPop(), opts = cfOptions(key), sel = new Set(catF[key]);
+  CF_OPEN = key; CF_SIG = ''; cfRedrawBar();
+  const p = cfPop(), opts = cfOptions(key), sel = new Set(cfF()[key]);
   p.innerHTML = (opts.length > 8 ? `<input type="search" class="cfq" data-cfq placeholder="Знайти" aria-label="Знайти" autocomplete="off">` : '')
     + `<div class="cfl">${opts.length ? `<label class="cfo cfall"><input type="checkbox" data-cfall="${key}"><span class="t"></span></label>` : ''}${opts.length ? opts.map(([v,c]) => `<label class="cfo"><input type="checkbox" data-cfk="${key}" value="${esc(v)}" ${sel.has(v)?'checked':''}><span class="t" translate="no">${esc(cfShow(key, v))}</span><small class="num">${c}</small></label>`).join('') : '<p class="cfe">Нічого не знайдено</p>'}</div>`
     + `<div class="cfa"><button type="button" class="btn ghost small" data-cfclr="${key}">Очистити</button><button type="button" class="btn small" data-cfdone>Готово</button></div>`;
@@ -4577,10 +4587,10 @@ function cfOpen(key){
   const q = p.querySelector('[data-cfq]'); if(q && !matchMedia('(pointer:coarse)').matches) q.focus();
 }
 function cfToggle(key, v, on){
-  const set = new Set(catF[key]); on ? set.add(v) : set.delete(v);
-  catF[key] = [...set];
+  const F = cfF(), set = new Set(F[key]); on ? set.add(v) : set.delete(v);
+  F[key] = [...set];
   cfSyncAll();
-  render();
+  cfRender();
 }
 /* «Вибрати всі» / «Зняти всі», як в Excel: діє на значення, видимі зараз у списку
    (з урахуванням пошуку всередині списку) */
@@ -4592,16 +4602,16 @@ function cfSyncAll(){
   a.nextElementSibling.textContent = all ? 'Зняти всі' : 'Вибрати всі';
 }
 function cfSetAll(key, on){
-  const set = new Set(catF[key]);
+  const F = cfF(), set = new Set(F[key]);
   cfVisible().forEach(i => { i.checked = on; on ? set.add(i.value) : set.delete(i.value); });
-  catF[key] = [...set];
+  F[key] = [...set];
   cfSyncAll();
-  render();
+  cfRender();
 }
 function cfClear(key){
-  catF[key] = [];
+  cfF()[key] = [];
   if(CF_OPEN === key) cfClose();
-  render();
+  cfRender();
 }
 function setCatF(key, val){ catF[key] = val; render(); }
 function resetCatF(){
@@ -4959,10 +4969,19 @@ function openSkuPicker(){
   const q=pickQ.trim().toLowerCase();
   // заявка збирається з одного складу — інакше збірка й відвантаження
   // розповзлися б на дві локації
-  const list=liveSkus().filter(s=>siteOf(s)===OD.site)
+  let list=liveSkus().filter(s=>siteOf(s)===OD.site)
     .filter(s=>!q||[s.art,s.maker,s.color,s.code,compText(s.comp)].some(v=>String(v||'').toLowerCase().includes(q)));
+  // фільтри, як у каталозі (свій набір галочок — pickF)
+  CF_CTX = 'pick'; PICK_BASE = list.slice();
+  if(!seeSale()) pickF.sale = [];
+  if(!seeCost()){ pickF.cost = []; pickF.mk = []; }
+  CF_KEYS.forEach(k => { if(!pickF[k].length || !cfAllowed(k)) return; const set = new Set(pickF[k]); list = list.filter(s => set.has(cfVal(k, s))); });
+  const pbc = String(pickF.bc||'').trim(), pbj = pbc ? barcodeJump(/^\d+$/.test(pbc) ? 'DG'+pbc : pbc) : null;
+  if(pbj) list = list.filter(s => s.id === pbj);
+  const pfOld = $('#pfSel'), pfSl = pfOld ? pfOld.scrollLeft : 0;
   openSheet(`<div class="panel-head"><button class="btn ghost small" data-pickback>← До заявки</button><h2 style="flex:1;margin-left:6px">Каталог</h2></div>
-    <div class="qwrap" style="margin-bottom:10px"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="pickQ" type="search" placeholder="Артикул, бренд, колір, склад" value="${esc(pickQ)}" style="width:100%;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:11px 12px 11px 40px"></div>
+    <div class="qwrap" style="margin-bottom:6px"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="pickQ" type="search" placeholder="Артикул, бренд, колір, склад" value="${esc(pickQ)}" style="width:100%;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:11px 12px 11px 40px"></div>
+    <div class="catf pkf"><span id="pfSel"></span><input id="pfBc" type="search" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Штрихкод" aria-label="Штрихкод" class="${pbc.length>=3&&!pbj?'miss':''}" value="${esc(pickF.bc||'')}"></div>
     ${list.map(s=>{ const l=levels(s.id), mine=reservedIn(o,s.id), fk=l.fk+mine.kg, fc=l.fc+mine.cn; const added=OD.lines.some(li=>li.sku===s.id);
       const off = fk<=0.001&&!added;
       return `<button class="pick ${added?'added':''} ${off?'off':''}" data-pick="${s.id}" ${off?'aria-disabled="true"':''}>
@@ -4970,6 +4989,9 @@ function openSkuPicker(){
         <div class="pick-f num"><span>вільно ${fmtKg(fk)} кг / ${fmtN(fc)} к</span>${seeSale()&&s.sale?`<span>${fmtEur(plPrice(s.sale, OD.pl))}/кг</span>`:''}<span class="pick-a">${added?'✓ додано':fk<=0.001?'немає вільного':'+ додати'}</span></div>
       </button>`; }).join('')||'<div class="empty">Нічого не знайдено.</div>'}`);
   const inp=$('#pickQ'); inp.addEventListener('input',()=>{ pickQ=inp.value; const pos=inp.selectionStart; openSkuPicker(); const n=$('#pickQ'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} });
+  const pf=$('#pfSel'); drawCatFilters(pickF, pf, 'pfreset'); pf.scrollLeft = pfSl;
+  pf.addEventListener('wheel', e=>{ if(pf.scrollWidth <= pf.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; pf.scrollLeft += e.deltaY; e.preventDefault(); }, {passive:false});
+  const pb=$('#pfBc'); pb.addEventListener('input',()=>{ pickF.bc=pb.value; const pos=pb.selectionStart; openSkuPicker(); const n=$('#pfBc'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} });
 }
 function pickSku(id){
   if(!OD) return;
@@ -7994,7 +8016,7 @@ document.addEventListener('click', e=>{
   if('onew' in d){ openOrderEditor(null); return; }
   if(d.oedit){ openOrderEditor(d.oedit); return; }
   if('opicker' in d){ openSkuPicker(); return; }
-  if('pickback' in d){ drawOrderEditor(); return; }
+  if('pickback' in d){ if(CF_OPEN) cfClose(); CF_CTX = 'cat'; drawOrderEditor(); return; }
   if(d.pick){ if(t.closest('.pick.off')) return; pickSku(d.pick); return; }
   if(d.lrm!==undefined){ syncOD(); OD.lines.splice(+d.lrm,1); drawOrderEditor(); return; }
   if('odsave' in d){ saveOrderDraft(); return; }
@@ -8026,12 +8048,13 @@ document.addEventListener('click', e=>{
   if(d.savesale){ saveSale(d.savesale); return; }
   if(d.costdel){ costDel(t); return; }
   if(d.costedit){ costEdit(t.dataset.sku, d.costedit); return; }
-  if('catfreset' in d){ resetCatF(); return; }
+  if('catfreset' in d){ CF_CTX = 'cat'; resetCatF(); return; }
   if(t.id==='cfExport'){ openCatExport(); return; }
   if('catxls' in d){ closeSheet(); exportCatXlsx(); return; }
   if('catdoc' in d){ closeSheet(); exportCatDocx(); return; }
-  if(d.cfopen){ cfOpen(d.cfopen); return; }
-  if(d.cfclr){ cfClear(d.cfclr); return; }
+  if(d.cfopen){ const cx = t.closest('#pfSel') ? 'pick' : 'cat'; if(CF_OPEN && cx !== CF_CTX) cfClose(); CF_CTX = cx; cfOpen(d.cfopen); return; }
+  if(d.cfclr){ if(!t.closest('#cfPop')) CF_CTX = t.closest('#pfSel') ? 'pick' : 'cat'; cfClear(d.cfclr); return; }
+  if('pfreset' in d){ Object.assign(pickF, {brand:[], art:[], color:[], cost:[], sale:[], mk:[], comp:[], nm:[], bc:''}); if(CF_OPEN) cfClose(); CF_CTX = 'pick'; openSkuPicker(); return; }
   if('cfdone' in d){ cfClose(); return; }
   if(d.costsave){ costSave(t.dataset.sku, d.costsave); return; }
   if(d.costcancel){ costCancel(d.costcancel); return; }
