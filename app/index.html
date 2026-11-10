@@ -172,7 +172,10 @@ header.top{position:sticky;top:0;z-index:5;background:var(--surface);padding:8px
 /* фільтри гортаються вбік у своїй смузі, а штрихкод і кнопка вивантаження стоять на місці */
 #cfSel,#pfSel{display:flex;gap:6px;align-items:center;flex:1 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 #cfSel::-webkit-scrollbar,#pfSel::-webkit-scrollbar{display:none}
-.pkf{margin:0 0 10px}
+.pkf{margin:0}
+/* підбір у заявку: шапка, пошук і фільтри стоять згори, список гортається під ними */
+.pktop{position:sticky;top:-16px;z-index:6;background:var(--bg);margin:-16px -16px 10px;padding:16px 16px 8px;box-shadow:0 1px 0 var(--line)}
+.pktop .panel-head{margin-bottom:10px}
 /* телефон — як було: увесь ряд разом зі штрихкодом гортається пальцем, кнопки вивантаження немає (вона лише для ПК) */
 @media (max-width:899px){
   .catf{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -4980,9 +4983,9 @@ function openSkuPicker(){
   const pbc = String(pickF.bc||'').trim(), pbj = pbc ? barcodeJump(/^\d+$/.test(pbc) ? 'DG'+pbc : pbc) : null;
   if(pbj) list = list.filter(s => s.id === pbj);
   const pfOld = $('#pfSel'), pfSl = pfOld ? pfOld.scrollLeft : 0;
-  openSheet(`<div class="panel-head"><button class="btn ghost small" data-pickback>← До заявки</button><h2 style="flex:1;margin-left:6px">Каталог</h2></div>
+  openSheet(`<div class="pktop"><div class="panel-head"><button class="btn ghost small" data-pickback>← До заявки</button><h2 style="flex:1;margin-left:6px">Каталог</h2></div>
     <div class="qwrap" style="margin-bottom:6px"><svg class="lens" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="pickQ" type="search" placeholder="Артикул, бренд, колір, склад" value="${esc(pickQ)}" style="width:100%;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:11px 12px 11px 40px"></div>
-    <div class="catf pkf"><span id="pfSel"></span><input id="pfBc" type="search" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Штрихкод" aria-label="Штрихкод" class="${pbc.length>=3&&!pbj?'miss':''}" value="${esc(pickF.bc||'')}"></div>
+    <div class="catf pkf"><span id="pfSel"></span><input id="pfBc" type="search" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Штрихкод" aria-label="Штрихкод" class="${pbc.length>=3&&!pbj?'miss':''}" value="${esc(pickF.bc||'')}"></div></div>
     ${list.map(s=>{ const l=levels(s.id), mine=reservedIn(o,s.id), fk=l.fk+mine.kg, fc=l.fc+mine.cn; const added=OD.lines.some(li=>li.sku===s.id);
       const off = fk<=0.001&&!added;
       return `<button class="pick ${added?'added':''} ${off?'off':''}" data-pick="${s.id}" ${off?'aria-disabled="true"':''}>
