@@ -4294,7 +4294,9 @@ async function appTag(){
     if(!r.ok) return null;
     // ETag у стиснутої й нестиснутої відповіді різний (W/"…" і "…") — через це
     // плашка вискакувала без жодних змін. Беремо дату файлу, а ETag — без W/ і лапок.
-    const lm = r.headers.get('last-modified');
+    // і дата файлу в стиснутої й нестиснутої копії різниться на кілька секунд — тому дата як число,
+    // а «нова версія» — лише коли різниця більша за півтори хвилини (див. checkAppUpdate)
+    const lm = Date.parse(r.headers.get('last-modified') || '');
     if(lm) return lm;
     const et = r.headers.get('etag');
     return et ? et.replace(/^W\//i,'').replace(/"/g,'') : null;
@@ -4311,7 +4313,8 @@ async function checkAppUpdate(){
   if(document.hidden) return;
   const tag = await appTag(); if(!tag) return;
   if(APP_TAG === null){ APP_TAG = tag; return; }
-  if(tag !== APP_TAG && Date.now() - APP_NOTE_AT > 30*60000){ APP_NOTE_AT = Date.now(); showUpdateNote(); }
+  const changed = (typeof tag === 'number' && typeof APP_TAG === 'number') ? Math.abs(tag - APP_TAG) > 90000 : tag !== APP_TAG;
+  if(changed && Date.now() - APP_NOTE_AT > 30*60000){ APP_NOTE_AT = Date.now(); showUpdateNote(); }
 }
 function watchAppUpdates(){
   checkAppUpdate();
