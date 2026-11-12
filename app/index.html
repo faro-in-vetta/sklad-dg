@@ -713,6 +713,13 @@ nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true
 @media (max-width:360px){.ofilt .ofl{font-size:11.5px}}
 
 .odates{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.9fr);gap:6px;margin-bottom:8px}
+/* шкала першого завантаження */
+.bootld{max-width:340px;margin:12vh auto 0;padding:22px 20px 18px;background:var(--surface);border:1px solid var(--line);border-radius:16px;text-align:center;box-shadow:0 2px 10px rgba(26,18,8,.06)}
+.bootld .bl-h{font-family:var(--serif);font-size:19px;color:var(--ink);margin-bottom:6px}
+.bootld .bl-pct{font-size:30px;font-weight:700;color:var(--primary);line-height:1.1;margin-bottom:10px}
+.bootld .bl-bar{height:16px;border-radius:9px;background:rgba(182,140,90,.18);overflow:hidden}
+.bootld .bl-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),#B68C5A);border-radius:9px;transition:width .35s ease}
+.bootld .bl-s{margin-top:10px;font-size:13px;color:var(--muted);min-height:18px}
 /* коробки заявки */
 .bxl{display:flex;flex-direction:column;gap:6px;margin:0 0 6px}
 .bxr{border:1px solid var(--line);border-radius:10px;padding:6px 8px 8px;background:var(--surface)}
@@ -1301,6 +1308,18 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Завантажуємо склад…':'Caricamento del magazzino…',
+    'Завантажуємо дані складу':'Caricamento dei dati del magazzino',
+    'Готуємо екран':'Preparazione della schermata',
+    'Не вдалося завантажити дані':'Impossibile caricare i dati',
+    'Оновити сторінку':'Aggiorna la pagina',
+    'Запрошення':'Inviti',
+    'Ціни закупівлі':'Prezzi di acquisto',
+    'Рухи товару':'Movimenti',
+    'Позиції заявок':'Righe ordini',
+    'Оплати':'Pagamenti',
+    'Події заявок':'Eventi ordini',
+    'Фото товарів':'Foto degli articoli',
     'Вартість доставки:':'Costo di spedizione:',
     'Вартість за товар =':'Valore della merce =',
     'Разом з доставкою:':'Totale con spedizione:',
@@ -2254,6 +2273,18 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Завантажуємо склад…':'Loading the warehouse…',
+    'Завантажуємо дані складу':'Loading warehouse data',
+    'Готуємо екран':'Preparing the screen',
+    'Не вдалося завантажити дані':'Could not load the data',
+    'Оновити сторінку':'Reload the page',
+    'Запрошення':'Invitations',
+    'Ціни закупівлі':'Purchase prices',
+    'Рухи товару':'Stock movements',
+    'Позиції заявок':'Order lines',
+    'Оплати':'Payments',
+    'Події заявок':'Order events',
+    'Фото товарів':'Product photos',
     'Вартість доставки:':'Delivery cost:',
     'Вартість за товар =':'Goods value =',
     'Разом з доставкою:':'Total incl. delivery:',
@@ -3568,21 +3599,62 @@ const lineRowOf = (o, l, i) => ({
    «Max rows»). Без сторінок каталог понад 1000 карток і журнал понад 1000
    операцій мовчки обрізалися б — і залишки рахувалися б неправильно.
    Перша сторінка заодно питає загальну кількість, тож зайвих запитів немає. */
+/* Шкала першого завантаження. Нових запитів не робить: fetchAll і так дізнається
+   загальну кількість рядків (count на першій сторінці) — з неї й рахуємо відсоток. */
+let BOOT = null;
+const BOOT_NAME = {profiles:'люди', invites:'запрошення', skus:'каталог', sku_costs:'ціни закупівлі', ops_view:'рухи товару', ops:'рухи товару',
+  orders:'заявки', order_lines:'позиції заявок', payments:'оплати', returns:'повернення', order_events:'події заявок', audit:'історія'};
+function bootShow(){
+  BOOT = { t:{}, step:'', pct:2 };
+  const v = $('#view'); if(!v) return;
+  v.innerHTML = `<div class="bootld" id="bootLd" role="status" aria-live="polite"><div class="bl-h">Завантажуємо дані складу</div>
+    <div class="bl-pct num" id="blPct">2%</div><div class="bl-bar"><i id="blBar" style="width:2%"></i></div></div>`;
+}
+function bootDraw(){
+  if(!BOOT) return;
+  const ks = Object.keys(BOOT.t);
+  // 5% — вхід, 87% — таблиці за кількістю рядків (поки кількість невідома — як 200 рядків), решта — фото
+  const tot = k => { const x = BOOT.t[k]; return x.done ? Math.max(1, x.n) : (x.total && isFinite(x.total) ? Math.max(1, x.total) : 200); };
+  const all = ks.reduce((a,k)=>a+tot(k),0), got = ks.reduce((a,k)=>a+(BOOT.t[k].done ? tot(k) : Math.min(tot(k), BOOT.t[k].n)),0);
+  let pct = BOOT.photos ? 93 : 5 + Math.round((all ? got/all : 0) * 87);
+  pct = Math.max(BOOT.pct, Math.min(99, pct)); BOOT.pct = pct;
+  // підпис — найбільша таблиця, що ще вантажиться (поки кількості невідомі — «Отримуємо дані»)
+  const left = ks.filter(k => !BOOT.t[k].done && BOOT.t[k].total).sort((a,b) => (BOOT.t[b].total||0) - (BOOT.t[a].total||0))[0];
+  const x = left && BOOT.t[left];
+  const nm = left && BOOT_NAME[left] ? BOOT_NAME[left][0].toUpperCase()+BOOT_NAME[left].slice(1) : left;
+  const step = 'Завантажуємо дані складу';
+  const a = $('#blPct'), b = $('#blBar'), c = $('#blStep');
+  if(a) a.textContent = pct + '%'; if(b) b.style.width = pct + '%'; if(c) c.textContent = step;
+}
+function bootTick(table, n, total, done){
+  if(!BOOT) return;
+  const x = BOOT.t[table] || (BOOT.t[table] = { n:0, total:null, done:false });
+  x.n = n; if(total != null) x.total = total; if(done) x.done = true;
+  bootDraw();
+}
+function bootFail(e){
+  const v = $('#bootLd'); BOOT = null; if(!v) return;
+  v.innerHTML = `<div class="bl-h">Не вдалося завантажити дані</div><div class="bl-s">${esc((e && e.message) || 'Немає зв’язку з базою')}</div>
+    <button class="btn" style="margin-top:12px" onclick="location.reload()">Оновити сторінку</button>`;
+}
 async function fetchAll(table, opt = {}) {
   const STEP = 1000, out = [], key = opt.key || 'id';
   let total = null;
+  bootTick(table, 0, null);
   for (;;) {
     let q = db.from(table).select('*', total === null ? { count: 'exact' } : undefined);
     if (opt.filter) q = opt.filter(q);
     if (opt.order) q = q.order(opt.order, { ascending: !opt.desc });
     q = q.order(key, { ascending: true }).range(out.length, out.length + STEP - 1);
     const { data, error, count } = await q;
-    if (error) return { data: null, error };
+    if (error) { bootTick(table, out.length, null, true); return { data: null, error }; }
     if (total === null) total = count == null ? Infinity : count;
     out.push(...(data || []));
+    bootTick(table, out.length, opt.max ? Math.min(total, opt.max) : total);
     const goal = opt.max ? Math.min(total, opt.max) : total;
     if (!data || !data.length || out.length >= goal) break;
   }
+  bootTick(table, out.length, null, true);
   return { data: opt.max ? out.slice(0, opt.max) : out, error: null };
 }
 
@@ -3695,6 +3767,7 @@ async function hydrate(opts) {
   (iv.data || []).forEach(i => remember('invite', i.id, { id: i.id, email: i.email, name: i.name, role: i.role }));
   DATA_V = ver; FULL_AT = Date.now();
 
+  if (BOOT) { BOOT.photos = true; bootDraw(); }
   await refreshPhotoUrls();
 }
 
@@ -4285,7 +4358,9 @@ async function afterLogin() {
   ME = prof;
   $('#auth').style.display = 'none';
   document.body.classList.remove('locked');
-  await hydrate();
+  bootShow();
+  try { await hydrate(); } catch (e) { bootFail(e); throw e; }
+  BOOT = null;
   syncShippedOps();
   render();
   await touchPresence();
