@@ -1308,6 +1308,11 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Вартість доставки, €':'Costo di spedizione, €',
+    '0 — без доставки':'0 — senza spedizione',
+    'Доставка за рахунок клієнта — сума піде в інвойс.':'Spedizione a carico del cliente: l’importo va in fattura.',
+    'Доставка за наш рахунок — сума піде у витрати.':'Spedizione a nostro carico: l’importo va nelle spese.',
+    'Вкажіть вартість доставки (0 — якщо доставки немає).':'Indica il costo di spedizione (0 se non c’è spedizione).',
     'Внесіть коробки й підтвердіть збірку.':'Inserisci i colli e conferma la preparazione.',
     'Завантажуємо склад…':'Caricamento del magazzino…',
     'Завантажуємо дані складу':'Caricamento dei dati del magazzino',
@@ -2274,6 +2279,10 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Вартість доставки, €':'Delivery cost, €',
+    '0 — без доставки':'0 — no delivery',
+    'Доставка за наш рахунок — сума піде у витрати.':'Delivery at our expense: the amount goes to costs.',
+    'Вкажіть вартість доставки (0 — якщо доставки немає).':'Enter the delivery cost (0 if there is no delivery).',
     'Внесіть коробки й підтвердіть збірку.':'Enter the boxes and confirm picking.',
     'Завантажуємо склад…':'Loading the warehouse…',
     'Завантажуємо дані складу':'Loading warehouse data',
@@ -5199,12 +5208,6 @@ function drawOrderEditor(err){
       </select></label>
       <label class="f" id="odDaysWrap" style="${OD.terms==='prepay'?'visibility:hidden':''}">Днів<input id="odDays" type="number" inputmode="numeric" min="1" max="365" step="1" value="${esc(OD.days||30)}"></label>
     </div>`}
-    <div class="f" style="margin-bottom:6px">Доставка</div>
-    <div class="seg" role="radiogroup" aria-label="Доставка">
-      <label><input type="radio" name="odShipMode" value="us" ${OD.shipMode==='client'?'':'checked'}><span>За наш рахунок</span></label>
-      <label><input type="radio" name="odShipMode" value="client" ${OD.shipMode==='client'?'checked':''}><span>За рахунок клієнта</span></label>
-    </div>
-    <p class="hint" style="margin:-6px 0 12px">Суму доставки внесе бухгалтер при погодженні відвантаження.</p>
     <label class="f">Коментар<input id="odCom" placeholder="Необов'язково" value="${esc(OD.comment)}"></label>
     <div id="oderr">${err?`<div class="err" role="alert">${err}</div>`:''}</div>
     <button class="btn" data-odsave style="width:100%">${OD.id?'Зберегти зміни':'Створити заявку'}</button>`);
@@ -5347,7 +5350,7 @@ function wCell(content, o){
   return `<w:tc><w:tcPr><w:tcW w:w="${o.w||1000}" w:type="dxa"/>${o.fill?`<w:shd w:val="clear" w:fill="${o.fill}"/>`:''}<w:vAlign w:val="center"/><w:tcBorders>${['top','left','bottom','right'].map(s=>`<w:${s} w:val="single" w:sz="6" w:color="D9CBB8"/>`).join('')}</w:tcBorders></w:tcPr>${content}</w:tc>`;
 }
 /* доставка в інвойсі: сума, якщо платить клієнт і її пораховано; інакше пояснення */
-const invShipText = o => oShip(o) > 0 ? fmtEur(oShip(o)) : (o.shipMode === 'client' ? 'уточнюється' : 'безкоштовно');
+const invShipText = o => oShip(o) > 0 ? fmtEur(oShip(o)) : (o.shipMode === 'client' && !o.pickedAt ? 'уточнюється' : 'безкоштовно');
 function invoiceDocx(o){
   // Кожне поле пряжі — власна колонка, рядок лишається в один рівень.
   // Шрифт дрібніший, ніж був, бо колонок стало більше.
@@ -5535,7 +5538,11 @@ function openCarrier(id){
   const o=oById(id); if(!o||!can('fin')) return;
   openSheet(`${head('№ '+orderNo(o)+' · перевізник')}
     <div id="carerr"></div>
-    <p style="margin:0 0 10px"><b>${esc(o.client)}</b> · ${o.shipMode==='client'?'доставка за рахунок клієнта':'доставка за наш рахунок'}</p>
+    <p style="margin:0 0 10px"><b>${esc(o.client)}</b></p>
+    <div class="seg" role="radiogroup" aria-label="Доставка">
+      <label><input type="radio" name="carShipMode" value="us" ${o.shipMode==='client'?'':'checked'}><span>За наш рахунок</span></label>
+      <label><input type="radio" name="carShipMode" value="client" ${o.shipMode==='client'?'checked':''}><span>За рахунок клієнта</span></label>
+    </div>
     <div class="pair">
       <label class="f">Розрахунок перевізника, €<input id="carCost" type="number" inputmode="decimal" min="0" step="0.01" value="${o.delivery||''}"></label>
       <label class="f">Перевізник<input id="carName" list="carList" autocomplete="off" placeholder="GLS, DHL…" value="${esc(o.carrierName||'')}"></label>
@@ -5556,8 +5563,10 @@ function saveCarrier(id){
   const bx=bl.length, gr=boxSum(bl), wasGross=oGross(o), bChg=JSON.stringify(bl)!==JSON.stringify(oBoxList(o));
   if(cost<0){ $('#carerr').innerHTML='<div class="err">Сума не може бути від\'ємною.</div>'; return; }
   const was=oDeliv(o), wasN=o.carrierName||'', wasB=oBoxes(o), wasG=oBoxKg(o);
-  if(cost===was && name===wasN && !bChg){ closeSheet(); return; }
-  o.delivery=cost; o.carrierName=name;
+  const smEl=document.querySelector('input[name=carShipMode]:checked'), sm=smEl&&smEl.value==='client'?'client':'us', smChg=sm!==(o.shipMode||'us');
+  if(cost===was && name===wasN && !bChg && !smChg){ closeSheet(); return; }
+  o.delivery=cost; o.carrierName=name; o.shipMode=sm;
+  if(smChg) oev(o, sm==='client' ? 'Доставка: за рахунок клієнта' : 'Доставка: за наш рахунок');
   if(bChg){ setBoxes(o, bl); if(bl.length) o.boxCheck=false; }
   oev(o,`Розрахунок перевізника: ${fmtEur(was)} → ${fmtEur(cost)}${name?` (${name})`:''}${bChg?`; коробки: ${fmtN(wasB)} → ${fmtN(bx)} шт, брутто ${fmtKg2(wasGross)} → ${fmtKg2(oGross(o))} кг`:''}`);
   if(save()){ toast('№ '+orderNo(o)+': витрати на доставку збережено'); refreshOrders(); }
@@ -5625,7 +5634,20 @@ function openPicked(id){
     ${boxEdHtml(oBoxList(o).length ? oBoxList(o) : [{w:0,l:0,h:0,kg:0}])}
     <p class="hint num" id="pkHint"></p>
     <p class="hint">Вага брутто — коробка разом із пряжею, як на вагах.</p>
+    <div class="f" style="margin:6px 0 6px">Доставка</div>
+    <div class="seg" role="radiogroup" aria-label="Доставка">
+      <label><input type="radio" name="pkShipMode" value="us" ${o.shipMode==='client'?'':'checked'}><span>За наш рахунок</span></label>
+      <label><input type="radio" name="pkShipMode" value="client" ${o.shipMode==='client'?'checked':''}><span>За рахунок клієнта</span></label>
+    </div>
+    <div class="pair">
+      <label class="f">Вартість доставки, €<input id="pkDeliv" type="number" inputmode="decimal" min="0" step="0.01" value="${+o.delivery>0?o.delivery:''}" placeholder="0 — без доставки"></label>
+      <label class="f">Перевізник<input id="pkCar" list="pkCarList" autocomplete="off" placeholder="GLS, DHL…" value="${esc(o.carrierName||'')}"></label>
+    </div>
+    <datalist id="pkCarList">${[...new Set(S.reserves.map(x=>x.carrierName).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+    <p class="hint" id="pkShipHint" style="margin-top:-4px">${o.shipMode==='client'?'Доставка за рахунок клієнта — сума піде в інвойс.':'Доставка за наш рахунок — сума піде у витрати.'}</p>
     <button class="btn" data-pksave="${id}" style="width:100%">Підтвердити збірку</button>`);
+  document.querySelectorAll('input[name=pkShipMode]').forEach(r => r.addEventListener('change', () => {
+    const h = $('#pkShipHint'); if(h) h.textContent = r.value==='client' ? 'Доставка за рахунок клієнта — сума піде в інвойс.' : 'Доставка за наш рахунок — сума піде у витрати.'; }));
   const live=()=>{ let kg=0,cn=0; o.lines.forEach((li,i)=>{ kg+=parseFloat($(`[data-pkk="${i}"]`).value)||0; cn+=parseInt($(`[data-pkc="${i}"]`).value)||0; }); return {kg,cn}; };
   const calc=()=>boxSum(boxRead());
   const upd=()=>{ const {kg,cn}=live(); const bk=boxSum(boxRead());
@@ -5650,11 +5672,17 @@ function savePicked(id){
   }
   const bl=boxRead(), be=boxErr(bl,true); if(be) return fe(be);
   const ge=grossErr(bl, facts.reduce((t,f)=>t+f.kg,0)); if(ge) return fe(ge);
+  const dRaw=($('#pkDeliv').value||'').trim(), deliv=Math.round((parseFloat(dRaw)||0)*100)/100;
+  if(dRaw==='') return fe('Вкажіть вартість доставки (0 — якщо доставки немає).');
+  if(deliv<0) return fe('Вартість доставки не може бути від\'ємною.');
+  const car=($('#pkCar').value||'').trim();
   const bx=bl.length;
   o.lines.forEach((li,i)=>{ li.kg=facts[i].kg; li.cones=facts[i].cn; });
+  const smEl=document.querySelector('input[name=pkShipMode]:checked'), sm=smEl&&smEl.value==='client'?'client':'us';
+  o.delivery=deliv; if(car) o.carrierName=car; o.shipMode=sm;
   setBoxes(o, bl); o.boxCheck=false; o.grossKg=0; o.pickedAt=now(); o.pickedBy=S.current;
   if(!o.pickAt){ o.pickAt=o.pickedAt; o.pickBy=S.current; }   // окремого кроку «Взяти в збірку» більше немає
-  oev(o,`Зібрано: ${fmtN(bx)} кор., нетто ${fmtKg(oKg(o))} кг, брутто ${fmtKg2(oGross(o))} кг${ch.length?'. Уточнено: '+ch.join('; '):''}`);
+  oev(o,`Зібрано: ${fmtN(bx)} кор., нетто ${fmtKg(oKg(o))} кг, брутто ${fmtKg2(oGross(o))} кг${ch.length?'. Уточнено: '+ch.join('; '):''}; доставка ${sm==='client'?'за рахунок клієнта':'за наш рахунок'} ${fmtEur(deliv)}${car?` (${car})`:''}`);
   if(save()){ toast('№ '+orderNo(o)+': зібрано'); refreshOrders(); }
 }
 function openBoxes(id){
