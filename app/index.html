@@ -1308,6 +1308,7 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Внесіть коробки й підтвердіть збірку.':'Inserisci i colli e conferma la preparazione.',
     'Завантажуємо склад…':'Caricamento del magazzino…',
     'Завантажуємо дані складу':'Caricamento dei dati del magazzino',
     'Готуємо екран':'Preparazione della schermata',
@@ -2273,6 +2274,7 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Внесіть коробки й підтвердіть збірку.':'Enter the boxes and confirm picking.',
     'Завантажуємо склад…':'Loading the warehouse…',
     'Завантажуємо дані складу':'Loading warehouse data',
     'Готуємо екран':'Preparing the screen',
@@ -4928,6 +4930,7 @@ const oConesKg = o => oCn(o)*CONE_KG;
 const oBoxKg = o => +o.boxKg>0 ? +o.boxKg : (+o.grossKg>0 ? Math.max(0, Math.round((+o.grossKg - oKg(o) - oConesKg(o))*100)/100) : 0);
 const oGross = o => oBoxList(o).length ? boxSum(oBoxList(o)) : oKg(o)+oConesKg(o)+oBoxKg(o);   // є коробки поштучно — брутто це сума їхніх ваг
 const oBoxList = o => normBoxes(o.boxList);
+const canBox = o => !!o && !isClient() && o.status==='active' && !o.pickedAt && (can('pick') || can('fin') || (o.who===S.current && (can('order')||can('smp'))));
 /* зібрану заявку не пускаємо далі, поки немає коробок або їх треба перевірити після правки */
 const boxNeed = o => BOX_COL && o.status==='active' && !!o.pickedAt && (!!o.boxCheck || !oBoxList(o).length);
 const fmtDim = v => String(Math.round((+v||0)*10)/10).replace('.', ',');
@@ -5049,8 +5052,7 @@ function lineHtml(o, li, i){
 }
 function orderActions(o){
   const st=oStage(o), mine=o.who===S.current, b=[];
-  if(st==='res' && can('pick')) b.push(`<button class="btn small" data-opick="${o.id}">Взяти в збірку</button>`);
-  if(st==='pick' && can('pick')) b.push(`<button class="btn small" data-opicked="${o.id}">Зібрано</button>`);
+  if((st==='res' || st==='pick') && canBox(o)) b.push(`<button class="btn small" data-opicked="${o.id}">Внести коробки</button>`);
   if(boxNeed(o) && (can('pick')||can('fin'))) b.push(`<button class="btn small" data-obox="${o.id}">${o.boxCheck?'Перевірити коробки':'Внести коробки'}</button>`);
   if(st==='wait' && can('fin') && !boxNeed(o)) b.push(`<button class="btn small in" data-oappr="${o.id}">${o.terms==='prepay'?'Передоплату отримано':'Дозволити відвантаження'}</button>`);
   if(st==='ready' && can('ship') && !boxNeed(o)) b.push(`<button class="btn small out" data-oship="${o.id}">Відвантажити</button>`);
@@ -5283,7 +5285,7 @@ function saveOrderDraft(){
     const no={id:uid(),yy:nx.yy,no:nx.no,site:OD.site||defSite(null),client,sample:smp,terms,days,comment,shipMode,shipping:0,pl:OD.pl==='ua'?'ua':'eu',lines,who:S.current,at:now(),status:'active',events:[]};
     oev(no,`${smp?'Заявку на пробники':'Заявку'} створено: ${sumTxt(lines)}, доставка ${shipMode==='client'?'за рахунок клієнта':'за наш рахунок'}, товар у резерві`);
     S.reserves.push(no);
-    if(save()){ toast(`Заявку № ${orderNo(no)} створено`); OD=null; closeSheet(); tab='reserves'; oFilter='all'; render(); }
+    if(save()){ toast(`Заявку № ${orderNo(no)} створено`); OD=null; closeSheet(); tab='reserves'; oFilter='all'; render(); if(canBox(no)) openPicked(no.id); }
     return;
   }
   const art = id => (skuById(id)||{}).art||'?';
@@ -5308,7 +5310,7 @@ function saveOrderDraft(){
   if(qtyCh){ o.boxCheck=true; ch.push('перевірте коробки'); }
   Object.assign(o,{client,sample:smp,terms,days,comment,shipMode,pl:OD.pl==='ua'?'ua':'eu',lines});
   oev(o,'Змінено: '+ch.join('; '));
-  if(save()){ toast('Заявку № '+orderNo(o)+' змінено'); render(); openOrderView(o.id); }
+  if(save()){ toast('Заявку № '+orderNo(o)+' змінено'); render(); if(canBox(o)) openPicked(o.id); else openOrderView(o.id); }
 }
 
 /* --- мінімальний генератор .docx --- */
@@ -5603,18 +5605,19 @@ function viewDebt(){
 function afterOrderStep(id){ render(); if($('#sheet').classList.contains('open')) openOrderView(id); }
 function orderPick(id){ const o=oById(id); if(!o||!can('pick')||o.pickAt) return; o.pickAt=now(); o.pickBy=S.current; oev(o,'Взято в збірку'); if(save()){ toast('№ '+orderNo(o)+': збірка на складі'); afterOrderStep(id); } }
 function openPicked(id){
-  const o=oById(id); if(!o||!can('pick')||o.pickedAt) return;
-  openSheet(`${head('№ '+orderNo(o)+' · збірка')}
+  const o=oById(id); if(!canBox(o)) return;
+  const store = can('pick') || can('fin');   // склад і бухгалтерія можуть уточнити фактичні кг; автор заявки — ні
+  openSheet(`${head('№ '+orderNo(o)+' · коробки')}
     <div id="pkerr"></div>
     <p style="margin:0 0 10px"><b>${esc(o.client)}</b> · ${o.lines.length} ${pos(o.lines.length)}</p>
-    <p class="hint" style="margin:0 0 8px">Впишіть фактичні кг і конуси зі складу, якщо вони відрізняються від замовлених.</p>
+    <p class="hint" style="margin:0 0 8px">${store?'Впишіть фактичні кг і конуси зі складу, якщо вони відрізняються від замовлених. ':''}Внесіть коробки й підтвердіть збірку.</p>
     ${o.lines.map((li,i)=>{const x=skuById(li.sku)||{}, l=levels(li.sku), mine=reservedIn(o,li.sku);
       return `<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRowZ(x)}</div>
-        <div class="hint num" style="margin:4px 0">Замовлено ${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к · доступно ${fmtKg(l.fk+mine.kg)} кг / ${fmtN(l.fc+mine.cn)} к</div>
+        ${store ? `<div class="hint num" style="margin:4px 0">Замовлено ${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к · доступно ${fmtKg(l.fk+mine.kg)} кг / ${fmtN(l.fc+mine.cn)} к</div>
         <div class="odl-f two">
           <label>Фактично конусів<input data-pkc="${i}" type="number" inputmode="numeric" min="0" step="1" value="${li.cones}"></label>
           <label>Фактично кг<input data-pkk="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${li.kg}"></label>
-        </div></div>`;}).join('')}
+        </div>` : `<div class="sub num oliq">${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к</div><input type="hidden" data-pkc="${i}" value="${li.cones}"><input type="hidden" data-pkk="${i}" value="${li.kg}">`}</div>`;}).join('')}
     <div class="f" style="margin:8px 0 4px">Коробки</div>
     ${boxEdHtml(oBoxList(o).length ? oBoxList(o) : [{w:0,l:0,h:0,kg:0}])}
     <p class="hint num" id="pkHint"></p>
@@ -5629,7 +5632,7 @@ function openPicked(id){
   upd();
 }
 function savePicked(id){
-  const o=oById(id); if(!o||!can('pick')||o.pickedAt) return;
+  const o=oById(id); if(!canBox(o)) return;
   const fe=m=>{$('#pkerr').innerHTML=`<div class="err">${m}</div>`; $('#panel').scrollTop=0;};
   const facts=[], ch=[];
   for(let i=0;i<o.lines.length;i++){
@@ -5647,6 +5650,7 @@ function savePicked(id){
   const bx=bl.length;
   o.lines.forEach((li,i)=>{ li.kg=facts[i].kg; li.cones=facts[i].cn; });
   setBoxes(o, bl); o.boxCheck=false; o.grossKg=0; o.pickedAt=now(); o.pickedBy=S.current;
+  if(!o.pickAt){ o.pickAt=o.pickedAt; o.pickBy=S.current; }   // окремого кроку «Взяти в збірку» більше немає
   oev(o,`Зібрано: ${fmtN(bx)} кор., нетто ${fmtKg(oKg(o))} кг, брутто ${fmtKg2(oGross(o))} кг${ch.length?'. Уточнено: '+ch.join('; '):''}`);
   if(save()){ toast('№ '+orderNo(o)+': зібрано'); refreshOrders(); }
 }
