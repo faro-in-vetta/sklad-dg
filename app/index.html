@@ -713,6 +713,29 @@ nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true
 @media (max-width:360px){.ofilt .ofl{font-size:11.5px}}
 
 .odates{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.9fr);gap:6px;margin-bottom:8px}
+/* коробки заявки */
+.bxl{display:flex;flex-direction:column;gap:6px;margin:0 0 6px}
+.bxr{border:1px solid var(--line);border-radius:10px;padding:6px 8px 8px;background:var(--surface)}
+.bxh{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.bxdel{border:0;background:none;color:var(--muted);font-size:20px;line-height:1;padding:0 4px;cursor:pointer}
+.bxf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bxf label{display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--muted);min-width:0}
+.bxf input{width:100%;min-width:0;border:1px solid var(--line);border-radius:7px;padding:6px;font-size:14px;background:var(--bg);color:var(--ink)}
+@media (max-width:380px){.bxf{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* заявки: клієнт і прайс EU/UA */
+.ofx{display:flex;gap:6px;margin:0 0 8px;align-items:stretch}
+.ofx #oNo{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:5px 8px;font-size:12px;color:var(--ink)}
+.ofx #oNo.on{border-color:var(--gold);background:var(--indigo-soft);font-weight:600}
+/* заявки: дати, клієнт, №, прайс і етапи стоять під шапкою, список гортається */
+.otop{position:sticky;top:var(--hdrH,0px);z-index:4;background:var(--bg);margin:0 -16px 8px;padding:8px 16px 1px;box-shadow:0 1px 0 var(--line)}
+.ofx select{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:5px 6px;font-size:12px;color:var(--ink)}
+.ofx select.on{border-color:var(--gold);background:var(--indigo-soft);color:var(--gold-deep);font-weight:600}
+.opl{display:flex;flex:none;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--surface)}
+.opl button{border:0;background:none;padding:4px 10px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer}
+.opl button + button{border-left:1px solid var(--line)}
+.opl button.on{background:var(--indigo-soft);color:var(--gold-deep)}
+.opl button.ua.on{background:#2F5DA8;color:#fff}
+.opl button.eu.on{background:var(--primary);color:var(--on-primary)}
 .odates label{display:flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:0 6px;min-width:0}
 .odates label span{font-size:11.5px;color:var(--muted)}
 .odates input{border:0;background:transparent;padding:7px 0;font-size:13px;min-width:0;width:100%;color:var(--ink)}
@@ -803,6 +826,11 @@ nav.tabs button{padding-bottom:2px}
 .invprev .ip-tot .big{margin-top:4px}
 .invprev .ip-tot .big b{color:#8A6030}
 .invprev .ip-w{margin-top:12px;line-height:1.5;font-size:11px}
+.invprev .ip-sec{font-family:var(--serif);font-size:13.5px;font-weight:600;color:#111;margin:14px 0 0;padding-bottom:3px;border-bottom:1.5px solid #B68C5A}
+.invprev .ip-row{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:11.5px}
+.invprev .ip-fin{margin-top:14px;padding-top:6px;border-top:1.5px solid #B68C5A;font-size:12px}
+.invprev .ip-fin .big{font-size:13px}
+.invprev table.ip-t tr.ip-sum td{font-weight:700;background:#FAF7F2}
 .invprev .ip-f{margin-top:14px;font-size:11px}
 .invprev .ip-f::after{content:'';display:block}
 
@@ -1273,6 +1301,40 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Вартість доставки:':'Costo di spedizione:',
+    'Вартість за товар =':'Valore della merce =',
+    'Разом з доставкою:':'Totale con spedizione:',
+    'уточнюється':'da definire',
+    'безкоштовно':'gratuita',
+    'Інформація по товару':'Informazioni sulla merce',
+    'Логістична інформація':'Informazioni logistiche',
+    'Кількість конусів:':'Numero di coni:',
+    'Коробка':'Collo',
+    'Об\'єм, м³':'Volume, m³',
+    'Вага брутто, кг':'Peso lordo, kg',
+    'Ширина S, см':'Larghezza S, cm',
+    'Довжина L, см':'Lunghezza L, cm',
+    'Висота H, см':'Altezza H, cm',
+    'Вага брутто — коробка разом із пряжею, як на вагах.':'Peso lordo: il collo con il filato, come sulla bilancia.',
+    'Коробка №':'Collo n. ',
+    '+ Коробка':'+ Collo',
+    'Ширина, см':'Larghezza, cm',
+    'Довжина, см':'Lunghezza, cm',
+    'Висота, см':'Altezza, cm',
+    'Вага, кг':'Peso, kg',
+    'Коробки':'Colli',
+    'Прибрати коробку':'Rimuovi collo',
+    'Перевірити коробки':'Verifica colli',
+    'Внести коробки':'Inserisci colli',
+    'Підтвердити коробки':'Conferma colli',
+    'перевірте коробки':'verificare i colli',
+    'немає коробок':'colli mancanti',
+    'Додайте хоча б одну коробку.':'Aggiungi almeno un collo.',
+    'Заявку змінили після збірки — перевірте кількість коробок, розміри й вагу.':'L\'ordine è stato modificato dopo la preparazione: verifica numero, dimensioni e peso dei colli.',
+    'Спершу внесіть коробки':'Prima inserisci i colli',
+    '№ заявки':'N. ordine',
+    'Номер заявки':'Numero ordine',
+    'Усі клієнти':'Tutti i clienti',
     'Економ-режим: вивантаження даних тимчасово вимкнене':'Modalità risparmio: l’esportazione dei dati è temporaneamente disattivata',
     'Прайс':'Listino',
     'Європа':'Europa',
@@ -2192,6 +2254,40 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Вартість доставки:':'Delivery cost:',
+    'Вартість за товар =':'Goods value =',
+    'Разом з доставкою:':'Total incl. delivery:',
+    'уточнюється':'to be confirmed',
+    'безкоштовно':'free',
+    'Інформація по товару':'Product information',
+    'Логістична інформація':'Logistics information',
+    'Кількість конусів:':'Number of cones:',
+    'Коробка':'Box',
+    'Об\'єм, м³':'Volume, m³',
+    'Вага брутто, кг':'Gross weight, kg',
+    'Ширина S, см':'Width S, cm',
+    'Довжина L, см':'Length L, cm',
+    'Висота H, см':'Height H, cm',
+    'Вага брутто — коробка разом із пряжею, як на вагах.':'Gross weight: the box with the yarn, as on the scale.',
+    'Коробка №':'Box No. ',
+    '+ Коробка':'+ Box',
+    'Ширина, см':'Width, cm',
+    'Довжина, см':'Length, cm',
+    'Висота, см':'Height, cm',
+    'Вага, кг':'Weight, kg',
+    'Коробки':'Boxes',
+    'Прибрати коробку':'Remove box',
+    'Перевірити коробки':'Check boxes',
+    'Внести коробки':'Enter boxes',
+    'Підтвердити коробки':'Confirm boxes',
+    'перевірте коробки':'check boxes',
+    'немає коробок':'no boxes',
+    'Додайте хоча б одну коробку.':'Add at least one box.',
+    'Заявку змінили після збірки — перевірте кількість коробок, розміри й вагу.':'The order was changed after picking: check the number, size and weight of the boxes.',
+    'Спершу внесіть коробки':'Enter the boxes first',
+    '№ заявки':'Order No.',
+    'Номер заявки':'Order number',
+    'Усі клієнти':'All customers',
     'Економ-режим: вивантаження даних тимчасово вимкнене':'Eco mode: data export is temporarily disabled',
     'Прайс':'Price list',
     'Європа':'Europe',
@@ -2897,6 +2993,12 @@ const UNIT_RULES = {
 
 const TR_RX = {
   it: [
+    [/^Разом: (\d+) SKU$/u, 'Totale: $1 SKU'],
+    [/^Разом: (\d+) кор\.$/u, 'Totale: $1 colli'],
+    [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу брутто\.$/u, 'Collo n. $1: indica larghezza, lunghezza, altezza e peso lordo.'],
+    [/^Коробка №(\d+):\s*$/u, 'Collo n. $1:'],
+    [/^ширина ([\d,]+) см, довжина ([\d,]+) см, висота ([\d,]+) см, вага ([\d,]+) кг$/u, 'larghezza $1 cm, lunghezza $2 cm, altezza $3 cm, peso $4 kg'],
+    [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу\.$/u, 'Collo n. $1: indica larghezza, lunghezza, altezza e peso.'],
     [/^був\(-ла\) (\d+) хв тому$/u, 'visto $1 min fa'],
     [/^був\(-ла\) (\d+) год тому$/u, 'visto $1 h fa'],
     [/^був\(-ла\) (.+)$/u, 'visto il $1'],
@@ -2960,6 +3062,12 @@ const TR_RX = {
     [/^Заявку № (.+) змінено$/u, 'Ordine n. $1 modificato'],
   ],
   en: [
+    [/^Разом: (\d+) SKU$/u, 'Total: $1 SKU'],
+    [/^Разом: (\d+) кор\.$/u, 'Total: $1 boxes'],
+    [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу брутто\.$/u, 'Box No. $1: enter width, length, height and gross weight.'],
+    [/^Коробка №(\d+):\s*$/u, 'Box No. $1:'],
+    [/^ширина ([\d,]+) см, довжина ([\d,]+) см, висота ([\d,]+) см, вага ([\d,]+) кг$/u, 'width $1 cm, length $2 cm, height $3 cm, weight $4 kg'],
+    [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу\.$/u, 'Box No. $1: enter width, length, height and weight.'],
     [/^був\(-ла\) (\d+) хв тому$/u, 'seen $1 min ago'],
     [/^був\(-ла\) (\d+) год тому$/u, 'seen $1 h ago'],
     [/^був\(-ла\) (.+)$/u, 'last seen $1'],
@@ -3336,6 +3444,9 @@ const SB_KEY = 'sb_publishable_hOxUT36SMVhShYKrycBLGQ_DVjU9WSk';
 const db = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 
 let ME = null;              // профіль поточного користувача
+let BOX_COL = false;         // чи є в базі стовпці orders.box_list / box_check (SQL 27)
+/* коробки заявки: [{w,l,h,kg}] — ширина, довжина, висота (см) і вага порожньої коробки (кг) */
+function normBoxes(a){ return (Array.isArray(a) ? a : []).map(b => ({ w:+b.w||0, l:+b.l||0, h:+b.h||0, kg:Math.round((+b.kg||0)*100)/100 })); }
 let PL_COL = false;          // чи є в базі стовпець orders.price_list (SQL 25)
 let SNAP = {};              // знімок останнього стану з бази (для diff)
 let SYNCING = false, DIRTY = false;
@@ -3413,7 +3524,7 @@ function fromOrder(r, lines, pays, rets, evs) {
     site: r.site || 'sg', pl: r.price_list === 'ua' ? 'ua' : 'eu',
     terms: r.terms, days: r.days, comment: r.comment || '',
     shipMode: r.ship_mode, delivery: +r.delivery || 0, carrierName: r.carrier_name || '',
-    boxes: r.boxes || 0, boxKg: +r.box_kg || 0,
+    boxes: r.boxes || 0, boxKg: +r.box_kg || 0, boxList: normBoxes(r.box_list), boxCheck: !!r.box_check,
     status: r.status, who: r.created_by, at: r.created_at,
     pickAt: r.pick_at, pickBy: r.pick_by, pickedAt: r.picked_at, pickedBy: r.picked_by,
     approvedAt: r.approved_at, approvedBy: r.approved_by,
@@ -3433,6 +3544,7 @@ const orderRowOf = o => ({
   terms: o.terms === 'sample' ? 'sample' : o.terms, days: +o.days || 0,
   comment: o.comment || null, ship_mode: o.shipMode || 'us', delivery: +o.delivery || 0,
   carrier_name: o.carrierName || null, boxes: +o.boxes || 0, box_kg: +o.boxKg || 0,
+  ...(BOX_COL ? { box_list: normBoxes(o.boxList), box_check: !!o.boxCheck } : {}),
   status: o.status, pick_at: tsOf(o.pickAt), pick_by: o.pickBy || null,
   picked_at: tsOf(o.pickedAt), picked_by: o.pickedBy || null,
   approved_at: tsOf(o.approvedAt), approved_by: o.approvedBy || null,
@@ -3527,6 +3639,7 @@ async function hydrate(opts) {
   if (opts && opts.soft && (DIRTY || SYNCING || WGEN !== gen)) return false;
   // стовпець прайсу з'являється після SQL 25 — до того його не надсилаємо, щоб не зламати збереження
   if ((or_.data || []).length) PL_COL = 'price_list' in or_.data[0];
+  if ((or_.data || []).length) BOX_COL = 'box_list' in or_.data[0];
 
   SNAP = {};
   S = {
@@ -4285,6 +4398,7 @@ const compSorted = c => (c||[]).slice().sort((a,b)=>b.p-a.p);
 const fmtPctC = v => String(Math.round(v*10)/10).replace('.',',');
 const compText = c => compSorted(c).map(x=>`${fmtPctC(x.p)}% ${x.f}`).join(' + ');
 const compTypes = c => [...new Set(compSorted(c).map(x=>FIBER_TYPE[x.f]||x.f))];
+const skuRowZ = x => skuRow(x, true).replace('<img class="thumb osw"', `<img class="thumb osw zoomable" data-zoom="0" data-sku="${x.id||''}" title="Збільшити фото"`);
 const skuRow = (x, bc) => `<div class="srow"><div class="srow-l">${skuIdHtml(x, '', bc)}</div>${thumbHtml(x,'thumb osw')}</div>`;
 const compCol = x => `<div class="ccol many">${(x.comp||[]).length?compSorted(x.comp).map(c=>`<span><b>${fmtPctC(c.p)}%</b> ${esc(c.f)}</span>`).join(''):'<span class="cna">склад —</span>'}</div>`;
 /* ---------- склади (локації) ----------
@@ -4737,7 +4851,36 @@ const fmtKg2 = kg => (Math.round(kg*100)/100).toLocaleString('uk-UA',{minimumFra
 const oBoxes = o => Math.max(0, parseInt(o.boxes)||0);
 const oConesKg = o => oCn(o)*CONE_KG;
 const oBoxKg = o => +o.boxKg>0 ? +o.boxKg : (+o.grossKg>0 ? Math.max(0, Math.round((+o.grossKg - oKg(o) - oConesKg(o))*100)/100) : 0);
-const oGross = o => oKg(o)+oConesKg(o)+oBoxKg(o);
+const oGross = o => oBoxList(o).length ? boxSum(oBoxList(o)) : oKg(o)+oConesKg(o)+oBoxKg(o);   // є коробки поштучно — брутто це сума їхніх ваг
+const oBoxList = o => normBoxes(o.boxList);
+/* зібрану заявку не пускаємо далі, поки немає коробок або їх треба перевірити після правки */
+const boxNeed = o => BOX_COL && o.status==='active' && !!o.pickedAt && (!!o.boxCheck || !oBoxList(o).length);
+const fmtDim = v => String(Math.round((+v||0)*10)/10).replace('.', ',');
+const boxText = b => `ширина ${fmtDim(b.w)} см, довжина ${fmtDim(b.l)} см, висота ${fmtDim(b.h)} см, вага ${fmtKg2(b.kg)} кг`;
+const boxSum = list => Math.round(list.reduce((t,b)=>t+(+b.kg||0),0)*100)/100;
+const boxVol = b => (+b.w||0)*(+b.l||0)*(+b.h||0)/1e6;                       // м³
+const boxVolSum = list => list.reduce((t,b)=>t+boxVol(b),0);
+const fmtM3 = v => (Math.round(v*1000)/1000).toFixed(3).replace('.', ',');
+/* записати коробки в заявку; box_kg у базі — тара (брутто − нетто − конуси), щоб старі розрахунки сходились */
+function setBoxes(o, bl){ o.boxList=bl; o.boxes=bl.length; o.boxKg=bl.length ? Math.max(0, Math.round((boxSum(bl)-oKg(o)-oConesKg(o))*100)/100) : 0; }
+/* сума брутто не може бути меншою за нетто */
+const grossErr = (bl, net) => bl.length && boxSum(bl)+0.005 < net ? `Вага брутто всіх коробок (${fmtKg2(boxSum(bl))} кг) менша за вагу нетто (${fmtKg(net)} кг).` : '';
+const boxRowHtml = (b,i) => `<div class="bxr"><div class="bxh"><b><span>Коробка №</span>${i+1}</b><button type="button" class="bxdel" data-bxdel="${i}" aria-label="Прибрати коробку" title="Прибрати коробку">×</button></div>
+  <div class="bxf"><label>Ширина, см<input data-bxw type="number" inputmode="decimal" min="0" step="0.1" value="${b.w||''}"></label><label>Довжина, см<input data-bxl type="number" inputmode="decimal" min="0" step="0.1" value="${b.l||''}"></label><label>Висота, см<input data-bxh type="number" inputmode="decimal" min="0" step="0.1" value="${b.h||''}"></label><label>Брутто, кг<input data-bxk type="number" inputmode="decimal" min="0" step="0.01" value="${b.kg||''}"></label></div></div>`;
+const boxEdHtml = list => `<div class="bxl" id="bxl">${list.map(boxRowHtml).join('')}</div><button type="button" class="btn ghost small" data-bxadd style="margin:0 0 10px">+ Коробка</button>`;
+function boxRead(){
+  const num = (r,a) => { const v = parseFloat((r.querySelector(a)||{}).value); return v>0 ? v : 0; };
+  return [...document.querySelectorAll('#bxl .bxr')].map(r => ({ w:num(r,'[data-bxw]'), l:num(r,'[data-bxl]'), h:num(r,'[data-bxh]'), kg:Math.round(num(r,'[data-bxk]')*100)/100 }));
+}
+function boxErr(list, required){
+  if(required && !list.length) return 'Додайте хоча б одну коробку.';
+  const i = list.findIndex(b => !(b.w>0 && b.l>0 && b.h>0 && b.kg>0));
+  return i < 0 ? '' : `Коробка №${i+1}: вкажіть ширину, довжину, висоту й вагу брутто.`;
+}
+function boxRedraw(list){ const el = $('#bxl'); if(!el) return; el.innerHTML = list.map(boxRowHtml).join(''); el.dispatchEvent(new Event('input', {bubbles:true})); }
+/* нова коробка — з розмірами й вагою попередньої: зазвичай пакують в однакові */
+function boxAdd(){ const l = boxRead(); const last = l[l.length-1]; l.push(last ? {...last} : {w:0,l:0,h:0,kg:0}); boxRedraw(l); const r = [...document.querySelectorAll('#bxl .bxr')].pop(); if(r){ const inp = r.querySelector('[data-bxw]'); if(inp) inp.focus(); } }
+function boxDel(i){ const l = boxRead(); l.splice(i,1); boxRedraw(l); }
 const oPaid = o => (o.payments||[]).reduce((t,p)=>t+(+p.amount||0),0);
 const oOwed = o => Math.max(0, +(oTotal(o)-oPaid(o)).toFixed(2));
 const oOver = o => Math.max(0, +(oPaid(o)-oTotal(o)).toFixed(2));
@@ -4766,19 +4909,37 @@ const reservedIn = (o,skuId) => o && o.status==='active' ? o.lines.filter(li=>li
 const termsText = o => o.sample?'Пробники, без оплати':`${o.terms==='prepay'?'Передоплата':`Відтермінування ${o.days} дн.`}${hasSmp(o)?' · є пробники':''}`;
 
 /* --- список --- */
-let oFilter='all', oFrom='', oTo='';
+let oFilter='all', oFrom='', oTo='', oClient='', oPl='', oNo='';
+/* пошук за номером: «36» знайде 26/0000036, «26/00000» — за частиною повного номера */
+const inNo = o => { const q = oNo.trim(); if(!q) return true; const d = q.replace(/\D/g,'');
+  return orderNo(o).includes(q) || (d && !q.includes('/') && String(o.no).includes(d.replace(/^0+/,'') || '0')); };
+const oClKey = o => String(o.client||'').trim().toLowerCase();
+function oTopOffset(){ const h = document.querySelector('header.top'); if(h) document.documentElement.style.setProperty('--hdrH', h.offsetHeight + 'px'); }
+window.addEventListener('resize', oTopOffset);
+document.addEventListener('input', e=>{ if(e.target.id!=='oNo') return; oNo = e.target.value; const pos = e.target.selectionStart; viewReserves(); const n=$('#oNo'); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} } });
 function viewReserves(){
   const inP = o => { const d=o.at.slice(0,10); return (!oFrom||d>=oFrom)&&(!oTo||d<=oTo); };
   const oq=($('#oq')?.value||'').trim().toLowerCase();
   const inQ = o => !oq || [orderNo(o),o.client,o.comment,...o.lines.map(li=>{const x=skuById(li.sku)||{}; return [x.art,x.maker,x.color].join(' ');})].some(v=>String(v||'').toLowerCase().includes(oq));
-  const base = S.reserves.filter(o=>seesSite(siteOf(o))&&inP(o)&&inQ(o));   // лише вибрані склади
+  const pre = S.reserves.filter(o=>seesSite(siteOf(o))&&inP(o)&&inQ(o));   // лише вибрані склади
+  /* фільтри «Клієнт» і «EU / UA»: впливають і на список, і на лічильники етапів.
+     У списку клієнтів — лише ті, що лишаються після інших умов (з кількістю). */
+  const showCl = !isClient(), showPl = seeSale() && !isClient();
+  if(!showCl) oClient = '';
+  if(!showPl) oPl = '';
+  const inPl = o => !oPl || (o.pl||'eu') === oPl;
+  const clMap = new Map();
+  pre.filter(inPl).forEach(o => { const k = oClKey(o); if(!k) return; const c = clMap.get(k) || {name:String(o.client).trim(), n:0}; c.n++; clMap.set(k, c); });
+  if(oClient && !clMap.has(oClient)) clMap.set(oClient, {name:(S.reserves.find(o=>oClKey(o)===oClient)||{}).client||oClient, n:0});
+  const clOpts = [...clMap.entries()].sort((a,b)=>a[1].name.localeCompare(b[1].name, undefined, {sensitivity:'base'}));
+  const base = pre.filter(o => inPl(o) && inNo(o) && (!oClient || oClKey(o) === oClient));
   const ALL_GROUPS = [['all','Усі'],['res','Створені'],['pick','Збірка'],['wait','Чекає оплати'],['ready','До відправки'],['unpaid','Не оплачені'],['done','Оплачені'],['sample','Пробники'],['cancel','Анульовані']];
   // На телефоні дев'ять фільтрів займають пів екрана. Лишаємо два робочі;
   // активний показуємо завжди, навіть якщо його обрали з комп'ютера.
-  const PHONE_KEYS = ['res', 'pick', 'ready'];   // рівно один ряд по три
-  const groups = isPhone()
-    ? ALL_GROUPS.filter(([k]) => PHONE_KEYS.includes(k) || (k === oFilter && k !== 'all'))
-    : ALL_GROUPS;
+  // Лишили три: Усі, Не оплачені, Оплачені — однаково на ПК і телефоні (один ряд по три).
+  const KEEP_KEYS = ['all', 'unpaid', 'done'];
+  if(!KEEP_KEYS.includes(oFilter)) oFilter = 'all';
+  const groups = ALL_GROUPS.filter(([k]) => KEEP_KEYS.includes(k));
   const cnt = k => k==='all'?base.length:base.filter(o=>oStage(o)===k).length;
   const list = base.filter(o=>oFilter==='all'||oStage(o)===oFilter).sort((a,b)=>b.at.localeCompare(a.at));
   const unpaid = S.reserves.filter(o=>oStage(o)==='unpaid');
@@ -4786,6 +4947,7 @@ function viewReserves(){
   const overdue = unpaid.filter(o=>o.due && o.due.slice(0,10)<todayStr()).length;
   $('#view').innerHTML = `
     ${can('fin')&&unpaid.length?`<div class="obar num"><span>Очікуємо оплату <b>${fmtEur0(debt)}</b></span><span>Прострочено <b class="${overdue?'neg':''}">${overdue}</b></span></div>`:''}
+    <div class="otop">
     <div class="odates">
       <label><span>з</span><input type="date" id="oFrom" value="${oFrom}" aria-label="Дата з"></label>
       <label><span>по</span><input type="date" id="oTo" value="${oTo}" aria-label="Дата по"></label>
@@ -4796,19 +4958,27 @@ function viewReserves(){
         <option value="prev">Минулий місяць</option>
       </select>
     </div>
+    <div class="ofx">
+      ${showCl?`<select id="oCl" class="${oClient?'on':''}" aria-label="Клієнт"><option value="">Усі клієнти</option>${clOpts.map(([k,c])=>`<option value="${esc(k)}" ${k===oClient?'selected':''}>${esc(c.name)} (${c.n})</option>`).join('')}</select>`:''}
+      <input id="oNo" type="search" inputmode="numeric" autocomplete="off" placeholder="№ заявки" aria-label="Номер заявки" value="${esc(oNo)}" class="${oNo.trim()?'on':''}">
+      ${showPl?`<div class="opl" role="group" aria-label="Прайс">${[['','Усі'],['eu','EU'],['ua','UA']].map(([k,n])=>`<button type="button" class="${k===oPl?'on':''} ${k}" data-opl="${k}" aria-pressed="${k===oPl}">${n}</button>`).join('')}</div>`:''}
+    </div>
     <div class="ofilt">${groups.map(([k,n])=>`<button class="hf ${k===oFilter?'on':''}" data-of="${k}"><span class="ofl">${n}</span><span class="ofc num">${cnt(k)}</span></button>`).join('')}</div>
+    </div>
     ${list.length?list.map(orderCard).join(''):'<div class="empty">Заявок за цими умовами немає.</div>'}`;
+  oTopOffset();
 }
 function lineHtml(o, li, i){
   const s=skuById(li.sku)||{};
-  return `<div class="oli"><div class="odl-h"><span class="lno">${i+1}</span>${skuRow(s)}</div><div class="sub num oliq">${fmtKg(lq(li))} кг / ${fmtN(lc(li))} к${li.sample?' · <span class="stg st-sample">пробник</span>':(seeSale()?` · ${fmtEur(li.price)}/кг = <b>${fmtEur(lq(li)*li.price)}</b>`:'')}</div></div>`;
+  return `<div class="oli"><div class="odl-h"><span class="lno">${i+1}</span>${skuRowZ(s)}</div><div class="sub num oliq">${fmtKg(lq(li))} кг / ${fmtN(lc(li))} к${li.sample?' · <span class="stg st-sample">пробник</span>':(seeSale()?` · ${fmtEur(li.price)}/кг = <b>${fmtEur(lq(li)*li.price)}</b>`:'')}</div></div>`;
 }
 function orderActions(o){
   const st=oStage(o), mine=o.who===S.current, b=[];
   if(st==='res' && can('pick')) b.push(`<button class="btn small" data-opick="${o.id}">Взяти в збірку</button>`);
   if(st==='pick' && can('pick')) b.push(`<button class="btn small" data-opicked="${o.id}">Зібрано</button>`);
-  if(st==='wait' && can('fin')) b.push(`<button class="btn small in" data-oappr="${o.id}">${o.terms==='prepay'?'Передоплату отримано':'Дозволити відвантаження'}</button>`);
-  if(st==='ready' && can('ship')) b.push(`<button class="btn small out" data-oship="${o.id}">Відвантажити</button>`);
+  if(boxNeed(o) && (can('pick')||can('fin'))) b.push(`<button class="btn small" data-obox="${o.id}">${o.boxCheck?'Перевірити коробки':'Внести коробки'}</button>`);
+  if(st==='wait' && can('fin') && !boxNeed(o)) b.push(`<button class="btn small in" data-oappr="${o.id}">${o.terms==='prepay'?'Передоплату отримано':'Дозволити відвантаження'}</button>`);
+  if(st==='ready' && can('ship') && !boxNeed(o)) b.push(`<button class="btn small out" data-oship="${o.id}">Відвантажити</button>`);
   if(st==='unpaid' && can('fin')) b.push(`<button class="btn small in" data-opaid="${o.id}">Оплату отримано</button>`);
   if(o.status==='shipped' && can('fin')) b.push(`<button class="btn small ghost" data-oret="${o.id}">Повернення</button>`);
   if(o.status==='shipped' && can('fin')) b.push(`<button class="btn small ghost" data-ofix="${o.id}">Виправити</button>`);
@@ -4826,7 +4996,7 @@ function orderCard(o){
   const overdue = st==='unpaid' && o.due && o.due.slice(0,10)<todayStr();
   const b=orderActions(o);
   return `<div class="ocard" data-oview="${o.id}" role="button" tabindex="0" aria-label="Відкрити заявку № ${orderNo(o)}">
-    <div class="ohead"><b class="num">№ ${orderNo(o)}</b>${seeSale()&&!isClient()&&!allSmp(o)?plBadge(o.pl):''}<span class="stg ${STAGE_CLS[st]}">${stageLabel(o)}</span>${o.sample&&st!=='sample'?'<span class="stg st-sample">пробники</span>':''}${hasRet(o)?'<span class="stg st-cancel" style="text-decoration:none">повернення</span>':''}</div>
+    <div class="ohead"><b class="num">№ ${orderNo(o)}</b>${seeSale()&&!isClient()&&!allSmp(o)?plBadge(o.pl):''}<span class="stg ${STAGE_CLS[st]}">${stageLabel(o)}</span>${boxNeed(o)&&!isClient()?`<span class="stg st-cancel">${o.boxCheck?'перевірте коробки':'немає коробок'}</span>`:''}${o.sample&&st!=='sample'?'<span class="stg st-sample">пробники</span>':''}${hasRet(o)?'<span class="stg st-cancel" style="text-decoration:none">повернення</span>':''}</div>
     <div class="oline"><b>${esc(o.client)}</b>${viewSites().length>1?`<span class="stg" style="background:var(--indigo-soft);color:var(--gold-deep)">${esc(siteTag(siteOf(o)))}</span>`:''}</div>
     <div class="sub num" style="color:var(--muted);font-size:13px;margin-bottom:6px">${n} ${pos(n)} · ${fmtKg(oKg(o))} кг / ${fmtN(oCn(o))} к${!seeSale()?'':allSmp(o)&&!oShip(o)?' · без оплати':` · <b style="color:var(--ink)">${fmtEur(oTotal(o))}</b>${oShip(o)?` <span style="font-size:12px">(з доставкою)</span>`:''}`}</div>
     ${o.lines.slice(0,2).map((li,i)=>lineHtml(o,li,i)).join('')}
@@ -4849,7 +5019,7 @@ function openOrderView(id){
   const o=oById(id); if(!o) return;
   const st=oStage(o);
   openSheet(`${head('Заявка № '+orderNo(o)+' від '+fmtDate(o.at))}
-    <div class="ohead">${seeSale()&&!isClient()&&!allSmp(o)?plBadge(o.pl):''}<span class="stg ${STAGE_CLS[st]}">${stageLabel(o)}</span>${o.sample&&st!=='sample'?'<span class="stg st-sample">пробники</span>':''}${hasRet(o)?'<span class="stg st-cancel" style="text-decoration:none">повернення</span>':''}</div>
+    <div class="ohead">${seeSale()&&!isClient()&&!allSmp(o)?plBadge(o.pl):''}<span class="stg ${STAGE_CLS[st]}">${stageLabel(o)}</span>${boxNeed(o)&&!isClient()?`<span class="stg st-cancel">${o.boxCheck?'перевірте коробки':'немає коробок'}</span>`:''}${o.sample&&st!=='sample'?'<span class="stg st-sample">пробники</span>':''}${hasRet(o)?'<span class="stg st-cancel" style="text-decoration:none">повернення</span>':''}</div>
     <div class="box">
       <div class="oline" style="font-size:18px"><b>${esc(o.client)}</b></div>
       <div class="sub" style="color:var(--muted)">${!seeSale()?'':termsText(o)}${o.paid&&!allSmp(o)?` · оплачено ${fmtDate(o.paidAt)}`:''}${!o.paid&&oPaid(o)>0?` · оплачено ${fmtEur(oPaid(o))}, залишок ${fmtEur(oOwed(o))}`:''}${o.due&&!o.paid?` · <span class="${o.due.slice(0,10)<todayStr()?'neg':''}">оплатити до ${fmtDate(o.due)}${o.due.slice(0,10)<todayStr()?` (прострочено ${daysOver(o)} ${dayWord(daysOver(o))})`:''}</span>`:''}</div>
@@ -4929,7 +5099,7 @@ function drawOrderEditor(err){
         const s=skuById(li.sku)||{}, l=levels(li.sku), mine=reservedIn(o,li.sku);
         li.maxKg=Math.round((l.fk+mine.kg)*100)/100; li.maxCn=l.fc+mine.cn;
         return `<div class="odl">
-          <div class="odl-h"><span class="lno">${i+1}</span>${skuRow(s)}<button type="button" class="rmc" data-lrm="${i}" aria-label="Прибрати позицію">×</button></div>
+          <div class="odl-h"><span class="lno">${i+1}</span>${skuRowZ(s)}<button type="button" class="rmc" data-lrm="${i}" aria-label="Прибрати позицію">×</button></div>
           <div class="odl-f ${li.sample?'two':''}">
             <label>Конусів<input data-lc="${i}" type="number" inputmode="numeric" min="0" max="${li.maxCn}" step="1" value="${esc(li.cones)}"></label>
             <label>Кг<input data-lk="${i}" type="number" inputmode="decimal" min="0" max="${li.maxKg}" step="0.01" value="${esc(li.kg)}"></label>
@@ -4989,7 +5159,7 @@ function openSkuPicker(){
     ${list.map(s=>{ const l=levels(s.id), mine=reservedIn(o,s.id), fk=l.fk+mine.kg, fc=l.fc+mine.cn; const added=OD.lines.some(li=>li.sku===s.id);
       const off = fk<=0.001&&!added;
       return `<button class="pick ${added?'added':''} ${off?'off':''}" data-pick="${s.id}" ${off?'aria-disabled="true"':''}>
-        ${skuRow(s, true).replace('<img class="thumb osw"', `<img class="thumb osw zoomable" data-zoom="0" data-sku="${s.id}" title="Збільшити фото"`)}
+        ${skuRowZ(s)}
         <div class="pick-f num"><span>вільно ${fmtKg(fk)} кг / ${fmtN(fc)} к</span>${seeSale()&&s.sale?`<span>${fmtEur(plPrice(s.sale, OD.pl))}/кг</span>`:''}<span class="pick-a">${added?'✓ додано':fk<=0.001?'немає вільного':'+ додати'}</span></div>
       </button>`; }).join('')||'<div class="empty">Нічого не знайдено.</div>'}`);
   const inp=$('#pickQ'); inp.addEventListener('input',()=>{ pickQ=inp.value; const pos=inp.selectionStart; openSkuPicker(); const n=$('#pickQ'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(e){} });
@@ -5058,6 +5228,9 @@ function saveOrderDraft(){
   /* позиція, що лишилась у заявці, зберігає свій id — інакше в базі з'являлась би
      друга позиція з тим самим номером (order_lines_order_id_pos_key, помилка 23505) */
   lines.forEach(n=>{ const old=o.lines.find(x=>x.sku===n.sku); if(old && old.id) n.id=old.id; });
+  // змінилися кг/конуси/позиції у вже зібраній заявці — коробки треба перевірити, далі не пускаємо
+  const qtyCh = !!o.pickedAt && (lines.length!==o.lines.length || lines.some(n=>{ const old=o.lines.find(x=>x.sku===n.sku); return !old || Math.abs(old.kg-n.kg)>0.0001 || old.cones!==n.cones; }));
+  if(qtyCh){ o.boxCheck=true; ch.push('перевірте коробки'); }
   Object.assign(o,{client,sample:smp,terms,days,comment,shipMode,pl:OD.pl==='ua'?'ua':'eu',lines});
   oev(o,'Змінено: '+ch.join('; '));
   if(save()){ toast('Заявку № '+orderNo(o)+' змінено'); render(); openOrderView(o.id); }
@@ -5093,6 +5266,8 @@ function wCell(content, o){
   o=o||{};
   return `<w:tc><w:tcPr><w:tcW w:w="${o.w||1000}" w:type="dxa"/>${o.fill?`<w:shd w:val="clear" w:fill="${o.fill}"/>`:''}<w:vAlign w:val="center"/><w:tcBorders>${['top','left','bottom','right'].map(s=>`<w:${s} w:val="single" w:sz="6" w:color="D9CBB8"/>`).join('')}</w:tcBorders></w:tcPr>${content}</w:tc>`;
 }
+/* доставка в інвойсі: сума, якщо платить клієнт і її пораховано; інакше пояснення */
+const invShipText = o => oShip(o) > 0 ? fmtEur(oShip(o)) : (o.shipMode === 'client' ? 'уточнюється' : 'безкоштовно');
 function invoiceDocx(o){
   // Кожне поле пряжі — власна колонка, рядок лишається в один рівень.
   // Шрифт дрібніший, ніж був, бо колонок стало більше.
@@ -5117,7 +5292,7 @@ function invoiceDocx(o){
       + wCell(num(li.sample?'пробник':fmtEur(q*li.price)),{w:W[9]})
       + `</w:tr>`;
   }).join('');
-  const table=`<w:tbl><w:tblPr><w:tblW w:w="9780" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${W.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${head}${rows}</w:tbl>`;
+  const table=`<w:tbl><w:tblPr><w:tblW w:w="9780" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${W.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${head}${rows}<w:tr>${wCell(wP([{t:`Разом: ${fmtN(o.lines.length)} SKU`,b:true,sz:17}],{space:0}),{w:W.slice(0,6).reduce((a,b)=>a+b,0),fill:'FAF7F2'}).replace('w:type="dxa"/>','w:type="dxa"/><w:gridSpan w:val="6"/>')}${[fmtKg(oKg(o)),fmtN(oCn(o)),'',fmtEur(oSum(o))].map((v,k)=>wCell(wP([{t:v,b:true,sz:17}],{align:'center',space:0}),{w:W[6+k],fill:'FAF7F2'})).join('')}</w:tr></w:tbl>`;
   const pay = allSmp(o)&&!oShip(o) ? 'Без оплати (пробники)' : (o.terms==='prepay'?'Передоплата':`Відтермінування ${o.days} дн.${o.due?`, оплатити до ${fmtDate(o.due)}`:''}`);
   const meta = [
     ['Клієнт: ', o.client],
@@ -5125,17 +5300,28 @@ function invoiceDocx(o){
     ['Дата відвантаження: ', o.shippedAt?fmtDate(o.shippedAt):'—'],
     ['Умови оплати: ', pay]
   ].map(([k,v])=>wP([{t:k,color:'777777',sz:17},{t:v,b:true,sz:17}],{space:40})).join('');
+  const secH = t => wP([{t, b:true, sz:24, font:'Georgia'}], {border:true, space:120});
+  // логістика: таблиця коробок і підсумок
+  const BW=[1370,1560,1560,1560,1660,2070];   // разом 9780 — як таблиця товару
+  const bth=(t,i)=>wCell(wP(t,{b:true,sz:16,align:i?'center':'left',space:0}),{w:BW[i],fill:'F3EADC'});
+  const bcell=(v,i,o2)=>wCell(wP([{t:String(v),sz:17,...(o2||{})}],{align:i?'center':'left',space:0}),{w:BW[i],fill:(o2&&o2.fill)||undefined});
+  const BL=oBoxList(o);
+  const logist = BL.length
+    ? `<w:tbl><w:tblPr><w:tblW w:w="${BW.reduce((a,b)=>a+b,0)}" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${BW.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>`
+      + `<w:tr><w:trPr><w:tblHeader/></w:trPr>${['Коробка','Ширина, см','Довжина, см','Висота, см','Об\'єм, м³','Вага брутто, кг'].map(bth).join('')}</w:tr>`
+      + BL.map((b,i)=>`<w:tr>${[`№ ${i+1}`,fmtDim(b.w),fmtDim(b.l),fmtDim(b.h),fmtM3(boxVol(b)),fmtKg2(b.kg)].map((v,k)=>bcell(v,k)).join('')}</w:tr>`).join('')
+      + `<w:tr>${wCell(wP([{t:`Разом: ${fmtN(BL.length)} кор.`,b:true,sz:17}],{space:0}),{w:BW[0]+BW[1]+BW[2]+BW[3],fill:'FAF7F2'}).replace('w:type="dxa"/>','w:type="dxa"/><w:gridSpan w:val="4"/>')}${bcell(fmtM3(boxVolSum(BL)),4,{b:true,fill:'FAF7F2'})}${bcell(fmtKg2(oGross(o)),5,{b:true,fill:'FAF7F2'})}</w:tr></w:tbl>`
+    : wP([{t:'Коробки: ',sz:17},{t:`${fmtN(oBoxes(o))} шт`,b:true,sz:17}],{space:20});
   // Спершу ваги ліворуч, під таблицею, далі гроші праворуч.
-  const weights =
-      wP([{t:'Вага нетто: ',sz:17},{t:fmtKg(oKg(o))+' кг',b:true,sz:17}],{space:20})
-    + wP([{t:'Конуси: ',sz:17},{t:`${fmtN(oCn(o))} шт × ${fmtKg2(CONE_KG)} кг = ${fmtKg2(oConesKg(o))} кг`,b:true,sz:17}],{space:20})
-    + wP([{t:'Коробки: ',sz:17},{t:`${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг`,b:true,sz:17}],{space:20})
-    + wP([{t:'Вага брутто: ',sz:17},{t:fmtKg2(oGross(o))+' кг',b:true,sz:17}],{space:160});
-
-  const money = [['Товар:', fmtEur(oSum(o))]]
-    .concat(oShip(o)?[['Доставка:', fmtEur(oShip(o))]]:[])
-    .map(([k,v])=>wP([{t:k+' ',sz:17},{t:v,b:true,sz:17}],{align:'right',space:40})).join('')
-    + wP([{t:'Разом до оплати: ',sz:17},{t:fmtEur(oTotal(o)),b:true,sz:17,color:'8A6030'}],{align:'right',space:120})
+  // вага нетто ліворуч, вартість товару праворуч — в одному рядку (табуляція по правому краю)
+  const tabP = (left, right) => wP([...left, {t:'§TAB§'}, ...right],{space:160})
+    .replace('<w:pPr>','<w:pPr><w:tabs><w:tab w:val="right" w:pos="9780"/></w:tabs>')
+    .replace(/<w:r><w:rPr>(?:(?!<w:r>).)*?<w:t xml:space="preserve">§TAB§<\/w:t><\/w:r>/, '<w:r><w:tab/></w:r>');
+  const money = '';
+  const weights = tabP([{t:'Вага нетто: ',sz:17},{t:fmtKg(oKg(o))+' кг',b:true,sz:17}], [{t:'Вартість за товар = ',sz:17},{t:fmtEur(oSum(o)),b:true,sz:17}]);
+  const moneyEnd = tabP([{t:'Вага брутто: ',sz:17},{t:fmtKg2(oGross(o))+' кг',b:true,sz:17}], [{t:'Вартість доставки: ',sz:17},{t:invShipText(o),b:true,sz:17}])
+    + wP([{t:'Разом з доставкою: ',sz:19},{t:fmtEur(oTotal(o)),b:true,sz:19,color:'8A6030'}],{align:'right',space:120})
+        .replace('<w:pPr>','<w:pPr><w:pBdr><w:top w:val="single" w:sz="12" w:space="6" w:color="B68C5A"/></w:pBdr>')
     + (oPaid(o)>0&&!o.paid?wP([{t:'Оплачено: ',sz:17},{t:fmtEur(oPaid(o)),b:true,sz:17},{t:'  ·  Залишок: ',sz:17},{t:fmtEur(oOwed(o)),b:true,sz:17,color:'A5362C'}],{align:'right',space:120}):'');
 
   const tot = weights + money
@@ -5146,9 +5332,14 @@ function invoiceDocx(o){
     + wP([{t:'Замовлення № '+orderNo(o),b:true,sz:30}],{space:160})
     + meta
     + `<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>`
+    + secH('Інформація по товару')
     + table
     + `<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>`
     + tot
+    + secH('Логістична інформація')
+    + logist
+    + `<w:p><w:pPr><w:spacing w:after="80"/></w:pPr></w:p>`
+    + moneyEnd
     + (o.comment?wP([{t:'Коментар: ',color:'777777',sz:17},{t:o.comment,sz:17}]):'')
     + (hasSmp(o)?wP([{t:'Пробники надані безкоштовно.',sz:17,color:'777777'}],{space:40}):'')
     + `<w:p><w:pPr><w:spacing w:after="20"/></w:pPr>
@@ -5192,18 +5383,19 @@ function openInvoice(id){
         <div><span>Дата відвантаження:</span> <b>${o.shippedAt?fmtDate(o.shippedAt):'—'}</b></div>
         <div><span>Умови оплати:</span> <b>${pay}</b></div>
       </div>
+      <div class="ip-sec">Інформація по товару</div>
       <div class="tbl-wrap"><table class="ip-t"><colgroup><col style="width:4%"><col style="width:10%"><col style="width:12%"><col style="width:10%"><col style="width:6%"><col style="width:16%"><col style="width:7%"><col style="width:9%"><col style="width:12%"><col style="width:14%"></colgroup>
-      <thead><tr><th class="c">№</th><th>Бренд</th><th>Артикул</th><th>Колір</th><th>Nm</th><th>Складники</th><th class="c">Кг</th><th class="c">Конусів</th><th class="c">Ціна, €/кг</th><th class="c">Сума, €</th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div class="ip-w">
-        <div>Вага нетто: <b>${fmtKg(oKg(o))} кг</b></div>
-        <div>Конуси: <b>${fmtN(oCn(o))} шт × ${fmtKg2(CONE_KG)} кг = ${fmtKg2(oConesKg(o))} кг</b></div>
-        <div>Коробки: <b>${fmtN(oBoxes(o))} шт / ${fmtKg2(oBoxKg(o))} кг</b></div>
-        <div>Вага брутто: <b>${fmtKg2(oGross(o))} кг</b></div>
-      </div>
-      <div class="ip-tot">
-        <div><span>Товар:</span> <b>${fmtEur(oSum(o))}</b></div>
-        ${oShip(o)?`<div><span>Доставка:</span> <b>${fmtEur(oShip(o))}</b></div>`:''}
-        <div class="big"><span>Разом до оплати:</span> <b>${fmtEur(oTotal(o))}</b></div>
+      <thead><tr><th class="c">№</th><th>Бренд</th><th>Артикул</th><th>Колір</th><th>Nm</th><th>Складники</th><th class="c">Кг</th><th class="c">Конусів</th><th class="c">Ціна, €/кг</th><th class="c">Сума, €</th></tr></thead><tbody>${rows}<tr class="ip-sum"><td colspan="6">Разом: ${fmtN(o.lines.length)} SKU</td><td class="c">${fmtKg(oKg(o))}</td><td class="c">${fmtN(oCn(o))}</td><td></td><td class="c">${fmtEur(oSum(o))}</td></tr></tbody></table></div>
+      <div class="ip-row"><div>Вага нетто: <b>${fmtKg(oKg(o))} кг</b></div><div>Вартість за товар = <b>${fmtEur(oSum(o))}</b></div></div>
+      <div class="ip-sec">Логістична інформація</div>
+      ${oBoxList(o).length ? `<div class="tbl-wrap"><table class="ip-t ip-bx"><colgroup><col style="width:14%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col style="width:17%"><col style="width:21%"></colgroup>
+        <thead><tr><th>Коробка</th><th class="c">Ширина, см</th><th class="c">Довжина, см</th><th class="c">Висота, см</th><th class="c">Об'єм, м³</th><th class="c">Вага брутто, кг</th></tr></thead>
+        <tbody>${oBoxList(o).map((b,i)=>`<tr><td>№ ${i+1}</td><td class="c">${fmtDim(b.w)}</td><td class="c">${fmtDim(b.l)}</td><td class="c">${fmtDim(b.h)}</td><td class="c">${fmtM3(boxVol(b))}</td><td class="c">${fmtKg2(b.kg)}</td></tr>`).join('')}
+        <tr class="ip-sum"><td colspan="4">Разом: ${fmtN(oBoxList(o).length)} кор.</td><td class="c">${fmtM3(boxVolSum(oBoxList(o)))}</td><td class="c">${fmtKg2(oGross(o))}</td></tr></tbody></table></div>`
+        : `<div class="ip-w"><div>Коробки: <b>${fmtN(oBoxes(o))} шт</b></div></div>`}
+      <div class="ip-row"><div>Вага брутто: <b>${fmtKg2(oGross(o))} кг</b></div><div>Вартість доставки: <b>${invShipText(o)}</b></div></div>
+      <div class="ip-tot ip-fin">
+        <div class="big"><span>Разом з доставкою:</span> <b>${fmtEur(oTotal(o))}</b></div>
         ${oPaid(o)>0&&!o.paid?`<div><span>Оплачено:</span> <b>${fmtEur(oPaid(o))}</b> · <span>Залишок:</span> <b style="color:#A5362C">${fmtEur(oOwed(o))}</b></div>`:''}
       </div>
       ${o.comment?`<div class="ip-s" style="margin-top:8px">Коментар: ${esc(o.comment)}</div>`:''}
@@ -5268,10 +5460,8 @@ function openCarrier(id){
       <label class="f">Розрахунок перевізника, €<input id="carCost" type="number" inputmode="decimal" min="0" step="0.01" value="${o.delivery||''}"></label>
       <label class="f">Перевізник<input id="carName" list="carList" autocomplete="off" placeholder="GLS, DHL…" value="${esc(o.carrierName||'')}"></label>
     </div>
-    <div class="pair">
-      <label class="f">Коробок<input id="carBoxes" type="number" inputmode="numeric" min="0" step="1" value="${o.boxes||''}"></label>
-      <label class="f">Вага коробок, кг<input id="carGross" type="number" inputmode="decimal" min="0" step="0.01" value="${o.boxKg||''}"></label>
-    </div>
+    <div class="f" style="margin:4px 0 4px">Коробки</div>
+    ${boxEdHtml(oBoxList(o))}
     <p class="hint num">Нетто ${fmtKg(oKg(o))} кг · конуси ${fmtKg2(oConesKg(o))} кг · коробки ${fmtKg2(oBoxKg(o))} кг · брутто ${fmtKg2(oGross(o))} кг.</p>
     <datalist id="carList">${[...new Set(S.reserves.map(x=>x.carrierName).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
     <p class="hint">${o.shipMode==='client'?'Заявка з доставкою за рахунок клієнта: ця сума йде в інвойс, у витрати не потрапляє.':'Доставка за наш рахунок: сума не йде в інвойс і повністю зменшує маржу.'}</p>
@@ -5280,12 +5470,16 @@ function openCarrier(id){
 function saveCarrier(id){
   const o=oById(id); if(!o||!can('fin')) return;
   const cost=Math.round((parseFloat($('#carCost').value)||0)*100)/100, name=$('#carName').value.trim();
-  const bx=Math.max(0, parseInt($('#carBoxes').value)||0), gr=Math.round((parseFloat($('#carGross').value)||0)*100)/100;
+  const bl=boxRead(), be=boxErr(bl,false);
+  if(be){ $('#carerr').innerHTML=`<div class="err">${be}</div>`; return; }
+  const ge=grossErr(bl, oKg(o)); if(ge){ $('#carerr').innerHTML=`<div class="err">${ge}</div>`; return; }
+  const bx=bl.length, gr=boxSum(bl), wasGross=oGross(o), bChg=JSON.stringify(bl)!==JSON.stringify(oBoxList(o));
   if(cost<0){ $('#carerr').innerHTML='<div class="err">Сума не може бути від\'ємною.</div>'; return; }
   const was=oDeliv(o), wasN=o.carrierName||'', wasB=oBoxes(o), wasG=oBoxKg(o);
-  if(cost===was && name===wasN && bx===wasB && gr===wasG){ closeSheet(); return; }
-  o.delivery=cost; o.carrierName=name; o.boxes=bx; if(gr>0) o.boxKg=gr;
-  oev(o,`Розрахунок перевізника: ${fmtEur(was)} → ${fmtEur(cost)}${name?` (${name})`:''}${bx!==wasB?`; коробок: ${fmtN(wasB)} → ${fmtN(bx)}`:''}${gr!==wasG&&gr>0?`; вага коробок: ${fmtKg2(gr)} кг`:''}`);
+  if(cost===was && name===wasN && !bChg){ closeSheet(); return; }
+  o.delivery=cost; o.carrierName=name;
+  if(bChg){ setBoxes(o, bl); if(bl.length) o.boxCheck=false; }
+  oev(o,`Розрахунок перевізника: ${fmtEur(was)} → ${fmtEur(cost)}${name?` (${name})`:''}${bChg?`; коробки: ${fmtN(wasB)} → ${fmtN(bx)} шт, брутто ${fmtKg2(wasGross)} → ${fmtKg2(oGross(o))} кг`:''}`);
   if(save()){ toast('№ '+orderNo(o)+': витрати на доставку збережено'); refreshOrders(); }
 }
 
@@ -5340,24 +5534,22 @@ function openPicked(id){
     <p style="margin:0 0 10px"><b>${esc(o.client)}</b> · ${o.lines.length} ${pos(o.lines.length)}</p>
     <p class="hint" style="margin:0 0 8px">Впишіть фактичні кг і конуси зі складу, якщо вони відрізняються від замовлених.</p>
     ${o.lines.map((li,i)=>{const x=skuById(li.sku)||{}, l=levels(li.sku), mine=reservedIn(o,li.sku);
-      return `<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRow(x)}</div>
+      return `<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRowZ(x)}</div>
         <div class="hint num" style="margin:4px 0">Замовлено ${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к · доступно ${fmtKg(l.fk+mine.kg)} кг / ${fmtN(l.fc+mine.cn)} к</div>
         <div class="odl-f two">
           <label>Фактично конусів<input data-pkc="${i}" type="number" inputmode="numeric" min="0" step="1" value="${li.cones}"></label>
           <label>Фактично кг<input data-pkk="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${li.kg}"></label>
         </div></div>`;}).join('')}
-    <div class="pair">
-      <label class="f">Коробок<input id="pkBoxes" type="number" inputmode="numeric" min="0" step="1" value="${o.boxes||1}"></label>
-      <label class="f">Вага коробок, кг<input id="pkBoxKg" type="number" inputmode="decimal" min="0" step="0.01" value="${o.boxKg||''}" placeholder="сумарно"></label>
-    </div>
+    <div class="f" style="margin:8px 0 4px">Коробки</div>
+    ${boxEdHtml(oBoxList(o).length ? oBoxList(o) : [{w:0,l:0,h:0,kg:0}])}
     <p class="hint num" id="pkHint"></p>
-    <p class="hint">Брутто = нетто + конуси (${fmtG(CONE_KG)} за конус) + вага коробок, яку ви вказали.</p>
+    <p class="hint">Вага брутто — коробка разом із пряжею, як на вагах.</p>
     <button class="btn" data-pksave="${id}" style="width:100%">Підтвердити збірку</button>`);
   const live=()=>{ let kg=0,cn=0; o.lines.forEach((li,i)=>{ kg+=parseFloat($(`[data-pkk="${i}"]`).value)||0; cn+=parseInt($(`[data-pkc="${i}"]`).value)||0; }); return {kg,cn}; };
-  const calc=()=>{ const {kg,cn}=live(); const bk=Math.max(0,parseFloat($('#pkBoxKg').value)||0); return kg+cn*CONE_KG+bk; };
-  const upd=()=>{ const {kg,cn}=live(); const bk=Math.max(0,parseFloat($('#pkBoxKg').value)||0);
-    $('#pkHint').innerHTML=`Нетто ${fmtKg(kg)} кг / ${fmtN(cn)} к · конуси ${fmtKg2(cn*CONE_KG)} кг · коробки ${fmtKg2(bk)} кг · <b>брутто ${fmtKg2(calc())} кг</b>`; };
-  ['#pkBoxes','#pkBoxKg'].forEach(x=>$(x).addEventListener('input',upd));
+  const calc=()=>boxSum(boxRead());
+  const upd=()=>{ const {kg,cn}=live(); const bk=boxSum(boxRead());
+    const bl=boxRead(); $('#pkHint').innerHTML=`Нетто ${fmtKg(kg)} кг / ${fmtN(cn)} к · коробок ${fmtN(bl.length)} · об'єм ${fmtM3(boxVolSum(bl))} м³ · <b>брутто ${fmtKg2(calc())} кг</b>`; };
+  $('#bxl').addEventListener('input',upd);
   o.lines.forEach((li,i)=>{ $(`[data-pkk="${i}"]`).addEventListener('input',upd); $(`[data-pkc="${i}"]`).addEventListener('input',upd); });
   upd();
 }
@@ -5375,16 +5567,39 @@ function savePicked(id){
     if(Math.abs(kg-li.kg)>0.0001||cn!==li.cones) ch.push(`${x.art}: ${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к → ${fmtKg(kg)} кг / ${fmtN(cn)} к`);
     facts.push({kg,cn});
   }
-  const bx=Math.max(0,parseInt($('#pkBoxes').value)||0), bk=Math.round((parseFloat($('#pkBoxKg').value)||0)*100)/100;
-  if(!(bx>0)) return fe('Вкажіть кількість коробок.');
-  if(!(bk>0)) return fe('Вкажіть вагу коробок.');
+  const bl=boxRead(), be=boxErr(bl,true); if(be) return fe(be);
+  const ge=grossErr(bl, facts.reduce((t,f)=>t+f.kg,0)); if(ge) return fe(ge);
+  const bx=bl.length;
   o.lines.forEach((li,i)=>{ li.kg=facts[i].kg; li.cones=facts[i].cn; });
-  o.boxes=bx; o.boxKg=bk; o.grossKg=0; o.pickedAt=now(); o.pickedBy=S.current;
-  oev(o,`Зібрано: ${fmtN(bx)} кор. (${fmtKg2(bk)} кг), нетто ${fmtKg(oKg(o))} кг, брутто ${fmtKg2(oGross(o))} кг${ch.length?'. Уточнено: '+ch.join('; '):''}`);
+  setBoxes(o, bl); o.boxCheck=false; o.grossKg=0; o.pickedAt=now(); o.pickedBy=S.current;
+  oev(o,`Зібрано: ${fmtN(bx)} кор., нетто ${fmtKg(oKg(o))} кг, брутто ${fmtKg2(oGross(o))} кг${ch.length?'. Уточнено: '+ch.join('; '):''}`);
   if(save()){ toast('№ '+orderNo(o)+': зібрано'); refreshOrders(); }
+}
+function openBoxes(id){
+  const o=oById(id); if(!o||!(can('pick')||can('fin'))) return;
+  openSheet(`${head('№ '+orderNo(o)+' · коробки')}
+    <div id="bxerr"></div>
+    <p style="margin:0 0 6px"><b>${esc(o.client)}</b> · ${o.lines.length} ${pos(o.lines.length)} · нетто ${fmtKg(oKg(o))} кг / ${fmtN(oCn(o))} к</p>
+    ${o.boxCheck?'<p class="hint neg" style="margin:0 0 8px">Заявку змінили після збірки — перевірте кількість коробок, розміри й вагу.</p>':''}
+    ${boxEdHtml(oBoxList(o).length ? oBoxList(o) : [{w:0,l:0,h:0,kg:0}])}
+    <p class="hint num" id="bxHint"></p>
+    <button class="btn" data-bxsave="${id}" style="width:100%">Підтвердити коробки</button>`);
+  const upd=()=>{ const bl=boxRead(); $('#bxHint').innerHTML=`${fmtN(bl.length)} кор. · об'єм ${fmtM3(boxVolSum(bl))} м³ · <b>брутто ${fmtKg2(boxSum(bl))} кг</b>`; };
+  $('#bxl').addEventListener('input',upd); upd();
+}
+function saveBoxes(id){
+  const o=oById(id); if(!o||!(can('pick')||can('fin'))) return;
+  const bl=boxRead(), be=boxErr(bl,true);
+  if(be){ $('#bxerr').innerHTML=`<div class="err">${be}</div>`; $('#panel').scrollTop=0; return; }
+  const ge=grossErr(bl, oKg(o)); if(ge){ $('#bxerr').innerHTML=`<div class="err">${ge}</div>`; $('#panel').scrollTop=0; return; }
+  const wasB=oBoxes(o), wasG=oGross(o);
+  setBoxes(o, bl); o.boxCheck=false;
+  oev(o,`Коробки: ${fmtN(wasB)} → ${fmtN(bl.length)} шт, брутто ${fmtKg2(wasG)} → ${fmtKg2(oGross(o))} кг`);
+  if(save()){ toast('№ '+orderNo(o)+': коробки збережено'); refreshOrders(); }
 }
 function openApprove(id){
   const o=oById(id); if(!o||oStage(o)!=='wait'||!can('fin')) return;
+  if(boxNeed(o)){ openBoxes(id); return; }
   openSheet(`${head('№ '+orderNo(o)+' · дозвіл')}
     <p style="margin:0 0 10px"><b>${esc(o.client)}</b> · ${o.lines.length} ${pos(o.lines.length)} · ${fmtEur(oTotal(o))}${oShip(o)?` (з доставкою ${fmtEur(oShip(o))})`:''}</p>
     <div class="pair">
@@ -5408,7 +5623,7 @@ function openApprove(id){
   $('#aTerms').addEventListener('change',upd); upd();
 }
 function saveApprove(id){
-  const o=oById(id); if(!o||!can('fin')||oStage(o)!=='wait') return;
+  const o=oById(id); if(!o||!can('fin')||oStage(o)!=='wait'||boxNeed(o)) return;
   const tv=$('#aTerms').value, dv=parseInt($('#aDays').value)||0;
   if(tv!=='prepay' && !(dv>0 && dv<=365)){ $('#aHint').innerHTML='<span class="neg">Вкажіть кількість днів від 1 до 365.</span>'; return; }
   o.terms = tv==='prepay'?'prepay':'deferred'; o.days = tv==='prepay'?0:dv;
@@ -5421,10 +5636,11 @@ function saveApprove(id){
 }
 function openShip(id){
   const o=oById(id); if(!o) return;
+  if(boxNeed(o)){ if(can('pick')||can('fin')) openBoxes(id); else toast('Спершу внесіть коробки', 2500, true); return; }
   openSheet(`${head('№ '+orderNo(o)+' · відвантаження')}
     <div id="serr"></div>
     <p style="margin:0 0 10px"><b>${esc(o.client)}</b></p>
-    ${o.lines.map((li,i)=>`<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRow(skuById(li.sku)||{})}</div>
+    ${o.lines.map((li,i)=>`<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRowZ(skuById(li.sku)||{})}</div>
       <div class="hint num" style="margin:4px 0">Замовлено ${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к</div>
       <div class="odl-f two">
         <label>Фактично конусів<input data-sc="${i}" type="number" inputmode="numeric" min="0" step="1" value="${li.cones}"></label>
@@ -5437,7 +5653,7 @@ function openShip(id){
     <button class="btn out" data-shsave="${id}" style="width:100%">Відвантажити</button>`);
 }
 function saveShip(id){
-  const o=oById(id); if(!o||!can('ship')||o.status!=='active') return;
+  const o=oById(id); if(!o||!can('ship')||o.status!=='active'||boxNeed(o)) return;
   const fe=m=>{$('#serr').innerHTML=`<div class="err">${m}</div>`; $('#panel').scrollTop=0;};
   const dv=$('#sDate').value; if(!dv) return fe('Вкажіть дату.');
   if(dv < o.at.slice(0,10)) return fe(`Дата відвантаження не може бути раніше дати заявки (${fmtDate(o.at)}).`);
@@ -5557,7 +5773,7 @@ function openOrderFix(id){
     <p class="hint" style="margin:0 0 10px;color:var(--red)">Кілограми й конуси вже списані зі складу — тут їх не змінюють. Якщо помилка в кількості, оформіть повернення.</p>
     <label class="f">Клієнт<input id="fxClient" autocomplete="off" value="${esc(o.client)}"></label>
     ${o.lines.map((li,i)=>{const x=skuById(li.sku)||{};
-      return `<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRow(x)}</div>
+      return `<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRowZ(x)}</div>
         <div class="hint num" style="margin:4px 0">Відвантажено ${fmtKg(lShip(li))} кг / ${fmtN(lShipC(li))} к</div>
         <label class="check lsmp"><input type="checkbox" data-fxsm="${i}" ${li.sample?'checked':''}> Пробник, без оплати</label>
         <label class="f" data-fxpw="${i}" style="margin-top:6px${li.sample?';display:none':''}">Ціна продажу, €/кг<input data-fxp="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(li.sample?(x.sale||''):li.price)}"></label>
@@ -5634,7 +5850,7 @@ function openReturn(id){
     <p style="margin:0 0 10px"><b>${esc(o.client)}</b> · відвантажено ${fmtDate(o.shippedAt)}</p>
     <p class="hint" style="margin:0 0 8px">Вкажіть, скільки повертається. Товар стане на склад датою повернення, сума заявки зменшиться.</p>
     ${o.lines.map((li,i)=>{const x=skuById(li.sku)||{};
-      return `<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRow(x)}</div>
+      return `<div class="odl"><div class="odl-h"><span class="lno">${i+1}</span>${skuRowZ(x)}</div>
         <div class="hint num" style="margin:4px 0">Відвантажено ${fmtKg(lShip(li))} кг / ${fmtN(lShipC(li))} к${(+li.retKg||0)?` · вже повернено ${fmtKg(+li.retKg)} кг / ${fmtN(+li.retCones||0)} к`:''} · можна повернути ${fmtKg(lq(li))} кг / ${fmtN(lc(li))} к</div>
         <div class="odl-f two">
           <label>Повернути конусів<input data-rtc="${i}" type="number" inputmode="numeric" min="0" max="${lc(li)}" step="1" value="0"></label>
@@ -8025,11 +8241,16 @@ document.addEventListener('click', e=>{
   if(d.lrm!==undefined){ syncOD(); OD.lines.splice(+d.lrm,1); drawOrderEditor(); return; }
   if('odsave' in d){ saveOrderDraft(); return; }
   if(d.of){ oFilter = (oFilter===d.of ? 'all' : d.of); viewReserves(); return; }
+  if(d.opl!==undefined && t.closest('.opl')){ oPl = d.opl; viewReserves(); return; }
   if(d.oper){ const dd=new Date(), y=dd.getFullYear(), m=dd.getMonth(); const f=(Y,M,D)=>new Date(Date.UTC(Y,M,D)).toISOString().slice(0,10);
     [oFrom,oTo] = d.oper==='month'?[f(y,m,1),todayStr()]:d.oper==='prev'?[f(y,m-1,1),f(y,m,0)]:['','']; viewReserves(); return; }
   if(d.opick){ orderPick(d.opick); return; }
   if(d.opicked){ openPicked(d.opicked); return; }
   if(d.pksave){ savePicked(d.pksave); return; }
+  if('bxadd' in d){ boxAdd(); return; }
+  if(d.bxdel!==undefined){ boxDel(+d.bxdel); return; }
+  if(d.bxsave){ saveBoxes(d.bxsave); return; }
+  if(d.obox){ openBoxes(d.obox); return; }
   if(d.oappr){ openApprove(d.oappr); return; }
   if(d.apsave){ saveApprove(d.apsave); return; }
   if(d.oship){ openShip(d.oship); return; }
@@ -8152,6 +8373,7 @@ document.addEventListener('change', async e=>{
   if(t.id==='dMgr'){ dMgr=t.value; viewDebt(); }
   if(t.id==='oPer'){ const dd=new Date(), y=dd.getFullYear(), m=dd.getMonth(); const f=(Y,M,D)=>new Date(Date.UTC(Y,M,D)).toISOString().slice(0,10);
     [oFrom,oTo] = t.value==='month'?[f(y,m,1),todayStr()]:t.value==='prev'?[f(y,m-1,1),f(y,m,0)]:['','']; viewReserves(); }
+  if(t.id==='oCl'){ oClient = t.value; viewReserves(); }
   if(t.id==='oFrom'||t.id==='oTo'){ oFrom=$('#oFrom').value; oTo=$('#oTo').value; viewReserves(); }
   if(t.id==='xAll'){ document.querySelectorAll('[data-xs]').forEach(b=>b.checked=t.checked); xSync(); }
   if(t.dataset && t.dataset.xs){ xSync(); }
