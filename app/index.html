@@ -736,6 +736,10 @@ nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true
 /* заявки: дати, клієнт, №, прайс і етапи стоять під шапкою, список гортається */
 .otop{position:sticky;top:var(--hdrH,0px);z-index:4;background:var(--bg);margin:0 -16px 8px;padding:8px 16px 1px;box-shadow:0 1px 0 var(--line)}
 .ofx select{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:5px 6px;font-size:12px;color:var(--ink)}
+.ofx .oclb{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:5px 8px;font:inherit;font-size:12px;color:var(--ink);text-align:left;cursor:pointer}
+.ofx .oclb .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ofx .oclb svg{flex:none;color:var(--muted)}
+.ofx .oclb.on{border-color:var(--gold);background:var(--indigo-soft);color:var(--gold-deep);font-weight:600}
 .ofx select.on{border-color:var(--gold);background:var(--indigo-soft);color:var(--gold-deep);font-weight:600}
 .opl{display:flex;flex:none;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--surface)}
 .opl button{border:0;background:none;padding:4px 10px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer}
@@ -1308,6 +1312,7 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Жодного клієнта':'Nessun cliente',
     'Прайс UA: розміри коробок не обов\'язкові, обов\'язкова лише вага брутто.':'Listino UA: le dimensioni dei colli non sono obbligatorie, serve solo il peso lordo.',
     'Вартість доставки, €':'Costo di spedizione, €',
     '0 — без доставки':'0 — senza spedizione',
@@ -2280,6 +2285,7 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Жодного клієнта':'No customers',
     'Прайс UA: розміри коробок не обов\'язкові, обов\'язкова лише вага брутто.':'UA price list: box dimensions are optional, only the gross weight is required.',
     'Вартість доставки, €':'Delivery cost, €',
     '0 — без доставки':'0 — no delivery',
@@ -3042,6 +3048,7 @@ const TR_RX = {
     [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу брутто\.$/u, 'Collo n. $1: indica larghezza, lunghezza, altezza e peso lordo.'],
     [/^Коробка №(\d+):\s*$/u, 'Collo n. $1:'],
     [/^Коробка №(\d+): вкажіть вагу брутто\.$/u, 'Collo n. $1: indica il peso lordo.'],
+    [/^Клієнти: (\d+)$/u, 'Clienti: $1'],
     [/^ширина ([\d,]+) см, довжина ([\d,]+) см, висота ([\d,]+) см, вага ([\d,]+) кг$/u, 'larghezza $1 cm, lunghezza $2 cm, altezza $3 cm, peso $4 kg'],
     [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу\.$/u, 'Collo n. $1: indica larghezza, lunghezza, altezza e peso.'],
     [/^був\(-ла\) (\d+) хв тому$/u, 'visto $1 min fa'],
@@ -3112,6 +3119,7 @@ const TR_RX = {
     [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу брутто\.$/u, 'Box No. $1: enter width, length, height and gross weight.'],
     [/^Коробка №(\d+):\s*$/u, 'Box No. $1:'],
     [/^Коробка №(\d+): вкажіть вагу брутто\.$/u, 'Box No. $1: enter the gross weight.'],
+    [/^Клієнти: (\d+)$/u, 'Customers: $1'],
     [/^ширина ([\d,]+) см, довжина ([\d,]+) см, висота ([\d,]+) см, вага ([\d,]+) кг$/u, 'width $1 cm, length $2 cm, height $3 cm, weight $4 kg'],
     [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу\.$/u, 'Box No. $1: enter width, length, height and weight.'],
     [/^був\(-ла\) (\d+) хв тому$/u, 'seen $1 min ago'],
@@ -3292,7 +3300,7 @@ const TR_SKIP = new Set(['SCRIPT','STYLE','SVG','PATH','CIRCLE','RECT','CODE']);
 function translateDom(root){
   if(LANG === 'uk' || !root) return;
   const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode: n => TR_SKIP.has((n.parentNode && n.parentNode.nodeName) || '')
+    acceptNode: n => TR_SKIP.has((n.parentNode && n.parentNode.nodeName) || '') || (n.parentNode && n.parentNode.closest && n.parentNode.closest('[data-notr]'))
       ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
   });
   const jobs = [];
@@ -5010,7 +5018,62 @@ const reservedIn = (o,skuId) => o && o.status==='active' ? o.lines.filter(li=>li
 const termsText = o => o.sample?'Пробники, без оплати':`${o.terms==='prepay'?'Передоплата':`Відтермінування ${o.days} дн.`}${hasSmp(o)?' · є пробники':''}`;
 
 /* --- список --- */
-let oFilter='all', oFrom='', oTo='', oClient='', oPl='', oNo='';
+let oFilter='all', oFrom='', oTo='', oPl='', oNo='';
+/* фільтр «Клієнт» з галочками, як в Excel: null — усі клієнти, масив — лише вибрані (ключі oClKey) */
+let oClSel = null, OCL_OPTS = [], OCL_OPEN = false;
+const oClOn = k => !oClSel || oClSel.includes(k);
+function oclPop(){
+  let p = $('#oclPop'); if(p) return p;
+  p = document.createElement('div'); p.id = 'oclPop'; p.className = 'cfpop'; p.hidden = true; document.body.appendChild(p);
+  const picked = () => new Set([...p.querySelectorAll('[data-oclk]')].filter(i => i.checked).map(i => i.value));
+  p.addEventListener('change', e => { const t = e.target;
+    if(t.dataset.oclall !== undefined){ oclVisible().forEach(i => i.checked = t.checked); oclApply(picked()); }
+    else if(t.dataset.oclk !== undefined) oclApply(picked()); });
+  p.addEventListener('input', e => { if(e.target.dataset.oclq === undefined) return; const q = e.target.value.trim().toLowerCase();
+    p.querySelectorAll('.cfo:not(.cfall)').forEach(l => { l.style.display = !q || l.textContent.toLowerCase().includes(q) ? '' : 'none'; }); oclSyncAll(); });
+  p.addEventListener('click', e => {
+    if(e.target.closest('[data-oclclr]')){ p.querySelectorAll('[data-oclk]').forEach(i => i.checked = true); oclApply(picked()); }
+    else if(e.target.closest('[data-ocldone]')) oclClose(); });
+  return p;
+}
+const oclVisible = () => [...document.querySelectorAll('#oclPop .cfo:not(.cfall)')].filter(l => l.style.display !== 'none').map(l => l.querySelector('input'));
+function oclSyncAll(){
+  const a = document.querySelector('#oclPop [data-oclall]'); if(!a) return;
+  const vis = oclVisible(), all = vis.length > 0 && vis.every(i => i.checked);
+  a.checked = all; a.nextElementSibling.textContent = all ? 'Зняти всі' : 'Вибрати всі';
+}
+function oclApply(set){
+  const keys = OCL_OPTS.map(x => x[0]);
+  oClSel = keys.every(k => set.has(k)) ? null : keys.filter(k => set.has(k));
+  oclSyncAll(); viewReserves();
+}
+function oclClose(){ OCL_OPEN = false; const p = $('#oclPop'); if(p) p.hidden = true; }
+function oclOpen(){
+  if(OCL_OPEN){ oclClose(); return; }
+  OCL_OPEN = true;
+  const p = oclPop();
+  p.innerHTML = (OCL_OPTS.length > 8 ? `<input type="search" class="cfq" data-oclq placeholder="Знайти" aria-label="Знайти" autocomplete="off">` : '')
+    + `<div class="cfl">${OCL_OPTS.length ? `<label class="cfo cfall"><input type="checkbox" data-oclall><span class="t"></span></label>`
+      + OCL_OPTS.map(([k,c]) => `<label class="cfo"><input type="checkbox" data-oclk value="${esc(k)}" ${oClOn(k)?'checked':''}><span class="t" data-notr>${esc(c.name)}</span><small class="num">${c.n}</small></label>`).join('')
+      : '<p class="cfe">Нічого не знайдено</p>'}</div>`
+    + `<div class="cfa"><button type="button" class="btn ghost small" data-oclclr>Очистити</button><button type="button" class="btn small" data-ocldone>Готово</button></div>`;
+  p.hidden = false;
+  const b = $('#oClBtn'), r = b ? b.getBoundingClientRect() : {left:12, bottom:120, width:280};
+  const w = Math.min(Math.max(280, r.width), window.innerWidth - 24);
+  p.style.width = w + 'px';
+  p.style.left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12)) + 'px';
+  p.style.top = (r.bottom + 6) + 'px';
+  p.style.maxHeight = Math.max(200, window.innerHeight - r.bottom - 24) + 'px';
+  oclSyncAll();
+  const q = p.querySelector('[data-oclq]'); if(q && !matchMedia('(pointer:coarse)').matches) q.focus();
+}
+document.addEventListener('click', e => { if(e.target.closest && e.target.closest('#oClBtn')) oclOpen(); });
+document.addEventListener('pointerdown', e => {
+  if(!OCL_OPEN) return;
+  if(e.target.closest && (e.target.closest('#oclPop') || e.target.closest('#oClBtn'))) return;
+  oclClose();
+}, true);
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && OCL_OPEN) oclClose(); });
 /* пошук за номером: «36» знайде 26/0000036, «26/00000» — за частиною повного номера */
 const inNo = o => { const q = oNo.trim(); if(!q) return true; const d = q.replace(/\D/g,'');
   return orderNo(o).includes(q) || (d && !q.includes('/') && String(o.no).includes(d.replace(/^0+/,'') || '0')); };
@@ -5026,14 +5089,16 @@ function viewReserves(){
   /* фільтри «Клієнт» і «EU / UA»: впливають і на список, і на лічильники етапів.
      У списку клієнтів — лише ті, що лишаються після інших умов (з кількістю). */
   const showCl = !isClient(), showPl = seeSale() && !isClient();
-  if(!showCl) oClient = '';
+  if(!showCl){ oClSel = null; oclClose(); }
   if(!showPl) oPl = '';
   const inPl = o => !oPl || (o.pl||'eu') === oPl;
   const clMap = new Map();
   pre.filter(inPl).forEach(o => { const k = oClKey(o); if(!k) return; const c = clMap.get(k) || {name:String(o.client).trim(), n:0}; c.n++; clMap.set(k, c); });
-  if(oClient && !clMap.has(oClient)) clMap.set(oClient, {name:(S.reserves.find(o=>oClKey(o)===oClient)||{}).client||oClient, n:0});
+  (oClSel||[]).forEach(k => { if(!clMap.has(k)) clMap.set(k, {name:(S.reserves.find(o=>oClKey(o)===k)||{}).client||k, n:0}); });
   const clOpts = [...clMap.entries()].sort((a,b)=>a[1].name.localeCompare(b[1].name, undefined, {sensitivity:'base'}));
-  const base = pre.filter(o => inPl(o) && inNo(o) && (!oClient || oClKey(o) === oClient));
+  OCL_OPTS = clOpts;
+  const clLabel = !oClSel ? 'Усі клієнти' : !oClSel.length ? 'Жодного клієнта' : oClSel.length===1 ? esc((clMap.get(oClSel[0])||{name:oClSel[0]}).name) : `Клієнти: ${oClSel.length}`;
+  const base = pre.filter(o => inPl(o) && inNo(o) && oClOn(oClKey(o)));
   const ALL_GROUPS = [['all','Усі'],['res','Створені'],['pick','Збірка'],['wait','Чекає оплати'],['ready','До відправки'],['unpaid','Не оплачені'],['done','Оплачені'],['sample','Пробники'],['cancel','Анульовані']];
   // На телефоні дев'ять фільтрів займають пів екрана. Лишаємо два робочі;
   // активний показуємо завжди, навіть якщо його обрали з комп'ютера.
@@ -5060,7 +5125,7 @@ function viewReserves(){
       </select>
     </div>
     <div class="ofx">
-      ${showCl?`<select id="oCl" class="${oClient?'on':''}" aria-label="Клієнт"><option value="">Усі клієнти</option>${clOpts.map(([k,c])=>`<option value="${esc(k)}" ${k===oClient?'selected':''}>${esc(c.name)} (${c.n})</option>`).join('')}</select>`:''}
+      ${showCl?`<button type="button" id="oClBtn" class="oclb ${oClSel?'on':''}" aria-haspopup="true" aria-label="Клієнт"><span class="t" ${oClSel&&oClSel.length===1?'data-notr':''}>${clLabel}</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>`:''}
       <input id="oNo" type="search" inputmode="numeric" autocomplete="off" placeholder="№ заявки" aria-label="Номер заявки" value="${esc(oNo)}" class="${oNo.trim()?'on':''}">
       ${showPl?`<div class="opl" role="group" aria-label="Прайс">${[['','Усі'],['eu','EU'],['ua','UA']].map(([k,n])=>`<button type="button" class="${k===oPl?'on':''} ${k}" data-opl="${k}" aria-pressed="${k===oPl}">${n}</button>`).join('')}</div>`:''}
     </div>
@@ -8494,7 +8559,6 @@ document.addEventListener('change', async e=>{
   if(t.id==='dMgr'){ dMgr=t.value; viewDebt(); }
   if(t.id==='oPer'){ const dd=new Date(), y=dd.getFullYear(), m=dd.getMonth(); const f=(Y,M,D)=>new Date(Date.UTC(Y,M,D)).toISOString().slice(0,10);
     [oFrom,oTo] = t.value==='month'?[f(y,m,1),todayStr()]:t.value==='prev'?[f(y,m-1,1),f(y,m,0)]:['','']; viewReserves(); }
-  if(t.id==='oCl'){ oClient = t.value; viewReserves(); }
   if(t.id==='oFrom'||t.id==='oTo'){ oFrom=$('#oFrom').value; oTo=$('#oTo').value; viewReserves(); }
   if(t.id==='xAll'){ document.querySelectorAll('[data-xs]').forEach(b=>b.checked=t.checked); xSync(); }
   if(t.dataset && t.dataset.xs){ xSync(); }
