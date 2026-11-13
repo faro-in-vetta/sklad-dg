@@ -1308,6 +1308,7 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Прайс UA: розміри коробок не обов\'язкові, обов\'язкова лише вага брутто.':'Listino UA: le dimensioni dei colli non sono obbligatorie, serve solo il peso lordo.',
     'Вартість доставки, €':'Costo di spedizione, €',
     '0 — без доставки':'0 — senza spedizione',
     'Доставка за рахунок клієнта — сума піде в інвойс.':'Spedizione a carico del cliente: l’importo va in fattura.',
@@ -2279,6 +2280,7 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Прайс UA: розміри коробок не обов\'язкові, обов\'язкова лише вага брутто.':'UA price list: box dimensions are optional, only the gross weight is required.',
     'Вартість доставки, €':'Delivery cost, €',
     '0 — без доставки':'0 — no delivery',
     'Доставка за наш рахунок — сума піде у витрати.':'Delivery at our expense: the amount goes to costs.',
@@ -3039,6 +3041,7 @@ const TR_RX = {
     [/^Разом: (\d+) кор\.$/u, 'Totale: $1 colli'],
     [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу брутто\.$/u, 'Collo n. $1: indica larghezza, lunghezza, altezza e peso lordo.'],
     [/^Коробка №(\d+):\s*$/u, 'Collo n. $1:'],
+    [/^Коробка №(\d+): вкажіть вагу брутто\.$/u, 'Collo n. $1: indica il peso lordo.'],
     [/^ширина ([\d,]+) см, довжина ([\d,]+) см, висота ([\d,]+) см, вага ([\d,]+) кг$/u, 'larghezza $1 cm, lunghezza $2 cm, altezza $3 cm, peso $4 kg'],
     [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу\.$/u, 'Collo n. $1: indica larghezza, lunghezza, altezza e peso.'],
     [/^був\(-ла\) (\d+) хв тому$/u, 'visto $1 min fa'],
@@ -3108,6 +3111,7 @@ const TR_RX = {
     [/^Разом: (\d+) кор\.$/u, 'Total: $1 boxes'],
     [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу брутто\.$/u, 'Box No. $1: enter width, length, height and gross weight.'],
     [/^Коробка №(\d+):\s*$/u, 'Box No. $1:'],
+    [/^Коробка №(\d+): вкажіть вагу брутто\.$/u, 'Box No. $1: enter the gross weight.'],
     [/^ширина ([\d,]+) см, довжина ([\d,]+) см, висота ([\d,]+) см, вага ([\d,]+) кг$/u, 'width $1 cm, length $2 cm, height $3 cm, weight $4 kg'],
     [/^Коробка №(\d+): вкажіть ширину, довжину, висоту й вагу\.$/u, 'Box No. $1: enter width, length, height and weight.'],
     [/^був\(-ла\) (\d+) хв тому$/u, 'seen $1 min ago'],
@@ -4955,18 +4959,25 @@ const fmtM3 = v => (Math.round(v*1000)/1000).toFixed(3).replace('.', ',');
 function setBoxes(o, bl){ o.boxList=bl; o.boxes=bl.length; o.boxKg=bl.length ? Math.max(0, Math.round((boxSum(bl)-oKg(o)-oConesKg(o))*100)/100) : 0; }
 /* сума брутто не може бути меншою за нетто */
 const grossErr = (bl, net) => bl.length && boxSum(bl)+0.005 < net ? `Вага брутто всіх коробок (${fmtKg2(boxSum(bl))} кг) менша за вагу нетто (${fmtKg(net)} кг).` : '';
+let BX_OPT = false;   // прайс UA: розміри коробки не обов'язкові, лише вага брутто
+const bxPh = () => BX_OPT ? ' placeholder="—"' : '';
 const boxRowHtml = (b,i) => `<div class="bxr"><div class="bxh"><b><span>Коробка №</span>${i+1}</b><button type="button" class="bxdel" data-bxdel="${i}" aria-label="Прибрати коробку" title="Прибрати коробку">×</button></div>
-  <div class="bxf"><label>Ширина, см<input data-bxw type="number" inputmode="decimal" min="0" step="0.1" value="${b.w||''}"></label><label>Довжина, см<input data-bxl type="number" inputmode="decimal" min="0" step="0.1" value="${b.l||''}"></label><label>Висота, см<input data-bxh type="number" inputmode="decimal" min="0" step="0.1" value="${b.h||''}"></label><label>Брутто, кг<input data-bxk type="number" inputmode="decimal" min="0" step="0.01" value="${b.kg||''}"></label></div></div>`;
-const boxEdHtml = list => `<div class="bxl" id="bxl">${list.map(boxRowHtml).join('')}</div><button type="button" class="btn ghost small" data-bxadd style="margin:0 0 10px">+ Коробка</button>`;
+  <div class="bxf"><label>Ширина, см<input data-bxw type="number" inputmode="decimal" min="0" step="0.1"${bxPh()} value="${b.w||''}"></label><label>Довжина, см<input data-bxl type="number" inputmode="decimal" min="0" step="0.1"${bxPh()} value="${b.l||''}"></label><label>Висота, см<input data-bxh type="number" inputmode="decimal" min="0" step="0.1"${bxPh()} value="${b.h||''}"></label><label>Брутто, кг<input data-bxk type="number" inputmode="decimal" min="0" step="0.01" value="${b.kg||''}"></label></div></div>`;
+const boxEdHtml = (list, opt) => (BX_OPT = !!opt, '') + `${opt?'<p class="hint" style="margin:0 0 6px">Прайс UA: розміри коробок не обов\'язкові, обов\'язкова лише вага брутто.</p>':''}<div class="bxl" id="bxl">${list.map(boxRowHtml).join('')}</div><button type="button" class="btn ghost small" data-bxadd style="margin:0 0 10px">+ Коробка</button>`;
 function boxRead(){
   const num = (r,a) => { const v = parseFloat((r.querySelector(a)||{}).value); return v>0 ? v : 0; };
   return [...document.querySelectorAll('#bxl .bxr')].map(r => ({ w:num(r,'[data-bxw]'), l:num(r,'[data-bxl]'), h:num(r,'[data-bxh]'), kg:Math.round(num(r,'[data-bxk]')*100)/100 }));
 }
-function boxErr(list, required){
+function boxErr(list, required, dimsOpt){
   if(required && !list.length) return 'Додайте хоча б одну коробку.';
+  if(dimsOpt){ const j = list.findIndex(b => !(b.kg>0)); return j < 0 ? '' : `Коробка №${j+1}: вкажіть вагу брутто.`; }
   const i = list.findIndex(b => !(b.w>0 && b.l>0 && b.h>0 && b.kg>0));
   return i < 0 ? '' : `Коробка №${i+1}: вкажіть ширину, довжину, висоту й вагу брутто.`;
 }
+const boxDimsOpt = o => !!o && o.pl === 'ua';
+const dimCell = v => +v>0 ? fmtDim(v) : '—';
+const volCell = b => boxVol(b)>0 ? fmtM3(boxVol(b)) : '—';
+const volSumCell = list => boxVolSum(list)>0 ? fmtM3(boxVolSum(list)) : '—';
 function boxRedraw(list){ const el = $('#bxl'); if(!el) return; el.innerHTML = list.map(boxRowHtml).join(''); el.dispatchEvent(new Event('input', {bubbles:true})); }
 /* нова коробка — з розмірами й вагою попередньої: зазвичай пакують в однакові */
 function boxAdd(){ const l = boxRead(); const last = l[l.length-1]; l.push(last ? {...last} : {w:0,l:0,h:0,kg:0}); boxRedraw(l); const r = [...document.querySelectorAll('#bxl .bxr')].pop(); if(r){ const inp = r.querySelector('[data-bxw]'); if(inp) inp.focus(); } }
@@ -5392,8 +5403,8 @@ function invoiceDocx(o){
   const logist = BL.length
     ? `<w:tbl><w:tblPr><w:tblW w:w="${BW.reduce((a,b)=>a+b,0)}" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${BW.map(w=>`<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>`
       + `<w:tr><w:trPr><w:tblHeader/></w:trPr>${['Коробка','Ширина, см','Довжина, см','Висота, см','Об\'єм, м³','Вага брутто, кг'].map(bth).join('')}</w:tr>`
-      + BL.map((b,i)=>`<w:tr>${[`№ ${i+1}`,fmtDim(b.w),fmtDim(b.l),fmtDim(b.h),fmtM3(boxVol(b)),fmtKg2(b.kg)].map((v,k)=>bcell(v,k)).join('')}</w:tr>`).join('')
-      + `<w:tr>${wCell(wP([{t:`Разом: ${fmtN(BL.length)} кор.`,b:true,sz:17}],{space:0}),{w:BW[0]+BW[1]+BW[2]+BW[3],fill:'FAF7F2'}).replace('w:type="dxa"/>','w:type="dxa"/><w:gridSpan w:val="4"/>')}${bcell(fmtM3(boxVolSum(BL)),4,{b:true,fill:'FAF7F2'})}${bcell(fmtKg2(oGross(o)),5,{b:true,fill:'FAF7F2'})}</w:tr></w:tbl>`
+      + BL.map((b,i)=>`<w:tr>${[`№ ${i+1}`,dimCell(b.w),dimCell(b.l),dimCell(b.h),volCell(b),fmtKg2(b.kg)].map((v,k)=>bcell(v,k)).join('')}</w:tr>`).join('')
+      + `<w:tr>${wCell(wP([{t:`Разом: ${fmtN(BL.length)} кор.`,b:true,sz:17}],{space:0}),{w:BW[0]+BW[1]+BW[2]+BW[3],fill:'FAF7F2'}).replace('w:type="dxa"/>','w:type="dxa"/><w:gridSpan w:val="4"/>')}${bcell(volSumCell(BL),4,{b:true,fill:'FAF7F2'})}${bcell(fmtKg2(oGross(o)),5,{b:true,fill:'FAF7F2'})}</w:tr></w:tbl>`
     : wP([{t:'Коробки: ',sz:17},{t:`${fmtN(oBoxes(o))} шт`,b:true,sz:17}],{space:20});
   // Спершу ваги ліворуч, під таблицею, далі гроші праворуч.
   // вага нетто ліворуч, вартість товару праворуч — в одному рядку (табуляція по правому краю)
@@ -5473,8 +5484,8 @@ function openInvoice(id){
       <div class="ip-sec">Логістична інформація</div>
       ${oBoxList(o).length ? `<div class="tbl-wrap"><table class="ip-t ip-bx"><colgroup><col style="width:14%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col style="width:17%"><col style="width:21%"></colgroup>
         <thead><tr><th>Коробка</th><th class="c">Ширина, см</th><th class="c">Довжина, см</th><th class="c">Висота, см</th><th class="c">Об'єм, м³</th><th class="c">Вага брутто, кг</th></tr></thead>
-        <tbody>${oBoxList(o).map((b,i)=>`<tr><td>№ ${i+1}</td><td class="c">${fmtDim(b.w)}</td><td class="c">${fmtDim(b.l)}</td><td class="c">${fmtDim(b.h)}</td><td class="c">${fmtM3(boxVol(b))}</td><td class="c">${fmtKg2(b.kg)}</td></tr>`).join('')}
-        <tr class="ip-sum"><td colspan="4">Разом: ${fmtN(oBoxList(o).length)} кор.</td><td class="c">${fmtM3(boxVolSum(oBoxList(o)))}</td><td class="c">${fmtKg2(oGross(o))}</td></tr></tbody></table></div>`
+        <tbody>${oBoxList(o).map((b,i)=>`<tr><td>№ ${i+1}</td><td class="c">${dimCell(b.w)}</td><td class="c">${dimCell(b.l)}</td><td class="c">${dimCell(b.h)}</td><td class="c">${volCell(b)}</td><td class="c">${fmtKg2(b.kg)}</td></tr>`).join('')}
+        <tr class="ip-sum"><td colspan="4">Разом: ${fmtN(oBoxList(o).length)} кор.</td><td class="c">${volSumCell(oBoxList(o))}</td><td class="c">${fmtKg2(oGross(o))}</td></tr></tbody></table></div>`
         : `<div class="ip-w"><div>Коробки: <b>${fmtN(oBoxes(o))} шт</b></div></div>`}
       <div class="ip-row"><div>Вага брутто: <b>${fmtKg2(oGross(o))} кг</b></div><div>Вартість доставки: <b>${invShipText(o)}</b></div></div>
       <div class="ip-tot ip-fin">
@@ -5548,7 +5559,7 @@ function openCarrier(id){
       <label class="f">Перевізник<input id="carName" list="carList" autocomplete="off" placeholder="GLS, DHL…" value="${esc(o.carrierName||'')}"></label>
     </div>
     <div class="f" style="margin:4px 0 4px">Коробки</div>
-    ${boxEdHtml(oBoxList(o))}
+    ${boxEdHtml(oBoxList(o), boxDimsOpt(o))}
     <p class="hint num">Нетто ${fmtKg(oKg(o))} кг · конуси ${fmtKg2(oConesKg(o))} кг · коробки ${fmtKg2(oBoxKg(o))} кг · брутто ${fmtKg2(oGross(o))} кг.</p>
     <datalist id="carList">${[...new Set(S.reserves.map(x=>x.carrierName).filter(Boolean))].map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
     <p class="hint">${o.shipMode==='client'?'Заявка з доставкою за рахунок клієнта: ця сума йде в інвойс, у витрати не потрапляє.':'Доставка за наш рахунок: сума не йде в інвойс і повністю зменшує маржу.'}</p>
@@ -5557,7 +5568,7 @@ function openCarrier(id){
 function saveCarrier(id){
   const o=oById(id); if(!o||!can('fin')) return;
   const cost=Math.round((parseFloat($('#carCost').value)||0)*100)/100, name=$('#carName').value.trim();
-  const bl=boxRead(), be=boxErr(bl,false);
+  const bl=boxRead(), be=boxErr(bl,false,boxDimsOpt(o));
   if(be){ $('#carerr').innerHTML=`<div class="err">${be}</div>`; return; }
   const ge=grossErr(bl, oKg(o)); if(ge){ $('#carerr').innerHTML=`<div class="err">${ge}</div>`; return; }
   const bx=bl.length, gr=boxSum(bl), wasGross=oGross(o), bChg=JSON.stringify(bl)!==JSON.stringify(oBoxList(o));
@@ -5631,7 +5642,7 @@ function openPicked(id){
           <label>Фактично кг<input data-pkk="${i}" type="number" inputmode="decimal" min="0" step="0.01" value="${li.kg}"></label>
         </div>` : `<div class="sub num oliq">${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к</div><input type="hidden" data-pkc="${i}" value="${li.cones}"><input type="hidden" data-pkk="${i}" value="${li.kg}">`}</div>`;}).join('')}
     <div class="f" style="margin:8px 0 4px">Коробки</div>
-    ${boxEdHtml(oBoxList(o).length ? oBoxList(o) : [{w:0,l:0,h:0,kg:0}])}
+    ${boxEdHtml(oBoxList(o).length ? oBoxList(o) : [{w:0,l:0,h:0,kg:0}], boxDimsOpt(o))}
     <p class="hint num" id="pkHint"></p>
     <p class="hint">Вага брутто — коробка разом із пряжею, як на вагах.</p>
     <div class="f" style="margin:6px 0 6px">Доставка</div>
@@ -5670,7 +5681,7 @@ function savePicked(id){
     if(Math.abs(kg-li.kg)>0.0001||cn!==li.cones) ch.push(`${x.art}: ${fmtKg(li.kg)} кг / ${fmtN(li.cones)} к → ${fmtKg(kg)} кг / ${fmtN(cn)} к`);
     facts.push({kg,cn});
   }
-  const bl=boxRead(), be=boxErr(bl,true); if(be) return fe(be);
+  const bl=boxRead(), be=boxErr(bl,true,boxDimsOpt(o)); if(be) return fe(be);
   const ge=grossErr(bl, facts.reduce((t,f)=>t+f.kg,0)); if(ge) return fe(ge);
   const dRaw=($('#pkDeliv').value||'').trim(), deliv=Math.round((parseFloat(dRaw)||0)*100)/100;
   if(dRaw==='') return fe('Вкажіть вартість доставки (0 — якщо доставки немає).');
@@ -5691,7 +5702,7 @@ function openBoxes(id){
     <div id="bxerr"></div>
     <p style="margin:0 0 6px"><b>${esc(o.client)}</b> · ${o.lines.length} ${pos(o.lines.length)} · нетто ${fmtKg(oKg(o))} кг / ${fmtN(oCn(o))} к</p>
     ${o.boxCheck?'<p class="hint neg" style="margin:0 0 8px">Заявку змінили після збірки — перевірте кількість коробок, розміри й вагу.</p>':''}
-    ${boxEdHtml(oBoxList(o).length ? oBoxList(o) : [{w:0,l:0,h:0,kg:0}])}
+    ${boxEdHtml(oBoxList(o).length ? oBoxList(o) : [{w:0,l:0,h:0,kg:0}], boxDimsOpt(o))}
     <p class="hint num" id="bxHint"></p>
     <button class="btn" data-bxsave="${id}" style="width:100%">Підтвердити коробки</button>`);
   const upd=()=>{ const bl=boxRead(); $('#bxHint').innerHTML=`${fmtN(bl.length)} кор. · об'єм ${fmtM3(boxVolSum(bl))} м³ · <b>брутто ${fmtKg2(boxSum(bl))} кг</b>`; };
@@ -5699,7 +5710,7 @@ function openBoxes(id){
 }
 function saveBoxes(id){
   const o=oById(id); if(!o||!(can('pick')||can('fin'))) return;
-  const bl=boxRead(), be=boxErr(bl,true);
+  const bl=boxRead(), be=boxErr(bl,true,boxDimsOpt(o));
   if(be){ $('#bxerr').innerHTML=`<div class="err">${be}</div>`; $('#panel').scrollTop=0; return; }
   const ge=grossErr(bl, oKg(o)); if(ge){ $('#bxerr').innerHTML=`<div class="err">${ge}</div>`; $('#panel').scrollTop=0; return; }
   const wasB=oBoxes(o), wasG=oGross(o);
