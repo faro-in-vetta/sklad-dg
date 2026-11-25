@@ -289,6 +289,7 @@ main{padding-top:14px}
 .sku .snm,.sid .snm{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:6px}
 .sku .snm > span,.sid .snm > span{white-space:nowrap}
 .ccol.many.hs{display:block}.ccol.many.hs>span{display:inline-block;margin-right:8px}.ccol.many.hs>.sshelf{float:right;margin:0 0 0 10px;font-size:12.5px;line-height:1.25;font-weight:700;color:var(--muted)}
+.sbc .tgm{color:#229ED9;display:inline-flex;vertical-align:-0.2em;margin-right:3px}
 .ccol .sshelf b{color:var(--ink);font-weight:700}
 .shelfbox{grid-area:shelf;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:92px;padding:8px 10px;border:1px dashed var(--gold);border-radius:12px;background:var(--surface);text-align:center;align-self:start}
 .shelfbox span{font-size:12.5px;color:var(--muted)}
@@ -3128,6 +3129,7 @@ const UNIT_RULES = {
 const TR_RX = {
   it: [
     [/^Штрихкод (\S+) зайнято\s+змінено на (\S+)$/u, 'Codice a barre $1 occupato\ncambiato in $2'],
+    [/^На каналі Telegram з (\S+)$/u, 'Sul canale Telegram dal $1'],
     [/^Вага брутто всіх коробок \((.+?) кг\) менша за вагу нетто \((.+?) кг\)\.$/u, 'Il peso lordo di tutti i colli ($1 kg) è inferiore al peso netto ($2 kg).'],
     [/^Остання копія: (.+) \(1 день тому\)\.$/u, 'Ultimo backup: $1 (1 giorno fa).'],
     [/^Разом: (\d+) SKU$/u, 'Totale: $1 SKU'],
@@ -3202,6 +3204,7 @@ const TR_RX = {
   ],
   en: [
     [/^Штрихкод (\S+) зайнято\s+змінено на (\S+)$/u, 'Barcode $1 is taken\nchanged to $2'],
+    [/^На каналі Telegram з (\S+)$/u, 'On the Telegram channel since $1'],
     [/^Вага брутто всіх коробок \((.+?) кг\) менша за вагу нетто \((.+?) кг\)\.$/u, 'The gross weight of all boxes ($1 kg) is less than the net weight ($2 kg).'],
     [/^Остання копія: (.+) \(1 день тому\)\.$/u, 'Last backup: $1 (1 day ago).'],
     [/^Остання копія: (.+) \(1 день тому\)\. Час зробити нову\.$/u, 'Last backup: $1 (1 day ago). Time to make a new one.'],
@@ -3589,6 +3592,7 @@ const SB_KEY = 'sb_publishable_hOxUT36SMVhShYKrycBLGQ_DVjU9WSk';
 const db = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 
 let ME = null;              // профіль поточного користувача
+let TG = new Map();          // штрихкод → коли викладено на @yarn_stock_dg (SQL 31, пише агент каталогу)
 let SHELF_COL = false;       // чи є в базі стовпець skus.shelf (SQL 30)
 let ARCH_COL = false;        // чи є в базі стовпці orders.archived_at / archived_by (SQL 29)
 let BOX_COL = false;         // чи є в базі стовпці orders.box_list / box_check (SQL 27)
@@ -3805,7 +3809,7 @@ async function hydrate(opts) {
   const prevS = S, oldSnap = SNAP;
   const skipAudit = !!(opts && opts.soft && prevS && prevS.eco && Array.isArray(prevS.audit)
                        && AUDIT_AT && Date.now() - AUDIT_AT < ECO_AUDIT_EVERY);
-  const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au, st] = await Promise.all([
+  const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au, st, tg] = await Promise.all([
     fetchAll('profiles'),
     fetchAll('invites', { filter: q => q.is('accepted_at', null) }),
     fetchAll('skus'),
@@ -3818,7 +3822,8 @@ async function hydrate(opts) {
     fetchAll('order_events'),
     skipAudit ? Promise.resolve({ data: null })                         // економ-режим: історія з пам'яті
               : fetchAll('audit', { order: 'created_at', desc: true, max: 3000 }),  // історія — лише свіжа частина
-    db.from('app_settings').select('*')
+    db.from('app_settings').select('*'),
+    fetchAll('tg_posts', { key: 'code' })                   // немає таблиці (SQL 31) — просто без відміток
   ]);
   const err = [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au].find(r => r.error);
   if (err) throw err.error;
@@ -3830,6 +3835,7 @@ async function hydrate(opts) {
   // стовпець прайсу з'являється після SQL 25 — до того його не надсилаємо, щоб не зламати збереження
   if ((or_.data || []).length) PL_COL = 'price_list' in or_.data[0];
   if ((sk.data || []).length) SHELF_COL = 'shelf' in sk.data[0];
+  TG = new Map(((tg && !tg.error && tg.data) || []).map(r => [String(r.code || '').trim().toUpperCase(), r.posted_at]));
   if ((or_.data || []).length) BOX_COL = 'box_list' in or_.data[0];
   if ((or_.data || []).length) ARCH_COL = 'archived_at' in or_.data[0];
 
@@ -4598,6 +4604,10 @@ const compText = c => compSorted(c).map(x=>`${fmtPctC(x.p)}% ${x.f}`).join(' + '
 const compTypes = c => [...new Set(compSorted(c).map(x=>FIBER_TYPE[x.f]||x.f))];
 const skuRowZ = x => skuRow(x, true).replace('<img class="thumb osw"', `<img class="thumb osw zoomable" data-zoom="0" data-sku="${x.id||''}" title="Збільшити фото"`);
 const skuRow = (x, bc) => `<div class="srow"><div class="srow-l">${skuIdHtml(x, '', bc)}</div>${thumbHtml(x,'thumb osw')}</div>`;
+// галочка «на каналі Telegram» — бачить лише адмін
+const tgAt = x => (x && x.code && me().role === 'admin') ? TG.get(String(x.code).trim().toUpperCase()) : null;
+const tgMark = x => { const at = tgAt(x); return at
+  ? `<span class="tgm" title="На каналі Telegram з ${esc(fmtDate(at))}"><svg viewBox="0 0 24 24" width="1.15em" height="1.15em" aria-hidden="true"><path d="M4 12.5l5 5L20 6" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>` : ''; };
 const shelfOf = x => (x && x.shelf && !isClient()) ? x.shelf : '';
 const compCol = (x, shelf) => `<div class="ccol many${shelf?' hs':''}">${shelf?`<span class="sshelf">Стелаж № <b>${esc(shelf)}</b></span>`:''}${(x.comp||[]).length?compSorted(x.comp).map(c=>`<span><b>${fmtPctC(c.p)}%</b> ${esc(c.f)}</span>`).join(''):'<span class="cna">склад —</span>'}</div>`;
 /* ---------- склади (локації) ----------
@@ -4993,7 +5003,7 @@ function viewCatalog(){
             <div>${s.maker?`Brand: ${esc(s.maker)}`:''}</div>
             <div>${s.color?`Color: ${esc(s.color)}`:''}</div>
             <div>Art.: ${esc(s.art)}</div>
-            <div class="snm"><span>${s.meter?esc(nmText(s.meter)):''}</span>${s.code?`<span class="sbc">${esc(s.code)}</span>`:''}</div>
+            <div class="snm"><span>${s.meter?esc(nmText(s.meter)):''}</span>${s.code?`<span class="sbc">${tgMark(s)}${esc(s.code)}</span>`:''}</div>
             ${compCol(s, shelfOf(s))}
           </div>
         </div>
@@ -5023,7 +5033,7 @@ function skuIdHtml(x, extra, bc){
     <div>${x.maker?`Brand: ${esc(x.maker)}`:''}</div>
     <div>${x.color?`Color: ${esc(x.color)}`:''}</div>
     <div>Art.: ${esc(x.art||'')}</div>
-    ${bc ? `<div class="snm"><span>${x.meter?esc(nmText(x.meter)):''}</span>${x.code?`<span class="sbc">${esc(x.code)}</span>`:''}</div>`   // штрихкод праворуч у рядку Nm, як у каталозі
+    ${bc ? `<div class="snm"><span>${x.meter?esc(nmText(x.meter)):''}</span>${x.code?`<span class="sbc">${tgMark(x)}${esc(x.code)}</span>`:''}</div>`   // штрихкод праворуч у рядку Nm, як у каталозі
          : `<div>${x.meter?esc(nmText(x.meter)):''}</div>`}
     ${compCol(x, bc ? shelfOf(x) : '')}
   </div>${extra||''}`;
