@@ -288,6 +288,11 @@ main{padding-top:14px}
 /* штрихкод стоїть у рядку Nm праворуч і пишеться тим самим шрифтом, що й Nm */
 .sku .snm,.sid .snm{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:6px}
 .sku .snm > span,.sid .snm > span{white-space:nowrap}
+.ccol.many.hs{display:block}.ccol.many.hs>span{display:inline-block;margin-right:8px}.ccol.many.hs>.sshelf{float:right;margin:0 0 0 10px;font-weight:500;color:var(--muted)}
+.ccol .sshelf b{color:var(--ink);font-weight:700}
+.shelfbox{grid-area:shelf;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:92px;padding:8px 10px;border:1px dashed var(--gold);border-radius:12px;background:var(--surface);text-align:center;align-self:start}
+.shelfbox span{font-size:12.5px;color:var(--muted)}
+.shelfbox b{font-size:24px;line-height:1.15;color:var(--ink)}
 .sku .sbc,.sid .sbc{font:inherit;color:inherit;white-space:nowrap;flex:none}
 .delsku{width:34px;height:30px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;color:var(--red);background:var(--surface)}
 .delsku svg{width:17px;height:17px}
@@ -604,12 +609,12 @@ nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true
 :root:not([data-theme="light"]) .av{box-shadow:0 0 0 1px var(--gold)}}
 :root[data-theme="dark"] .btn.in,:root[data-theme="dark"] .btn.out{color:#1A1208}
 
-.skuhead{display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;grid-template-areas:"info comp sw";column-gap:14px;row-gap:8px;align-items:start}
+.skuhead{display:grid !important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto;grid-template-areas:"info comp shelf sw";column-gap:14px;row-gap:8px;align-items:start}
 .skuhead .info{grid-area:info}
 .skuhead .compbox{grid-area:comp;flex:none}
 .skuhead .sw-big{grid-area:sw}
 @media (max-width:560px){
-  .skuhead{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"info sw" "comp sw"}
+  .skuhead{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"info sw" "comp sw" "shelf sw"}
   .skuhead .compbox{font-size:14px}
   .skuhead .info{font-size:16px}
 }
@@ -1317,6 +1322,8 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Стелаж №':'Scaffale n.',
+    'Стелаж':'Scaffale',
     'Спершу виконайте в Supabase SQL 29 (архів)':'Esegui prima in Supabase l’SQL 29 (archivio)',
     'Архів':'Archivio',
     '← До заявок':'← Agli ordini',
@@ -2321,6 +2328,8 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Стелаж №':'Shelf No.',
+    'Стелаж':'Shelf',
     'Спершу виконайте в Supabase SQL 29 (архів)':'Run SQL 29 (archive) in Supabase first',
     'Архів':'Archive',
     '← До заявок':'← Back to orders',
@@ -3579,6 +3588,7 @@ const SB_KEY = 'sb_publishable_hOxUT36SMVhShYKrycBLGQ_DVjU9WSk';
 const db = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 
 let ME = null;              // профіль поточного користувача
+let SHELF_COL = false;       // чи є в базі стовпець skus.shelf (SQL 30)
 let ARCH_COL = false;        // чи є в базі стовпці orders.archived_at / archived_by (SQL 29)
 let BOX_COL = false;         // чи є в базі стовпці orders.box_list / box_check (SQL 27)
 /* коробки заявки: [{w,l,h,kg}] — ширина, довжина, висота (см) і вага порожньої коробки (кг) */
@@ -3620,7 +3630,7 @@ function fromSku(r, costs) {
     id: r.id, maker: r.maker, art: r.art, color: r.color || '', hex: r.hex || '',
     meter: r.meter || '', code: r.code, comp: r.comp || [], sale: +r.sale || 0,
     site: r.site || 'sg',
-    note: r.note || '', photos: r.photos || [], deleted: r.deleted,
+    note: r.note || '', shelf: r.shelf || '', photos: r.photos || [], deleted: r.deleted,
     createdBy: r.created_by, created: r.created_at,
     costs: cs.map(c => ({ id: c.id, price: c.price, date: c.date })),
     costActive: act ? act.id : null
@@ -3630,7 +3640,7 @@ const skuRowDb = s => ({
   id: s.id, maker: s.maker, art: s.art, color: s.color || null, hex: s.hex || null,
   meter: s.meter || null, code: s.code, comp: s.comp || [], sale: +s.sale || 0,
   site: siteOf(s),
-  note: s.note || null, photos: (s.photos || []).filter(p => !p.startsWith('data:')),
+  note: s.note || null, ...(SHELF_COL ? { shelf: s.shelf || null } : {}), photos: (s.photos || []).filter(p => !p.startsWith('data:')),
   deleted: !!s.deleted, deleted_at: s.deletedAt || null, deleted_by: s.deletedBy || null,
   created_by: s.createdBy || S.current || null
 });
@@ -3818,6 +3828,7 @@ async function hydrate(opts) {
   if (opts && opts.soft && (DIRTY || SYNCING || WGEN !== gen)) return false;
   // стовпець прайсу з'являється після SQL 25 — до того його не надсилаємо, щоб не зламати збереження
   if ((or_.data || []).length) PL_COL = 'price_list' in or_.data[0];
+  if ((sk.data || []).length) SHELF_COL = 'shelf' in sk.data[0];
   if ((or_.data || []).length) BOX_COL = 'box_list' in or_.data[0];
   if ((or_.data || []).length) ARCH_COL = 'archived_at' in or_.data[0];
 
@@ -4586,7 +4597,8 @@ const compText = c => compSorted(c).map(x=>`${fmtPctC(x.p)}% ${x.f}`).join(' + '
 const compTypes = c => [...new Set(compSorted(c).map(x=>FIBER_TYPE[x.f]||x.f))];
 const skuRowZ = x => skuRow(x, true).replace('<img class="thumb osw"', `<img class="thumb osw zoomable" data-zoom="0" data-sku="${x.id||''}" title="Збільшити фото"`);
 const skuRow = (x, bc) => `<div class="srow"><div class="srow-l">${skuIdHtml(x, '', bc)}</div>${thumbHtml(x,'thumb osw')}</div>`;
-const compCol = x => `<div class="ccol many">${(x.comp||[]).length?compSorted(x.comp).map(c=>`<span><b>${fmtPctC(c.p)}%</b> ${esc(c.f)}</span>`).join(''):'<span class="cna">склад —</span>'}</div>`;
+const shelfOf = x => (x && x.shelf && !isClient()) ? x.shelf : '';
+const compCol = (x, shelf) => `<div class="ccol many${shelf?' hs':''}">${shelf?`<span class="sshelf">Стелаж № <b>${esc(shelf)}</b></span>`:''}${(x.comp||[]).length?compSorted(x.comp).map(c=>`<span><b>${fmtPctC(c.p)}%</b> ${esc(c.f)}</span>`).join(''):'<span class="cna">склад —</span>'}</div>`;
 /* ---------- склади (локації) ----------
    Картка SKU і заявка належать одному складу. Товар «переїжджає» окремою
    операцією переміщення, яка знімає кілограми з картки одного складу й
@@ -4981,7 +4993,7 @@ function viewCatalog(){
             <div>${s.color?`Color: ${esc(s.color)}`:''}</div>
             <div>Art.: ${esc(s.art)}</div>
             <div class="snm"><span>${s.meter?esc(nmText(s.meter)):''}</span>${s.code?`<span class="sbc">${esc(s.code)}</span>`:''}</div>
-            ${compCol(s)}
+            ${compCol(s, shelfOf(s))}
           </div>
         </div>
         <div class="scol">${thumbHtml(s,'thumb sthumb')}${can('delsku')?`<span class="delsku ${Math.abs(l.kg)<0.001&&l.cn===0&&l.rk<0.001?'':'off'}" role="button" tabindex="0" data-delsku="${s.id}" aria-label="${t('cat.del')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>`:''}</div>
@@ -5012,7 +5024,7 @@ function skuIdHtml(x, extra, bc){
     <div>Art.: ${esc(x.art||'')}</div>
     ${bc ? `<div class="snm"><span>${x.meter?esc(nmText(x.meter)):''}</span>${x.code?`<span class="sbc">${esc(x.code)}</span>`:''}</div>`   // штрихкод праворуч у рядку Nm, як у каталозі
          : `<div>${x.meter?esc(nmText(x.meter)):''}</div>`}
-    ${compCol(x)}
+    ${compCol(x, bc ? shelfOf(x) : '')}
   </div>${extra||''}`;
 }
 const orderYY = o => o.yy ?? (new Date(o.at).getFullYear()%100);
@@ -7426,6 +7438,7 @@ async function exportCatXlsx(){
     if(!cl && seeCost()) r['Ціна закупівлі, €/кг'] = cost ? +cost.toFixed(2) : '';
     if(seeSale()) r[PRICE_LIST==='ua'?'Ціна продажу (Україна), €/кг':'Ціна продажу, €/кг'] = sale ? +sale.toFixed(2) : '';
     if(!cl) r['Склад'] = SITE_NAME[siteOf(x)] || '';
+    if(!cl) r['Стелаж №'] = x.shelf || '';
     return r; });
   const keys = rows[0] ? Object.keys(rows[0]) : [];
   const wb = new EJ.Workbook();
@@ -7454,7 +7467,7 @@ function catDocx(pics){
     return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="36000"><wp:extent cx="${EMU}" cy="${EMU}"/><wp:docPr id="${n}" name="Фото ${n}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="img${n}.jpeg"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU}" cy="${EMU}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r><w:r><w:t xml:space="preserve"> </w:t></w:r>`; };
   const ph = !!pics;                                // без фото — колонки «Фото» немає
   const cols = [['№',420,'c']].concat(ph ? [['Фото',2500,'c']] : []).concat([['Штрихкод',1250,'l'],['Бренд',1500,'l'],['Артикул',1700,'l'],['Колір',1900,'l'],['Nm',900,'c'],['Склад пряжі',3300,'l']])
-    .concat(cl ? [] : [['На складі, кг',1100,'c']])
+    .concat(cl ? [] : [['Стелаж №',800,'c'],['На складі, кг',1100,'c']])
     .concat([['Вільно, кг',1100,'c'],['Конусів',850,'c']])
     .concat(sale ? [['Ціна, €/кг',1000,'c']] : []);
   const total = cols.reduce((t,c) => t + c[1], 0), scale = 15000 / total;
@@ -7464,7 +7477,7 @@ function catDocx(pics){
   let tKg=0, tFk=0, tFc=0;
   const rows = data.map(({x,l,sale:sp}, n) => { tKg+=l.kg; tFk+=l.fk; tFc+=l.fc;
     const v = [n+1].concat(ph ? [null] : []).concat([x.code, x.maker, x.art, x.color, x.meter, compText(x.comp)])
-      .concat(cl ? [] : [fmtKg(l.kg)]).concat([fmtKg(l.fk), fmtN(l.fc)]).concat(sale ? [sp ? fmtEur(sp) : '—'] : []);
+      .concat(cl ? [] : [x.shelf || '', fmtKg(l.kg)]).concat([fmtKg(l.fk), fmtN(l.fc)]).concat(sale ? [sp ? fmtEur(sp) : '—'] : []);
     const imgs = ((pics && pics[n]) || []).filter(Boolean);
     const photoCell = !ph ? '' : wCell(`<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="0"/></w:pPr>${imgs.length ? imgs.map(pic).join('') : '<w:r><w:rPr><w:sz w:val="16"/><w:color w:val="999999"/></w:rPr><w:t>—</w:t></w:r>'}</w:p>`, {w:W[1]});
     return '<w:tr><w:trPr><w:cantSplit/></w:trPr>' + v.map((t,i) => (ph && i===1) ? photoCell : cell(t,i, i===(ph?7:6)?{color:'555555',sz:15}:null)).join('') + '</w:tr>'; }).join('');
@@ -7541,7 +7554,7 @@ async function exportXlsx(opt){
   if(!window.XLSX){ toast('Бібліотека Excel не завантажилась'); return; }
   const typeName = {in:'Прихід',out:'Продаж',smp:'Пробники',adj:'Коригування',ret:'Повернення',mov_out:'Переміщення (зі складу)',mov_in:'Переміщення (на склад)'};
   const stock = liveSkus().map(x=>{const l=levels(x.id); return {
-    'Виробник':x.maker||'','Артикул':x.art,'Колір':x.color,'Склад':compText(x.comp),'Тип волокна':compTypes(x.comp).join(', '),'Nm':x.meter||'','Штрихкод':x.code,
+    'Виробник':x.maker||'','Артикул':x.art,'Колір':x.color,'Склад':compText(x.comp),'Тип волокна':compTypes(x.comp).join(', '),'Nm':x.meter||'','Штрихкод':x.code,'Стелаж №':x.shelf||'',
     'На складі, кг':+l.kg.toFixed(2),'На складі, конусів':l.cn,'Резерв, кг':+l.rk.toFixed(2),'Резерв, конусів':l.rc,
     'Вільно, кг':+l.fk.toFixed(2),'Вільно, конусів':l.fc,'Ціна закупівлі, €/кг':+l.cost.toFixed(2),'Ціна продажу, €/кг':(p=>p.sale?+p.sale.toFixed(2):'')(pricing(x,l)),'Джерело ціни продажу':(p=>p.sale?p.src:'')(pricing(x,l)),'Націнка, %':(p=>p.markup===null?'':+p.markup.toFixed(1))(pricing(x,l)),'Вартість залишку, €':+(l.kg*l.cost).toFixed(2)};});
   const ops = [...S.ops].filter(o=>inPer(o.at)).sort((a,b)=>a.at.localeCompare(b.at)).map(o=>{const x=skuById(o.sku)||{}; return {
@@ -7650,6 +7663,7 @@ function openSku(id){
         <b>Composition:</b>
         ${(s.comp||[]).length?compSorted(s.comp).map(x=>`<div class="cl num"><span class="cp">${fmtPctC(x.p)}%</span> ${esc(x.f)}</div>`).join('')+`<div class="ctypes">${compTypes(s.comp).map(t=>`<span>${esc(TYPE_UA[t]||t)}</span>`).join('')}</div>`:'<div class="cl" style="color:var(--muted);font-weight:400">не вказано</div>'}
       </div>
+      ${isClient()?'':`<div class="shelfbox"><span>Стелаж №</span><b class="num">${s.shelf?esc(s.shelf):'—'}</b></div>`}
       ${s.photos[0]?`<img class="sw-big zoomable" data-zoom="0" data-sku="${s.id}" src="${cardPhotoSrc(s.photos[0])}" alt="Фото пряжі">`:`<div class="sw-big" style="background:${esc(s.hex||'var(--indigo-soft)')}" role="img" aria-label="Відтінок ${esc(s.color||'')}"></div>`}
     </div>
     ${s.photos.length>1?`<div class="gallery">${s.photos.slice(1).map((p,i)=>`<img class="zoomable" data-zoom="${i+1}" data-sku="${s.id}" src="${cardPhotoSrc(p)}" alt="Фото пряжі" loading="lazy" decoding="async">`).join('')}</div>`:''}
@@ -7961,6 +7975,7 @@ function openSkuForm(id, copyFrom){
       ${can('fin')?`<label class="f">Ціна закупівлі, €/кг<input id="fPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Необов'язково"></label>`:''}
       <label class="f">Дата приходу<input id="fDate" type="date" value="${todayStr()}"></label>
     </div>`}
+    <label class="f">Стелаж №<input id="fShelf" value="${esc(b?.shelf||'')}" placeholder="Необов'язково" autocomplete="off" maxlength="20"></label>
     <label class="f">Примітка<textarea id="fNote" rows="2">${esc(b?.note||'')}</textarea></label>
     <button class="btn" id="fSave" data-id="${id||''}" style="width:100%">${s?'Зберегти зміни':'Додати SKU'}</button>
   `);
@@ -8027,8 +8042,8 @@ function saveSku(id){
   S.customFibers=S.customFibers||[]; comp.forEach(x=>{ if(!FIBER_TYPE[x.f] && !S.customFibers.includes(x.f)) S.customFibers.push(x.f); });
   if(id){
     const old=skuById(id);
-    const nv={meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):(+old.sale||0),maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim()};
-    const lbl={maker:'Бренд',art:'Артикул',color:'Колір',meter:'Nm',code:'Штрихкод',hex:'Відтінок',note:'Примітка',sale:'Ціна продажу'};
+    const nv={meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):(+old.sale||0),maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),shelf:($('#fShelf')?.value||'').trim()};
+    const lbl={maker:'Бренд',art:'Артикул',color:'Колір',meter:'Nm',code:'Штрихкод',hex:'Відтінок',note:'Примітка',sale:'Ціна продажу',shelf:'Стелаж'};
     const show=(k,v)=>k==='sale'?(v?fmtEur(v):'—'):(v===''||v==null?'—':String(v));
     const ch=Object.keys(lbl).filter(k=>String(old[k]??'')!==String(nv[k]??'')).map(k=>`${lbl[k]}: ${show(k,old[k])} → ${show(k,nv[k])}`);
     const op=old.photos.length, np=draftPhotos.length, samePh=op===np && old.photos.every((x,i)=>x===draftPhotos[i]);
@@ -8036,7 +8051,7 @@ function saveSku(id){
     const oc=compText(old.comp), nc=compText(comp);
     if(oc!==nc) ch.push(`Склад: ${oc||'—'} → ${nc||'—'}`);
     if(ch.length) audit(id,'edit',ch.join('; '));
-    Object.assign(skuById(id), {comp,meter:$('#fMeter').value.trim(),sale:nv.sale,maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),photos:[...draftPhotos]});
+    Object.assign(skuById(id), {comp,meter:$('#fMeter').value.trim(),sale:nv.sale,maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),shelf:($('#fShelf')?.value||'').trim(),photos:[...draftPhotos]});
     if(save()){ toast('Зміни збережено'); openSku(id); render(); }
     return;
   }
@@ -8048,7 +8063,7 @@ function saveSku(id){
   const nsite = ($('#fSite') && $('#fSite').value) || defSite(null);
   audit(nid,'create','Створено картку'+(draftPhotos.length?` з ${draftPhotos.length} фото`:''));
   if(bumped) audit(nid,'edit',`Штрихкод: ${bumped} → ${code} (код зайняв інший користувач)`);
-  S.skus.push({id:nid,createdBy:S.current,site:nsite,comp,meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):0,maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),photos:[...draftPhotos],created:now()});
+  S.skus.push({id:nid,createdBy:S.current,site:nsite,comp,meter:$('#fMeter').value.trim(),sale:can('fin')?(parseFloat($('#fSale').value)||0):0,maker,art,color,code,hex:draftHex,note:$('#fNote').value.trim(),shelf:($('#fShelf')?.value||'').trim(),photos:[...draftPhotos],created:now()});
   const price=parseFloat($('#fPrice')?.value)||0;
   if(kg>0){ const at=dateToIso($('#fDate').value); if(price>0) addCost(skuById(nid), at, price); S.ops.push({id:uid(),sku:nid,type:'in',kg,cones:cn,price,who:S.current,at,party:maker,comment:'Перша партія'}); }
   if(save()){ toast('SKU додано'); render(); openSku(nid); }
