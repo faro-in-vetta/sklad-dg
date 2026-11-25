@@ -706,6 +706,10 @@ nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true
 @media (max-width:420px){.odl-f input{padding:9px 6px}.lsum{font-size:12.5px;padding:0 5px}}
 
 .ofilt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 10px}
+.ofilt.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.omon{font-family:var(--serif);font-size:17px;color:var(--gold-deep);margin:14px 2px 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.omon span{font-family:Inter,system-ui,sans-serif;font-size:13px;color:var(--muted)}
+.arcbtn.on{background:var(--indigo-soft);border-color:var(--gold);color:var(--gold-deep)}
 .ofilt .hf{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:48px;padding:5px 4px;border-radius:10px;text-align:center;line-height:1.15}
 .ofilt .ofl{font-size:12.5px;font-weight:500}
 .ofilt .ofc{font-size:15px;font-weight:700;opacity:1;color:var(--ink)}
@@ -912,6 +916,7 @@ body.locked > header, body.locked > main, body.locked > nav{filter:blur(3px);poi
     <div class="catf" id="catFilters"><span id="cfSel"></span><input id="cfBc" type="search" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Штрихкод" aria-label="Штрихкод"><button type="button" class="cfx cfdl" id="cfExport" title="Вивантажити список" aria-label="Вивантажити список"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg></button></div>
     <div class="search" id="orderBar" style="display:none">
       <button class="btn" data-onew id="newOrderBtn" style="flex:1" data-i18n="cat.neworder">Нова заявка</button>
+      <button class="btn ghost arcbtn" data-oarch id="archBtn" style="flex:1">Архів</button>
     </div>
   </div>
 </header>
@@ -1312,6 +1317,28 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Архів':'Archivio',
+    '← До заявок':'← Agli ordini',
+    'В архів':'Archivia',
+    'Повернути до списку':'Riporta in elenco',
+    'Переміщено в архів':'Spostato in archivio',
+    'Повернуто з архіву до списку':'Riportato dall\'archivio in elenco',
+    'В архіві поки порожньо.':'L\'archivio è vuoto.',
+    'в архіві':'in archivio',
+    'знову в списку':'di nuovo in elenco',
+    'В архів — лише оплачені заявки':'In archivio solo gli ordini pagati',
+    'Січень':'Gennaio',
+    'Лютий':'Febbraio',
+    'Березень':'Marzo',
+    'Квітень':'Aprile',
+    'Травень':'Maggio',
+    'Червень':'Giugno',
+    'Липень':'Luglio',
+    'Серпень':'Agosto',
+    'Вересень':'Settembre',
+    'Жовтень':'Ottobre',
+    'Листопад':'Novembre',
+    'Грудень':'Dicembre',
     'Прокрутити донизу':'Scorri in fondo',
     'Немає зв’язку з базою':'Nessuna connessione al database',
     'Вартість доставки не може бути від\'ємною.':'Il costo di spedizione non può essere negativo.',
@@ -2293,6 +2320,28 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Архів':'Archive',
+    '← До заявок':'← Back to orders',
+    'В архів':'Archive',
+    'Повернути до списку':'Back to the list',
+    'Переміщено в архів':'Moved to the archive',
+    'Повернуто з архіву до списку':'Returned from the archive to the list',
+    'В архіві поки порожньо.':'The archive is empty.',
+    'в архіві':'archived',
+    'знову в списку':'back in the list',
+    'В архів — лише оплачені заявки':'Only paid orders can be archived',
+    'Січень':'January',
+    'Лютий':'February',
+    'Березень':'March',
+    'Квітень':'April',
+    'Травень':'May',
+    'Червень':'June',
+    'Липень':'July',
+    'Серпень':'August',
+    'Вересень':'September',
+    'Жовтень':'October',
+    'Листопад':'November',
+    'Грудень':'December',
     'Прокрутити донизу':'Scroll to the bottom',
     'Немає зв’язку з базою':'No connection to the database',
     'Вартість доставки не може бути від\'ємною.':'The delivery cost cannot be negative.',
@@ -3528,6 +3577,7 @@ const SB_KEY = 'sb_publishable_hOxUT36SMVhShYKrycBLGQ_DVjU9WSk';
 const db = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 
 let ME = null;              // профіль поточного користувача
+let ARCH_COL = false;        // чи є в базі стовпці orders.archived_at / archived_by (SQL 29)
 let BOX_COL = false;         // чи є в базі стовпці orders.box_list / box_check (SQL 27)
 /* коробки заявки: [{w,l,h,kg}] — ширина, довжина, висота (см) і вага порожньої коробки (кг) */
 function normBoxes(a){ return (Array.isArray(a) ? a : []).map(b => ({ w:+b.w||0, l:+b.l||0, h:+b.h||0, kg:Math.round((+b.kg||0)*100)/100 })); }
@@ -3615,6 +3665,7 @@ function fromOrder(r, lines, pays, rets, evs) {
     paid: r.paid, paidAt: r.paid_at, due: r.due,
     shippedAt: r.shipped_at, shippedBy: r.shipped_by,
     cancelledAt: r.cancelled_at, cancelledBy: r.cancelled_by, cancelReason: r.cancel_reason || '',
+    archivedAt: r.archived_at || null, archivedBy: r.archived_by || null,
     lines: ls,
     payments: pays.filter(p => p.order_id === r.id).map(p => ({ id: p.id, amount: +p.amount, at: p.paid_on, by: p.created_by, note: p.comment || '' })),
     returns: rets.filter(x => x.order_id === r.id).map(x => ({ id: x.id, at: x.returned_on, reason: x.reason || '', sum: +x.amount || 0, by: x.created_by })),
@@ -3636,6 +3687,7 @@ const orderRowOf = o => ({
   shipped_at: tsOf(o.shippedAt), shipped_by: o.shippedBy || null,
   cancelled_at: tsOf(o.cancelledAt), cancelled_by: o.cancelledBy || null,
   cancel_reason: o.cancelReason || null,
+  ...(ARCH_COL ? { archived_at: tsOf(o.archivedAt), archived_by: o.archivedBy || null } : {}),
   // автор заявки: при оновленні чужої заявки не перебиваємо його собою
   created_by: o.who || S.current || null
 });
@@ -3765,6 +3817,7 @@ async function hydrate(opts) {
   // стовпець прайсу з'являється після SQL 25 — до того його не надсилаємо, щоб не зламати збереження
   if ((or_.data || []).length) PL_COL = 'price_list' in or_.data[0];
   if ((or_.data || []).length) BOX_COL = 'box_list' in or_.data[0];
+  if ((or_.data || []).length) ARCH_COL = 'archived_at' in or_.data[0];
 
   SNAP = {};
   S = {
@@ -5049,6 +5102,12 @@ const termsText = o => o.sample?'Пробники, без оплати':`${o.ter
 
 /* --- список --- */
 let oFilter='all', oFrom='', oTo='', oPl='', oNo='';
+/* Архів: анульовані — завжди там; відвантажені адмін/головбух переносять кнопкою «В архів».
+   Це лише вид списку: дебіторка, аналітика й залишки рахують архівні заявки як і раніше. */
+let oArch = false;
+const isArch = o => o.status === 'cancelled' || !!o.archivedAt;
+const MON_FULL = ['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+const monHead = o => { const d = new Date(o.at); return MON_FULL[d.getMonth()] + ' ' + d.getFullYear(); };
 /* фільтр «Клієнт» з галочками, як в Excel: null — усі клієнти, масив — лише вибрані (ключі oClKey) */
 let oClSel = null, OCL_OPTS = [], OCL_OPEN = false;
 const oClOn = k => !oClSel || oClSel.includes(k);
@@ -5115,7 +5174,8 @@ function viewReserves(){
   const inP = o => { const d=o.at.slice(0,10); return (!oFrom||d>=oFrom)&&(!oTo||d<=oTo); };
   const oq=($('#oq')?.value||'').trim().toLowerCase();
   const inQ = o => !oq || [orderNo(o),o.client,o.comment,...o.lines.map(li=>{const x=skuById(li.sku)||{}; return [x.art,x.maker,x.color].join(' ');})].some(v=>String(v||'').toLowerCase().includes(oq));
-  const pre = S.reserves.filter(o=>seesSite(siteOf(o))&&inP(o)&&inQ(o));   // лише вибрані склади
+  if(!can('fin')) oArch = false;   // архів бачать лише адмін і головбух
+  const pre = S.reserves.filter(o=>seesSite(siteOf(o))&&inP(o)&&inQ(o)&&isArch(o)===oArch);   // лише вибрані склади
   /* фільтри «Клієнт» і «EU / UA»: впливають і на список, і на лічильники етапів.
      У списку клієнтів — лише ті, що лишаються після інших умов (з кількістю). */
   const showCl = !isClient(), showPl = seeSale() && !isClient();
@@ -5133,7 +5193,7 @@ function viewReserves(){
   // На телефоні дев'ять фільтрів займають пів екрана. Лишаємо два робочі;
   // активний показуємо завжди, навіть якщо його обрали з комп'ютера.
   // Лишили три: Усі, Не оплачені, Оплачені — однаково на ПК і телефоні (один ряд по три).
-  const KEEP_KEYS = ['all', 'unpaid', 'done'];
+  const KEEP_KEYS = oArch ? ['all', 'done', 'cancel'] : ['all', 'unpaid', 'done'];
   if(!KEEP_KEYS.includes(oFilter)) oFilter = 'all';
   const groups = ALL_GROUPS.filter(([k]) => KEEP_KEYS.includes(k));
   const cnt = k => k==='all'?base.length:base.filter(o=>oStage(o)===k).length;
@@ -5142,7 +5202,7 @@ function viewReserves(){
   const debt = unpaid.reduce((t,o)=>t+oOwed(o),0);
   const overdue = unpaid.filter(o=>o.due && o.due.slice(0,10)<todayStr()).length;
   $('#view').innerHTML = `
-    ${can('fin')&&unpaid.length?`<div class="obar num"><span>Очікуємо оплату <b>${fmtEur0(debt)}</b></span><span>Прострочено <b class="${overdue?'neg':''}">${overdue}</b></span></div>`:''}
+    ${!oArch&&can('fin')&&unpaid.length?`<div class="obar num"><span>Очікуємо оплату <b>${fmtEur0(debt)}</b></span><span>Прострочено <b class="${overdue?'neg':''}">${overdue}</b></span></div>`:''}
     <div class="otop">
     <div class="odates">
       <label><span>з</span><input type="date" id="oFrom" value="${oFrom}" aria-label="Дата з"></label>
@@ -5161,7 +5221,12 @@ function viewReserves(){
     </div>
     <div class="ofilt">${groups.map(([k,n])=>`<button class="hf ${k===oFilter?'on':''}" data-of="${k}"><span class="ofl">${n}</span><span class="ofc num">${cnt(k)}</span></button>`).join('')}</div>
     </div>
-    ${list.length?list.map(orderCard).join(''):'<div class="empty">Заявок за цими умовами немає.</div>'}`;
+    ${!list.length?`<div class="empty">${oArch&&!pre.length?'В архіві поки порожньо.':'Заявок за цими умовами немає.'}</div>`
+      : !oArch ? list.map(orderCard).join('')
+      : list.map((o,i)=>{ const h=monHead(o), prev=i?monHead(list[i-1]):''; const n=list.filter(x=>monHead(x)===h).length;
+          return (h!==prev?`<div class="omon">${h} <span class="num">· ${n}</span></div>`:'') + orderCard(o); }).join('')}`;
+  const ab = $('#archBtn'); if(ab){ ab.style.display = can('fin') ? '' : 'none'; ab.textContent = oArch ? '← До заявок' : 'Архів'; ab.classList.toggle('on', oArch); }
+  { const nb = $('#newOrderBtn'); if(nb) nb.style.display = oArch ? 'none' : ''; }   // в архіві — лише «← До заявок»
   oTopOffset();
 }
 function lineHtml(o, li, i){
@@ -5169,6 +5234,7 @@ function lineHtml(o, li, i){
   return `<div class="oli"><div class="odl-h"><span class="lno">${i+1}</span>${skuRowZ(s)}</div><div class="sub num oliq">${fmtKg(lq(li))} кг / ${fmtN(lc(li))} к${li.sample?' · <span class="stg st-sample">пробник</span>':(seeSale()?` · ${fmtEur(li.price)}/кг = <b>${fmtEur(lq(li)*li.price)}</b>`:'')}</div></div>`;
 }
 function orderActions(o){
+  if(isArch(o)) return can('fin') && o.archivedAt && o.status==='shipped' ? [`<button class="btn small ghost" data-ounarc="${o.id}">Повернути до списку</button>`] : [];
   const st=oStage(o), mine=o.who===S.current, b=[];
   if((st==='res' || st==='pick') && canBox(o)) b.push(`<button class="btn small" data-opicked="${o.id}">Внести коробки</button>`);
   if(boxNeed(o) && (can('pick')||can('fin'))) b.push(`<button class="btn small" data-obox="${o.id}">${o.boxCheck?'Перевірити коробки':'Внести коробки'}</button>`);
@@ -5184,6 +5250,8 @@ function orderActions(o){
      && (can('fin') || (o.status==='active' && mine && (can('order')||can('smp')))))
     b.push(`<button class="btn small ghost" data-ocancel="${o.id}">Анулювати</button>`);
   if(seeSale()) b.push(`<button class="btn small ghost" data-oinv="${o.id}">На друк</button>`);
+  // в архів — лише оплачені (і пробники, за які оплата не потрібна)
+  if(can('fin') && ARCH_COL && (st==='done' || st==='sample')) b.push(`<button class="btn small ghost" data-oarc="${o.id}">В архів</button>`);
   return b;
 }
 function orderCard(o){
@@ -8450,6 +8518,13 @@ document.addEventListener('click', e=>{
   if('close' in d){ const back=$('[data-costadd],[data-savesale]'); const sid=back&&(back.dataset.costadd||back.dataset.savesale); closeSheet(); if(sid) openSku(sid); return; }
   if(d.op){ openOp(d.op, d.sku); return; }
   if('onew' in d){ openOrderEditor(null); return; }
+  if('oarch' in d){ oArch = !oArch; oFilter = 'all'; viewReserves(); window.scrollTo(0,0); return; }
+  if(d.oarc || d.ounarc){ const o = oById(d.oarc || d.ounarc); if(!o || !can('fin') || o.status!=='shipped') return;
+    if(d.oarc && !['done','sample'].includes(oStage(o))){ toast('В архів — лише оплачені заявки', 2500, true); return; }
+    if(d.oarc){ o.archivedAt = now(); o.archivedBy = S.current; oev(o, 'Переміщено в архів'); }
+    else { o.archivedAt = null; o.archivedBy = null; oev(o, 'Повернуто з архіву до списку'); }
+    if(save()) toast('№ '+orderNo(o)+(d.oarc?' — в архіві':' — знову в списку'));
+    refreshOrders(); return; }
   if(d.oedit){ openOrderEditor(d.oedit); return; }
   if('opicker' in d){ openSkuPicker(); return; }
   if('pickback' in d){ if(CF_OPEN) cfClose(); CF_CTX = 'cat'; drawOrderEditor(); return; }
