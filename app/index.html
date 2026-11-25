@@ -288,7 +288,7 @@ main{padding-top:14px}
 /* штрихкод стоїть у рядку Nm праворуч і пишеться тим самим шрифтом, що й Nm */
 .sku .snm,.sid .snm{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;column-gap:6px}
 .sku .snm > span,.sid .snm > span{white-space:nowrap}
-.ccol.many.hs{display:block}.ccol.many.hs>span{display:inline-block;margin-right:8px}.ccol.many.hs>.sshelf{float:right;margin:0 0 0 10px;font-weight:500;color:var(--muted)}
+.ccol.many.hs{display:block}.ccol.many.hs>span{display:inline-block;margin-right:8px}.ccol.many.hs>.sshelf{float:right;margin:0 0 0 10px;font-size:12.5px;line-height:1.25;font-weight:700;color:var(--muted)}
 .ccol .sshelf b{color:var(--ink);font-weight:700}
 .shelfbox{grid-area:shelf;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:92px;padding:8px 10px;border:1px dashed var(--gold);border-radius:12px;background:var(--surface);text-align:center;align-self:start}
 .shelfbox span{font-size:12.5px;color:var(--muted)}
@@ -634,12 +634,13 @@ nav.tabs .tabbtn[aria-current="true"] svg,nav.tabs [data-tab][aria-current="true
 .ccol .cna{color:var(--muted);font-weight:400;font-style:italic}
 @media (max-width:420px){
   .sku .sinfo,.sid{font-size:10.5px;line-height:1.25;column-gap:6px}
+  .ccol.many.hs>.sshelf{font-size:10.5px}
   .ccol{font-size:10px;padding-left:5px}
   .sku .sthumb{width:30px;height:30px}
   .sku .delsku{width:30px;height:26px}
   .sku .slevels .chip{font-size:10.5px}
 }
-@media (max-width:360px){.sku .sinfo,.sid{font-size:10px}.ccol{font-size:9.5px}}
+@media (max-width:360px){.sku .sinfo,.sid{font-size:10px}.ccol{font-size:9.5px}.ccol.many.hs>.sshelf{font-size:10px}}
 
 .ccol.many{grid-column:1 / -1;grid-row:3;flex-direction:row;flex-wrap:wrap;column-gap:8px;row-gap:1px;border-left:0;border-top:1.5px solid var(--gold);padding:3px 0 0;margin-top:2px}
 .ccol.many span{white-space:nowrap}
