@@ -1317,6 +1317,7 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Спершу виконайте в Supabase SQL 29 (архів)':'Esegui prima in Supabase l’SQL 29 (archivio)',
     'Архів':'Archivio',
     '← До заявок':'← Agli ordini',
     'В архів':'Archivia',
@@ -2320,6 +2321,7 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Спершу виконайте в Supabase SQL 29 (архів)':'Run SQL 29 (archive) in Supabase first',
     'Архів':'Archive',
     '← До заявок':'← Back to orders',
     'В архів':'Archive',
@@ -5251,7 +5253,8 @@ function orderActions(o){
     b.push(`<button class="btn small ghost" data-ocancel="${o.id}">Анулювати</button>`);
   if(seeSale()) b.push(`<button class="btn small ghost" data-oinv="${o.id}">На друк</button>`);
   // в архів — лише оплачені (і пробники, за які оплата не потрібна)
-  if(can('fin') && ARCH_COL && (st==='done' || st==='sample')) b.push(`<button class="btn small ghost" data-oarc="${o.id}">В архів</button>`);
+  // «В архів» — на кожній заявці; неоплачену застосунок не пропустить і пояснить чому
+  if(can('fin')) b.push(`<button class="btn small ghost" data-oarc="${o.id}">В архів</button>`);
   return b;
 }
 function orderCard(o){
@@ -8519,8 +8522,10 @@ document.addEventListener('click', e=>{
   if(d.op){ openOp(d.op, d.sku); return; }
   if('onew' in d){ openOrderEditor(null); return; }
   if('oarch' in d){ oArch = !oArch; oFilter = 'all'; viewReserves(); window.scrollTo(0,0); return; }
-  if(d.oarc || d.ounarc){ const o = oById(d.oarc || d.ounarc); if(!o || !can('fin') || o.status!=='shipped') return;
+  if(d.oarc || d.ounarc){ const o = oById(d.oarc || d.ounarc); if(!o || !can('fin')) return;
+    if(!ARCH_COL){ toast('Спершу виконайте в Supabase SQL 29 (архів)', 3000, true); return; }
     if(d.oarc && !['done','sample'].includes(oStage(o))){ toast('В архів — лише оплачені заявки', 2500, true); return; }
+    if(o.status!=='shipped') return;
     if(d.oarc){ o.archivedAt = now(); o.archivedBy = S.current; oev(o, 'Переміщено в архів'); }
     else { o.archivedAt = null; o.archivedBy = null; oev(o, 'Повернуто з архіву до списку'); }
     if(save()) toast('№ '+orderNo(o)+(d.oarc?' — в архіві':' — знову в списку'));
