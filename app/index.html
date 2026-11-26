@@ -478,6 +478,12 @@ label.f input,label.f select,label.f textarea{display:block;width:100%;margin-to
 .mk{border-radius:8px;padding:1px 7px;font-weight:700}
 .mk.pos{background:var(--green-soft)}.mk.neg{background:var(--red-soft)}
 .pricebox{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.pricebox.n4{grid-template-columns:repeat(4,1fr)}
+@media (max-width:600px){.pricebox.n4{grid-template-columns:repeat(2,1fr)}}
+.pricebox > .pt.rec{background:#FCE4EC;border-color:#F48FB1;text-decoration:none}
+.pricebox > .pt.rec.diff{border:2px solid #E91E63}
+.chip.rec{background:#FCE4EC;color:#AD1457;font-weight:700}
+.chip.rec.diff{box-shadow:inset 0 0 0 1.5px #E91E63}
 .pricebox > .pt{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:left;color:var(--ink);position:relative;min-width:0}
 .pricebox > button.pt:not(:disabled):hover{border-color:var(--indigo)}
 .pricebox > button.pt > b:first-of-type{padding-right:16px}
@@ -1324,6 +1330,10 @@ const PHRASES = {
     'Каталог':'Catalogo',
     'Кашемір':'Cashmere',
     'Клієнт':'Cliente',
+    'Рек. ціна':'Prezzo consigliato',
+    'Рекомендована':'Consigliato',
+    'канал Україна':'canale Ucraina',
+    'Відкрити пост на каналі України':'Apri il post sul canale Ucraina',
     'Стелаж №':'Scaffale n.',
     'Стелаж':'Scaffale',
     'Спершу виконайте в Supabase SQL 29 (архів)':'Esegui prima in Supabase l’SQL 29 (archivio)',
@@ -2330,6 +2340,10 @@ const PHRASES = {
     'Каталог':'Catalogue',
     'Кашемір':'Cashmere',
     'Клієнт':'Customer',
+    'Рек. ціна':'Rec. price',
+    'Рекомендована':'Recommended',
+    'канал Україна':'Ukraine channel',
+    'Відкрити пост на каналі України':'Open the post on the Ukraine channel',
     'Стелаж №':'Shelf No.',
     'Стелаж':'Shelf',
     'Спершу виконайте в Supabase SQL 29 (архів)':'Run SQL 29 (archive) in Supabase first',
@@ -3592,6 +3606,7 @@ const SB_KEY = 'sb_publishable_hOxUT36SMVhShYKrycBLGQ_DVjU9WSk';
 const db = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 
 let ME = null;              // профіль поточного користувача
+let REC = new Map();         // штрихкод → {rec, ua, post}: ціна з каналу України × 1,25 (SQL 32, пише агент каталогу)
 let TG = new Map();          // штрихкод → коли викладено на @yarn_stock_dg (SQL 31, пише агент каталогу)
 let SHELF_COL = false;       // чи є в базі стовпець skus.shelf (SQL 30)
 let ARCH_COL = false;        // чи є в базі стовпці orders.archived_at / archived_by (SQL 29)
@@ -3809,7 +3824,7 @@ async function hydrate(opts) {
   const prevS = S, oldSnap = SNAP;
   const skipAudit = !!(opts && opts.soft && prevS && prevS.eco && Array.isArray(prevS.audit)
                        && AUDIT_AT && Date.now() - AUDIT_AT < ECO_AUDIT_EVERY);
-  const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au, st, tg] = await Promise.all([
+  const [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au, st, tg, rc] = await Promise.all([
     fetchAll('profiles'),
     fetchAll('invites', { filter: q => q.is('accepted_at', null) }),
     fetchAll('skus'),
@@ -3823,7 +3838,8 @@ async function hydrate(opts) {
     skipAudit ? Promise.resolve({ data: null })                         // економ-режим: історія з пам'яті
               : fetchAll('audit', { order: 'created_at', desc: true, max: 3000 }),  // історія — лише свіжа частина
     db.from('app_settings').select('*'),
-    fetchAll('tg_posts', { key: 'code' })                   // немає таблиці (SQL 31) — просто без відміток
+    fetchAll('tg_posts', { key: 'code' }),                  // немає таблиці (SQL 31) — просто без відміток
+    fetchAll('sku_rec', { key: 'code' })                    // немає таблиці (SQL 32) — без рекомендованої ціни
   ]);
   const err = [pf, iv, sk, sc, op, or_, ol, pa, rt, ev, au].find(r => r.error);
   if (err) throw err.error;
@@ -3836,6 +3852,8 @@ async function hydrate(opts) {
   if ((or_.data || []).length) PL_COL = 'price_list' in or_.data[0];
   if ((sk.data || []).length) SHELF_COL = 'shelf' in sk.data[0];
   TG = new Map(((tg && !tg.error && tg.data) || []).map(r => [String(r.code || '').trim().toUpperCase(), r.posted_at]));
+  REC = new Map(((rc && !rc.error && rc.data) || []).filter(r => +r.rec > 0)
+    .map(r => [String(r.code || '').trim().toUpperCase(), { rec: +r.rec, ua: +r.ua, post: r.ua_post }]));
   if ((or_.data || []).length) BOX_COL = 'box_list' in or_.data[0];
   if ((or_.data || []).length) ARCH_COL = 'archived_at' in or_.data[0];
 
@@ -4608,6 +4626,14 @@ const skuRow = (x, bc) => `<div class="srow"><div class="srow-l">${skuIdHtml(x, 
 const tgAt = x => (x && x.code && me().role === 'admin') ? TG.get(String(x.code).trim().toUpperCase()) : null;
 const tgMark = x => { const at = tgAt(x); return at
   ? `<span class="tgm" title="На каналі Telegram з ${esc(fmtDate(at))}"><svg viewBox="0 0 24 24" width="1.15em" height="1.15em" aria-hidden="true"><path d="M4 12.5l5 5L20 6" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>` : ''; };
+// рекомендована ціна — лише інформація; бачать адмін і головбух. У прайсі UA — сама ціна України
+const recOf = x => (x && x.code && ['admin','accountant'].includes(me().role)) ? REC.get(String(x.code).trim().toUpperCase()) || null : null;
+const recVal = r => r ? (PRICE_LIST === 'ua' ? r.ua : r.rec) : null;
+const recDiff = (sale, r) => Math.abs((+sale || 0) - recVal(r)) >= 0.005;
+const recChip = (x, sale) => { const r = recOf(x); return r
+  ? `<span class="chip rec${recDiff(sale, r) ? ' diff' : ''}"><span>Рек. ціна</span> ${fmtEur(recVal(r))}/${t('unit.kg')}</span>` : ''; };
+const recTile = (x, sale) => { const r = recOf(x); return r
+  ? `<a class="pt rec${recDiff(sale, r) ? ' diff' : ''}" href="https://t.me/yarns_italia/${encodeURIComponent(r.post || '')}" target="_blank" rel="noopener" title="Відкрити пост на каналі України"><b>Рекомендована</b><div class="v">${fmtEur(recVal(r))}<small>/${t('unit.kg')}</small></div><b>${PRICE_LIST === 'ua' ? '<span>канал Україна</span>' : `<span>Україна</span> ${fmtEur(r.ua)} + 25%`}</b></a>` : ''; };
 const shelfOf = x => (x && x.shelf && !isClient()) ? x.shelf : '';
 const compCol = (x, shelf) => `<div class="ccol many${shelf?' hs':''}">${shelf?`<span class="sshelf">Стелаж № <b>${esc(shelf)}</b></span>`:''}${(x.comp||[]).length?compSorted(x.comp).map(c=>`<span><b>${fmtPctC(c.p)}%</b> ${esc(c.f)}</span>`).join(''):'<span class="cna">склад —</span>'}</div>`;
 /* ---------- склади (локації) ----------
@@ -5010,6 +5036,7 @@ function viewCatalog(){
         <div class="scol">${thumbHtml(s,'thumb sthumb')}${can('delsku')?`<span class="delsku ${Math.abs(l.kg)<0.001&&l.cn===0&&l.rk<0.001?'':'off'}" role="button" tabindex="0" data-delsku="${s.id}" aria-label="${t('cat.del')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></span>`:''}</div>
           <div class="levels num slevels">
             ${seeSale()?`<span class="chip sale${PRICE_LIST==='ua'&&pr.src==='прайс Україна'?' ua':''}">${t('cat.sale')} ${pr.sale?fmtEur(pr.sale)+'/'+t('unit.kg'):'—'}</span>`:''}
+            ${seeSale() ? recChip(s, pr.sale) : ''}
             <span class="chip free">${t('cat.free')} ${fmtKg(l.fk)} ${t('unit.kg')} / ${fmtN(l.fc)} ${t('unit.cn')}</span>
             ${viewSites().length>1?`<span class="chip site">${esc(siteTag(siteOf(s)))}</span>`:''}
             ${l.rk>0&&!isClient()?`<span class="chip resv">${t('cat.resv')} ${fmtKg(l.rk)} ${t('unit.kg')}</span>`:''}
@@ -7684,10 +7711,11 @@ function openSku(id){
       <div class="lv resv"><b>${t('sku.resv')}</b><div class="kg">${fmtKg(l.rk)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.rc)} ${t('sku.cones')}</div></div>`}
       <div class="lv free"><b>${t('sku.free')}</b><div class="kg">${fmtKg(l.fk)} ${t('unit.kg')}</div><div class="cn">${fmtN(l.fc)} ${t('sku.cones')}</div></div>
     </div>
-    ${!seeSale()?'':(()=>{const pr=plView(pricing(s,l));return `<div class="pricebox num">
+    ${!seeSale()?'':(()=>{const pr=plView(pricing(s,l));return `<div class="pricebox num${recOf(s)&&seeCost()?' n4':''}">
       ${!seeCost()?'':`<button class="pt" data-editcost="${id}" ${can('fin')?'':'disabled'} aria-label="${t('sku.editcost')}"><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><b>${t('sku.buy')}</b><div class="v">${pr.cost?fmtEur(pr.cost)+'<small>/'+t('unit.kg')+'</small>':'—'}</div><b>${(c=>c?t('sku.from')+' '+fmtDate(c.date):'')(costInfo(s).act)}</b></button>`}
       <button class="pt" data-editsale="${id}" ${can('fin')?'':'disabled'} aria-label="${t('sku.editsale')}"><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><b>${t('sku.sell')}</b><div class="v">${pr.sale?fmtEur(pr.sale)+'<small>/'+t('unit.kg')+'</small>':'—'}</div>${pr.sale?`<b>${pr.src}</b>`:''}</button>
       ${!seeCost()?'':`<div class="pt"><b>${t('sku.markup')}</b><div class="v ${pr.markup!==null&&pr.markup<0?'neg':'pos'}">${fmtPct(pr.markup)}</div></div>`}
+      ${recTile(s, pr.sale)}
     </div>`})()}
     <div class="actions">
       <button class="btn" data-op="in" data-sku="${id}" ${can('in')?'':'disabled'}><span class="dot" style="background:var(--green)"></span>Прихід</button>
