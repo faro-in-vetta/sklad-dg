@@ -3790,6 +3790,27 @@ async function fetchAll(table, opt = {}) {
     bootTick(table, out.length, opt.max ? Math.min(total, opt.max) : total);
     const goal = opt.max ? Math.min(total, opt.max) : total;
     if (!data || !data.length || out.length >= goal) break;
+    /* Кількість рядків уже відома — решту сторінок качаємо паралельно, по 4 одночасно
+       (раніше — по одній: історія з 3 сторінок чекала 3 запити поспіль). Порядок рядків
+       той самий: сторінки складаються за номером. */
+    if (isFinite(goal)) {
+      const offs = [];
+      for (let f = out.length; f < goal; f += STEP) offs.push(f);
+      for (let i = 0; i < offs.length; i += 4) {
+        const res = await Promise.all(offs.slice(i, i + 4).map(f => {
+          let p = db.from(table).select('*');
+          if (opt.filter) p = opt.filter(p);
+          if (opt.order) p = p.order(opt.order, { ascending: !opt.desc });
+          return p.order(key, { ascending: true }).range(f, f + STEP - 1);
+        }));
+        for (const r of res) {
+          if (r.error) { bootTick(table, out.length, null, true); return { data: null, error: r.error }; }
+          out.push(...(r.data || []));
+        }
+        bootTick(table, out.length, goal);
+      }
+      break;
+    }
   }
   bootTick(table, out.length, null, true);
   return { data: opt.max ? out.slice(0, opt.max) : out, error: null };
